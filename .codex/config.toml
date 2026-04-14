@@ -1,0 +1,69 @@
+################################################################################
+# repo-root/.codex/config.toml
+#
+# Project-scoped configuration for Codex.
+# Strategy:
+# - Keep defaults stable across IDE / CLI.
+# - Push L2+ review quality up in Chat/Codex before Browser Copilot.
+# - Use profiles for execution modes (CLI only), not for every persona.
+# - Use subagents for specialist review lenses.
+################################################################################
+
+# Stable default for day-to-day IDE + CLI usage.
+# GPT-5.4 is the recommended starting model for most Codex tasks.
+model = "gpt-5.4"
+review_model = "gpt-5.4"
+personality = "pragmatic"
+approval_policy = "on-request"
+model_reasoning_effort = "medium"
+
+# Keep project root discovery predictable.
+project_root_markers = [".git"]
+
+# Default subagent orchestration limits.
+[agents]
+max_threads = 6
+max_depth = 1
+job_max_runtime_seconds = 900
+
+################################################################################
+# Profiles (CLI only)
+# NOTE: Profiles are experimental and NOT supported in the Codex IDE extension.
+################################################################################
+
+# Default implementation mode.
+[profiles.hq_coder]
+model = "gpt-5.3-codex"
+personality = "pragmatic"
+model_reasoning_effort = "medium"
+approval_policy = "on-request"
+
+# Requirement / scoping / acceptance clarification.
+[profiles.req_pl]
+model = "gpt-5.4"
+personality = "pragmatic"
+model_reasoning_effort = "medium"
+approval_policy = "on-request"
+
+# Regression / contract / failure-path verification.
+[profiles.test_qa]
+model = "gpt-5.4"
+personality = "pragmatic"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
+
+# Deep L2+ review mode.
+# Use this when you want architecture / boundary / persistence / rollout risks,
+# and want to lighten the load on Browser Copilot.
+[profiles.l2plus_review]
+model = "gpt-5.4"
+personality = "pragmatic"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
+
+# Fast read-heavy exploration before editing or before spawning specialists.
+[profiles.pr_explorer]
+model = "gpt-5.4-mini"
+personality = "pragmatic"
+model_reasoning_effort = "medium"
+approval_policy = "on-request"
