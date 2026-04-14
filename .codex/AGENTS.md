@@ -200,6 +200,14 @@ If overlays conflict, return to Req PL and tighten the goal / non-goal first.
 
 ---
 
+# UI / Styling
+
+- Figma to code conversion is handled by Claude Code (Figma MCP)
+- Follow repo-level design rules in `docs/coding-rules.md`
+- Visual correctness is verified in browser, not by agent review
+
+---
+
 # Output Templates
 
 ## [ReqPL]
