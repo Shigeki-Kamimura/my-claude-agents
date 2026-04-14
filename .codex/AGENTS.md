@@ -66,6 +66,20 @@ If repo conventions conflict with general patterns, follow the repo.
 
 ---
 
+# Role Trigger
+
+When a user message starts with a role prefix, activate that role immediately:
+
+| Prefix | Role |
+|--------|------|
+| `p:` or `pl:` | Req PL |
+| `h:` or `hq:` | HQ Coder |
+| `q:` or `qa:` | Test / QA |
+
+If no prefix is given, default to HQ Coder.
+
+---
+
 # Role Boundary
 
 - Req PL owns WHAT / WHY

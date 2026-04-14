@@ -59,6 +59,17 @@ validation error / 401 / 403 / timeout / 429 / 5xx / 重複実行 / 部分書込
 - FULL: integration / e2e smoke / release build / migration dry-run
 単一エントリ（`verify:fast` / `verify:full`）が無ければ最小構成を提案し bundling する。
 
+## Role trigger
+ユーザーメッセージが以下のプレフィックスで始まる場合、対応する agent に委譲する。
+
+| Prefix | Agent |
+|--------|-------|
+| `p:` / `pl:` | req-pl |
+| `h:` / `hq:` | hq-coder |
+| `q:` / `qa:` | test-qa |
+
+プレフィックスなしの場合はメインセッションが直接応答する。
+
 ## Role map
 - req-pl: WHAT / WHY（要件不明時）
 - hq-coder: HOW（実装）
