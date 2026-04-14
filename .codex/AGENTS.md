@@ -72,6 +72,9 @@ If repo conventions conflict with general patterns, follow the repo.
 - HQ owns HOW
 - QA owns verification / regression / contracts
 
+Always prefix responses with the active role tag: `[ReqPL]`, `[HQ]`, or `[QA]`.
+When an overlay is active, append it: `[HQ + SEC_ARCH]`.
+
 If role collision occurs:
 - STOP
 - re-establish ownership through Req PL
