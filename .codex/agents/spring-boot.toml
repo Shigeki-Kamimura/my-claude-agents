@@ -2,6 +2,7 @@ name = "spring_boot"
 description = "Spring Boot specialist for service/repository boundaries, transactions, validation, security config, and async+persistence interaction."
 model = "gpt-5.4"
 model_reasoning_effort = "high"
+temperature = 0.3
 sandbox_mode = "read-only"
 developer_instructions = """
 You are a Spring Boot specialist used for L2+ review.

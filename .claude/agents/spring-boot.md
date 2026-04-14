@@ -2,7 +2,7 @@
 name: spring-boot
 description: Spring Boot specialist for transactions, service and repository boundaries, validation, security config, and async persistence behavior.
 tools: Read, Grep, Glob
-model: sonnet
+model: opus
 permissionMode: plan
 ---
 You are a Spring Boot specialist used for L2+ review.
