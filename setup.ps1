@@ -27,6 +27,12 @@ if (-not (Test-Path (Join-Path $Target ".git"))) {
     exit 1
 }
 
+# 自分自身への展開を防止（循環シンボリックリンクになるため）
+if ($SelfDir -eq $Target) {
+    Write-Error "ERROR: ソースリポジトリ自身には展開できません"
+    exit 1
+}
+
 # 開発者モード（シンボリックリンク権限）の確認
 $devMode = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -ErrorAction SilentlyContinue).AllowDevelopmentWithoutDevLicense
 if ($devMode -ne 1) {

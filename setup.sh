@@ -22,6 +22,12 @@ if [ ! -d "$TARGET/.git" ]; then
   exit 1
 fi
 
+# 自分自身への展開を防止（循環シンボリックリンクになるため）
+if [ "$SELF_DIR" = "$TARGET" ]; then
+  echo "ERROR: ソースリポジトリ自身には展開できません" >&2
+  exit 1
+fi
+
 echo "=== claude-config セットアップ: $TARGET ==="
 
 # --- .git/info/exclude にエントリを追加（重複しない） ---
