@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため。
-# Scope: シンボリックリンク作成と .git/info/exclude への登録のみ。CLAUDE.md / upstream ファイルは変更しない。
+# Scope: .claude と .codex のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
 # Usage: bash ~/.claude/setup.sh [TARGET_PROJECT_DIR]
 
 set -euo pipefail
@@ -10,10 +10,13 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC_AGENTS="$SELF_DIR/.claude/agents"
 SRC_SKILLS="$SELF_DIR/.claude/skills"
 SRC_SETTINGS="$SELF_DIR/.claude/settings.json"
+SRC_CODEX_AGENTS="$SELF_DIR/.codex/agents"
+SRC_CODEX_INSTRUCTIONS="$SELF_DIR/.codex/AGENTS.md"
 
 TARGET="${1:-$(pwd)}"
 TARGET="$(cd "$TARGET" && pwd)"
 CLAUDE_DIR="$TARGET/.claude"
+CODEX_DIR="$TARGET/.codex"
 EXCLUDE_FILE="$TARGET/.git/info/exclude"
 
 # gitリポジトリかチェック
@@ -94,10 +97,45 @@ else
   echo "  [LINK] settings.json -> $SRC_SETTINGS"
 fi
 
+# --- Codex: AGENTS.md ---
+mkdir -p "$CODEX_DIR"
+add_exclude ".codex"
+
+CODEX_INSTRUCTIONS_DEST="$CODEX_DIR/AGENTS.md"
+if [ -f "$CODEX_INSTRUCTIONS_DEST" ] && [ ! -L "$CODEX_INSTRUCTIONS_DEST" ]; then
+  echo "  [SKIP upstream] .codex/AGENTS.md（upstream 優先）"
+else
+  ln -sf "$SRC_CODEX_INSTRUCTIONS" "$CODEX_INSTRUCTIONS_DEST"
+  echo "  [LINK] .codex/AGENTS.md -> $SRC_CODEX_INSTRUCTIONS"
+fi
+
+# --- Codex agents: ファイル単位でリンク ---
+mkdir -p "$CODEX_DIR/agents"
+
+linked_codex_agents=0
+skipped_codex_agents=0
+if [ -d "$SRC_CODEX_AGENTS" ]; then
+  for src in "$SRC_CODEX_AGENTS"/*.toml; do
+    [ -e "$src" ] || continue
+    name="$(basename "$src")"
+    dest="$CODEX_DIR/agents/$name"
+
+    if [ -f "$dest" ] && [ ! -L "$dest" ]; then
+      echo "  [SKIP upstream] .codex/agents/$name"
+      skipped_codex_agents=$((skipped_codex_agents + 1))
+    else
+      ln -sf "$src" "$dest"
+      echo "  [LINK] .codex/agents/$name -> $src"
+      linked_codex_agents=$((linked_codex_agents + 1))
+    fi
+  done
+fi
+
 # --- サマリ ---
 echo ""
 echo "=== 完了 ==="
-echo "  agents : ${linked_agents} linked, ${skipped_agents} skipped (upstream)"
-echo "  skills : ${linked_skills} linked, ${skipped_skills} skipped (upstream)"
+echo "  claude agents : ${linked_agents} linked, ${skipped_agents} skipped (upstream)"
+echo "  claude skills : ${linked_skills} linked, ${skipped_skills} skipped (upstream)"
+echo "  codex agents  : ${linked_codex_agents} linked, ${skipped_codex_agents} skipped (upstream)"
 echo ""
 echo "upstream を汚さないために .git/info/exclude を使用しています（.gitignore は変更していません）"

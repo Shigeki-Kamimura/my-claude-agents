@@ -1,5 +1,5 @@
 # Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため（Windows ネイティブ環境向け）。
-# Scope: シンボリックリンク作成と .git/info/exclude への登録のみ。CLAUDE.md / upstream ファイルは変更しない。
+# Scope: .claude と .codex のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
 # Usage: pwsh ~/.claude/setup.ps1 [-Target C:\path\to\your-project]
 # 前提: 開発者モード ON（管理者権限不要でシンボリックリンクが使えるようになる）
 #   設定 > システム > 開発者向け > 開発者モード: オン
@@ -16,9 +16,12 @@ $SelfDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SrcAgents = Join-Path $SelfDir ".claude\agents"
 $SrcSkills = Join-Path $SelfDir ".claude\skills"
 $SrcSettings = Join-Path $SelfDir ".claude\settings.json"
+$SrcCodexAgents = Join-Path $SelfDir ".codex\agents"
+$SrcCodexInstructions = Join-Path $SelfDir ".codex\AGENTS.md"
 
 $Target = (Resolve-Path $Target).Path
 $ClaudeDir   = Join-Path $Target ".claude"
+$CodexDir    = Join-Path $Target ".codex"
 $ExcludeFile = Join-Path $Target ".git\info\exclude"
 
 # git リポジトリかチェック
@@ -104,10 +107,44 @@ if ((Test-Path $settingsDest) -and (Get-Item $settingsDest).LinkType -ne "Symbol
     Write-Host "  [LINK] settings.json -> $SrcSettings"
 }
 
+# --- Codex: AGENTS.md ---
+New-Item -ItemType Directory -Path $CodexDir -Force | Out-Null
+Add-Exclude ".codex"
+
+$codexInstructionsDest = Join-Path $CodexDir "AGENTS.md"
+if ((Test-Path $codexInstructionsDest) -and (Get-Item $codexInstructionsDest).LinkType -ne "SymbolicLink") {
+    Write-Host "  [SKIP upstream] .codex/AGENTS.md（upstream 優先）"
+} else {
+    if (Test-Path $codexInstructionsDest) { Remove-Item $codexInstructionsDest -Force }
+    New-Item -ItemType SymbolicLink -Path $codexInstructionsDest -Target $SrcCodexInstructions | Out-Null
+    Write-Host "  [LINK] .codex/AGENTS.md -> $SrcCodexInstructions"
+}
+
+# --- Codex agents: ファイル単位でリンク ---
+New-Item -ItemType Directory -Path (Join-Path $CodexDir "agents") -Force | Out-Null
+
+$linkedCodexAgents = 0; $skippedCodexAgents = 0
+if (Test-Path $SrcCodexAgents) {
+    foreach ($src in (Get-ChildItem -Path $SrcCodexAgents -Filter "*.toml" -File)) {
+        $dest = Join-Path $CodexDir "agents\$($src.Name)"
+
+        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+            Write-Host "  [SKIP upstream] .codex/agents/$($src.Name)"
+            $skippedCodexAgents++
+        } else {
+            if (Test-Path $dest) { Remove-Item $dest -Force }
+            New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
+            Write-Host "  [LINK] .codex/agents/$($src.Name) -> $($src.FullName)"
+            $linkedCodexAgents++
+        }
+    }
+}
+
 # --- サマリ ---
 Write-Host ""
 Write-Host "=== 完了 ===" -ForegroundColor Green
-Write-Host "  agents : $linkedAgents linked, $skippedAgents skipped (upstream)"
-Write-Host "  skills : $linkedSkills linked, $skippedSkills skipped (upstream)"
+Write-Host "  claude agents : $linkedAgents linked, $skippedAgents skipped (upstream)"
+Write-Host "  claude skills : $linkedSkills linked, $skippedSkills skipped (upstream)"
+Write-Host "  codex agents  : $linkedCodexAgents linked, $skippedCodexAgents skipped (upstream)"
 Write-Host ""
 Write-Host "upstream を汚さないために .git/info/exclude を使用しています（.gitignore は変更していません）"
