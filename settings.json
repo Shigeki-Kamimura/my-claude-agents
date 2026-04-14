@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "defaultMode": "default",
+  "disableBypassPermissionsMode": "disable",
+  "plansDirectory": ".claude/plans",
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(pwd)",
+      "Bash(ls *)",
+      "Bash(find . *)",
+      "Bash(rg *)"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/config/credentials.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(rsync *)",
+      "Bash(rm *)",
+      "Bash(rm -r*)",
+      "Bash(rm -f*)",
+      "Bash(find * -delete)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)"
+    ]
+  }
+}
