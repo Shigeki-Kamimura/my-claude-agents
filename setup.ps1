@@ -16,6 +16,7 @@ $SelfDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SrcAgents = Join-Path $SelfDir ".claude\agents"
 $SrcSkills = Join-Path $SelfDir ".claude\skills"
 $SrcSettings = Join-Path $SelfDir ".claude\settings.json"
+$SrcClaudeMd = Join-Path $SelfDir ".claude\CLAUDE.md"
 $SrcCodexAgents = Join-Path $SelfDir ".codex\agents"
 $SrcCodexInstructions = Join-Path $SelfDir ".codex\AGENTS.md"
 
@@ -94,6 +95,17 @@ if (Test-Path $SrcSkills) {
             $linkedSkills++
         }
     }
+}
+
+# --- CLAUDE.md: upstream が持っていれば触らない ---
+$claudeMdDest = Join-Path $ClaudeDir "CLAUDE.md"
+if ((Test-Path $claudeMdDest) -and (Get-Item $claudeMdDest).LinkType -ne "SymbolicLink") {
+    Write-Host "  [SKIP upstream] CLAUDE.md（upstream 優先）"
+} else {
+    if (Test-Path $claudeMdDest) { Remove-Item $claudeMdDest -Force }
+    New-Item -ItemType SymbolicLink -Path $claudeMdDest -Target $SrcClaudeMd | Out-Null
+    Add-Exclude ".claude/CLAUDE.md"
+    Write-Host "  [LINK] CLAUDE.md -> $SrcClaudeMd"
 }
 
 # --- settings.json: upstream が持っていれば触らない ---

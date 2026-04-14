@@ -10,6 +10,7 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC_AGENTS="$SELF_DIR/.claude/agents"
 SRC_SKILLS="$SELF_DIR/.claude/skills"
 SRC_SETTINGS="$SELF_DIR/.claude/settings.json"
+SRC_CLAUDE_MD="$SELF_DIR/.claude/CLAUDE.md"
 SRC_CODEX_AGENTS="$SELF_DIR/.codex/agents"
 SRC_CODEX_INSTRUCTIONS="$SELF_DIR/.codex/AGENTS.md"
 
@@ -85,6 +86,16 @@ if [ -d "$SRC_SKILLS" ]; then
       linked_skills=$((linked_skills + 1))
     fi
   done
+fi
+
+# --- CLAUDE.md: upstream が持っていれば触らない ---
+CLAUDE_MD_DEST="$CLAUDE_DIR/CLAUDE.md"
+if [ -f "$CLAUDE_MD_DEST" ] && [ ! -L "$CLAUDE_MD_DEST" ]; then
+  echo "  [SKIP upstream] CLAUDE.md（upstream 優先）"
+else
+  ln -sf "$SRC_CLAUDE_MD" "$CLAUDE_MD_DEST"
+  add_exclude ".claude/CLAUDE.md"
+  echo "  [LINK] CLAUDE.md -> $SRC_CLAUDE_MD"
 fi
 
 # --- settings.json: upstream が持っていれば触らない ---
