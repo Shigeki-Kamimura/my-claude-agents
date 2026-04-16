@@ -38,7 +38,16 @@ if ($SelfDir -eq $Target) {
 }
 
 # 開発者モード（シンボリックリンク権限）の確認
-$devMode = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -ErrorAction SilentlyContinue).AllowDevelopmentWithoutDevLicense
+# StrictMode 下でプロパティ不在による例外を防ぐため try/catch で包む
+$devMode = $null
+try {
+    $regKey = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -ErrorAction Stop
+    if ($null -ne $regKey -and (Get-Member -InputObject $regKey -Name "AllowDevelopmentWithoutDevLicense" -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $devMode = $regKey.AllowDevelopmentWithoutDevLicense
+    }
+} catch {
+    # レジストリキー自体が存在しない場合は警告のみ
+}
 if ($devMode -ne 1) {
     Write-Warning "開発者モードが OFF の可能性があります。シンボリックリンク作成に失敗する場合は設定を確認してください。"
     Write-Warning "設定 > システム > 開発者向け > 開発者モード: オン"
