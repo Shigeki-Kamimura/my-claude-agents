@@ -7,10 +7,17 @@ set -euo pipefail
 
 # --- パス解決 ---
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC_AGENTS="$SELF_DIR/.claude/agents"
-SRC_SKILLS="$SELF_DIR/.claude/skills"
-SRC_SETTINGS="$SELF_DIR/.claude/settings.json"
-SRC_CLAUDE_MD="$SELF_DIR/.claude/CLAUDE.md"
+# ★追加: profileによる切り替え
+if [ "$PROFILE" = "company" ]; then
+  SRC_CLAUDE_ROOT="$SELF_DIR/.claude-company"
+else
+  SRC_CLAUDE_ROOT="$SELF_DIR/.claude"
+fi
+
+SRC_AGENTS="$SRC_CLAUDE_ROOT/agents"
+SRC_SKILLS="$SRC_CLAUDE_ROOT/skills"
+SRC_SETTINGS="$SRC_CLAUDE_ROOT/settings.json"
+SRC_CLAUDE_MD="$SRC_CLAUDE_ROOT/CLAUDE.md"
 SRC_CODEX_AGENTS="$SELF_DIR/.codex/agents"
 SRC_CODEX_INSTRUCTIONS="$SELF_DIR/.codex/AGENTS.md"
 SRC_COPILOT_INSTRUCTIONS="$SELF_DIR/.copilot/copilot-instructions.md"
