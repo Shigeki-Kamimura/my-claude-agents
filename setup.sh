@@ -4,6 +4,8 @@
 # Usage: bash ~/.claude/setup.sh [TARGET_PROJECT_DIR]
 
 set -euo pipefail
+# ★ここに置く
+PROFILE="${2:-personal}"
 
 # --- パス解決 ---
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
