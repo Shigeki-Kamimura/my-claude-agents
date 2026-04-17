@@ -31,6 +31,7 @@ Do not invent missing facts.
 Ask at most 1 question only if correctness is blocked.
 
 ## Role boundary
+既定のレビュー順序: 要件が曖昧なら先に `req-pl`、実装後は `adviser` → `test-qa`、高リスク境界のみ specialist に上げる。
 - `p:` / `pl:` -> `req-pl`
 - `h:` / `hq:` -> `hq-coder`
 - `q:` / `qa:` -> `test-qa`
