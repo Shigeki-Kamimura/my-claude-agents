@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため。
-# Scope: .claude と .codex のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
+# Scope: .claude と .codex と .copilot のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
 # Usage: bash ~/.claude/setup.sh [TARGET_PROJECT_DIR]
 
 set -euo pipefail
@@ -13,11 +13,13 @@ SRC_SETTINGS="$SELF_DIR/.claude/settings.json"
 SRC_CLAUDE_MD="$SELF_DIR/.claude/CLAUDE.md"
 SRC_CODEX_AGENTS="$SELF_DIR/.codex/agents"
 SRC_CODEX_INSTRUCTIONS="$SELF_DIR/.codex/AGENTS.md"
+SRC_COPILOT_INSTRUCTIONS="$SELF_DIR/.copilot/copilot-instructions.md"
 
 TARGET="${1:-$(pwd)}"
 TARGET="$(cd "$TARGET" && pwd)"
 CLAUDE_DIR="$TARGET/.claude"
 CODEX_DIR="$TARGET/.codex"
+COPILOT_DIR="$TARGET/.copilot"
 EXCLUDE_FILE="$TARGET/.git/info/exclude"
 
 # gitリポジトリかチェック
@@ -140,6 +142,18 @@ if [ -d "$SRC_CODEX_AGENTS" ]; then
       linked_codex_agents=$((linked_codex_agents + 1))
     fi
   done
+fi
+
+# --- Copilot: copilot-instructions.md ---
+mkdir -p "$COPILOT_DIR"
+add_exclude ".copilot"
+
+COPILOT_INSTRUCTIONS_DEST="$COPILOT_DIR/copilot-instructions.md"
+if [ -f "$COPILOT_INSTRUCTIONS_DEST" ] && [ ! -L "$COPILOT_INSTRUCTIONS_DEST" ]; then
+  echo "  [SKIP upstream] .copilot/copilot-instructions.md（upstream 優先）"
+else
+  ln -sf "$SRC_COPILOT_INSTRUCTIONS" "$COPILOT_INSTRUCTIONS_DEST"
+  echo "  [LINK] .copilot/copilot-instructions.md -> $SRC_COPILOT_INSTRUCTIONS"
 fi
 
 # --- サマリ ---

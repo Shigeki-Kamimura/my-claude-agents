@@ -1,5 +1,5 @@
 # Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため（Windows ネイティブ環境向け）。
-# Scope: .claude と .codex のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
+# Scope: .claude と .codex と .copilot のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
 # Usage: pwsh ~/.claude/setup.ps1 [-Target C:\path\to\your-project]
 # 前提: 開発者モード ON（管理者権限不要でシンボリックリンクが使えるようになる）
 #   設定 > システム > 開発者向け > 開発者モード: オン
@@ -19,10 +19,12 @@ $SrcSettings = Join-Path $SelfDir ".claude\settings.json"
 $SrcClaudeMd = Join-Path $SelfDir ".claude\CLAUDE.md"
 $SrcCodexAgents = Join-Path $SelfDir ".codex\agents"
 $SrcCodexInstructions = Join-Path $SelfDir ".codex\AGENTS.md"
+$SrcCopilotInstructions = Join-Path $SelfDir ".copilot\copilot-instructions.md"
 
 $Target = (Resolve-Path $Target).Path
 $ClaudeDir   = Join-Path $Target ".claude"
 $CodexDir    = Join-Path $Target ".codex"
+$CopilotDir  = Join-Path $Target ".copilot"
 $ExcludeFile = Join-Path $Target ".git\info\exclude"
 
 # git リポジトリかチェック
@@ -159,6 +161,19 @@ if (Test-Path $SrcCodexAgents) {
             $linkedCodexAgents++
         }
     }
+}
+
+# --- Copilot: copilot-instructions.md ---
+New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
+Add-Exclude ".copilot"
+
+$copilotInstructionsDest = Join-Path $CopilotDir "copilot-instructions.md"
+if ((Test-Path $copilotInstructionsDest) -and (Get-Item $copilotInstructionsDest).LinkType -ne "SymbolicLink") {
+    Write-Host "  [SKIP upstream] .copilot/copilot-instructions.md（upstream 優先）"
+} else {
+    if (Test-Path $copilotInstructionsDest) { Remove-Item $copilotInstructionsDest -Force }
+    New-Item -ItemType SymbolicLink -Path $copilotInstructionsDest -Target $SrcCopilotInstructions | Out-Null
+    Write-Host "  [LINK] .copilot/copilot-instructions.md -> $SrcCopilotInstructions"
 }
 
 # --- サマリ ---
