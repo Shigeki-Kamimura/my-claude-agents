@@ -33,8 +33,10 @@ QA output: Contracts / Minimal tests / Security coverage / Failure-mode coverage
 
 # Multi-Model Workflow
 1. Discovery / Reuse
-   - Claude Adviser identifies current behavior, reusable assets, gaps, and reuse mode
+   - Use when existing front/back components, services, validation, or flows may already cover the task
+   - Claude Adviser identifies current behavior, reusable assets, gaps, and recommended reuse mode
 2. Decision
+   - Use when reuse, ownership, architecture, UX, or API direction is unclear
    - Claude Adviser or Req PL converts ambiguity into a Decision Ticket
 3. Implementation
    - HQ executes the smallest safe diff
@@ -44,21 +46,16 @@ QA output: Contracts / Minimal tests / Security coverage / Failure-mode coverage
 5. Fix + Convergence
    - QA checks ticket validity
    - HQ applies grouped fixes
-   - Claude performs one post-fix convergence review
+   - Claude performs one post-fix convergence review on changed lines and unresolved tickets
 6. Final Gate
    - Browser Copilot reviews final diff as merge gate
 
 Rule:
-- As-Is before To-Be
-- Reuse first
-- Do not start non-trivial implementation without acceptance and boundaries
-- Do not default to repeated Claude/Codex ping-pong
-- Prefer one strong convergence round over many short review loops
+- do not default to repeated Claude/Codex ping-pong
+- prefer one strong convergence round over many short review loops
 
 # Ticket Types
 ## Discovery / Reuse Ticket
-Use before non-trivial changes to existing screens, flows, APIs, components, services, validation, or DB responsibility.
-Fields:
 - Task
 - As-Is
 - Existing Assets
@@ -66,14 +63,13 @@ Fields:
 - Reuse Decision (Reuse / Extend / Replace / New)
 - Constraints
 - Open Questions
+
 Exit:
 - current behavior confirmed
 - reusable assets inspected or ruled out
 - one reuse decision selected
 
 ## Decision Ticket
-Use when reuse, ownership, architecture, UX, or API direction is not obvious.
-Fields:
 - Context
 - Decision to Make
 - Options
@@ -81,14 +77,13 @@ Fields:
 - Recommendation
 - Validation
 - Open Risks
+
 Exit:
 - one option selected
 - trade-offs bounded
 - no core ownership ambiguity remains
 
 ## Implementation Ticket
-Use when the path is chosen and work is ready to build.
-Fields:
 - Objective
 - Scope
 - Non-goals
@@ -99,25 +94,70 @@ Fields:
 - Touch / Do NOT Touch
 - Dependencies
 - Rollback Notes
+
 Exit:
 - build-ready scope
 - testable acceptance
 - explicit boundaries
 
 ## Review Ticket
-Use for medium/high risk findings only.
-Fields:
 - ID
+- Status (open / fixed / accepted-risk / defer)
+- Severity (high / medium / low)
+- Route (Implementation / Decision)
 - Location
 - Short label
-- Status (open / fixed / accepted-risk)
+
+Rules:
+- return medium/high by default; low only when it affects merge judgment, accepted-risk logging, or convergence clarity
+- `high` = merge-blocking unless fixed or explicitly accepted by decision
+- `medium` = should be fixed before merge unless accepted-risk is explicit
+- `low` = may be deferred if no medium/high remains
+- `Implementation` = requirement already settled; corrective work only
+- `Decision` = requirement / ownership / acceptance ambiguity remains
+
+# Review Output Contract
+Initial L2+ review must end with:
+1. Scope
+2. Review Tickets
+3. Stop condition
+
+Post-fix convergence review must end with:
+1. Updated Review Tickets
+2. New Risks
+3. Convergence Decision
+
+Formats:
+- `ID | Status | Severity | Route | Location | Short label`
+- `Convergence: Clean` only when no unresolved high/medium issue remains
+- `Convergence: Not Clean` when any unresolved high/medium issue remains
+
+# Specialist Operation
+Default:
+- adviser only
+
+Add specialists only when directly relevant:
+- `data-platform` for DB schema, migration, transaction, retry, idempotency, duplicate/lost/partial write risk
+- `sec-arch` for authn/authz, trust boundary, public API exposure, secret/PII, unsafe rollback shape
+- `test-qa` when changed contracts, side effects, error paths, or comment-quality validation need explicit regression coverage
+- `react-ui-flow` for React state ownership, effect risk, async UI side effects, form flow, optimistic UI
+- `vue-frontend` for Vue reactivity, props/emits contracts, async UI side effects, SSR/hydration behavior
+- `nestjs-backend` for Nest guards, pipes, interceptors, filters, DTO validation/transformation, controller/service boundaries
+- `spring-boot` for transaction scope, controller/service/repository boundaries, validation, security config, async persistence
+
+Rules:
+- do not launch specialists only because the diff is large
+- do not launch both `data-platform` and `sec-arch` unless both boundaries are touched
+- adviser organizes review focus; specialists validate specific high-risk boundaries
+- specialists do not replace Req PL for ambiguity or QA for validation planning
+- prefer <=2 specialists in one review unless correctness clearly requires more
 
 # Ticket Conversion
-- Discovery / Reuse -> Decision: reuse, ownership, or direction is unclear
-- Discovery / Reuse -> Implementation: path is obvious, local, and ownership is settled
-- Decision -> Implementation: one option selected and acceptance is concrete
-- Review -> Decision: finding reveals unresolved requirement or ownership ambiguity
-- Review -> Implementation: requirement is settled and only corrective work remains
+- Discovery / Reuse -> Decision when reuse is unclear, conflicting, or architecture-affecting
+- Discovery / Reuse -> Implementation when reuse choice is obvious and scope is local
+- Decision -> Implementation once one option is selected and acceptance is concrete
+- Review Ticket -> Decision only when the finding reveals unresolved requirement or ownership ambiguity
+- Review Ticket -> Implementation when the requirement is already settled and only the fix remains
 
 # Reuse-First Check
 Before new component / service / hook / validator / flow creation, inspect:
@@ -174,8 +214,8 @@ Work may move to Claude L2+ review only after:
 - reuse-first check is done for non-trivial UI / service additions
 
 Work may move to final gate only after:
-- Review Tickets are closed or marked accepted-risk
-- convergence review found no unresolved medium/high issue
+- Review Tickets are closed, deferred, or marked accepted-risk
+- convergence review found no unresolved high/medium issue
 - rollback path is stated for high-risk changes
 
 # High-Risk / Failure Modes

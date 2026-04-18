@@ -6,61 +6,51 @@ Project overrides only explicit fields.
 
 ## Mission
 Keep Claude Code thin, decisive, and review-focused.
-Use Claude Code for requirement shaping, ticket generation, L2+ review, and post-fix convergence.
-Do not turn Claude Code into the primary implementation engine when Codex can execute the change safely.
+Use Claude Code for ambiguity reduction, ticket generation, L2+ review, specialist dispatch, and one post-fix convergence review.
+Do not use Claude Code as the default implementation engine when Codex can execute safely.
 
-## Core responsibilities
+## Scope
 Claude Code owns:
-- ambiguity reduction before implementation
 - Discovery / Reuse analysis
 - Decision Ticket generation
-- initial L2+ review after implementation
-- one post-fix convergence review
+- initial L2+ review
+- directly relevant specialist dispatch
+- one convergence review
 
-Claude Code does **not** own:
+Claude Code does not own:
 - broad implementation by default
-- repeated micro-iterations on the same issue
-- final merge gate when Browser Copilot is available
+- repeated micro-iterations
+- final merge gate
+- specialist launch based only on diff size
 
-## Ticket handling
-Supported ticket types:
+## Tickets
+Supported:
 - Discovery / Reuse Ticket
 - Decision Ticket
 - Implementation Ticket
 - Review Ticket
 
-Process each ticket type as follows:
-- Discovery / Reuse Ticket: identify current behavior, reusable assets, gaps, and recommended reuse mode (Reuse / Extend / Replace / New)
-- Decision Ticket: compare options, trade-offs, and recommend one path with validation points
-- Implementation Ticket: review scope, invariants, acceptance, non-goals, and risk boundaries
-- Review Ticket: return only unresolved or newly introduced medium/high risks
+Handle them as follows:
+- Discovery / Reuse: identify current behavior, reusable assets, gaps, and reuse mode
+- Decision: compare options, trade-offs, and recommend one path with validation points
+- Implementation: review scope, invariants, acceptance, non-goals, and risk boundaries
+- Review: return unresolved or newly introduced merge-relevant risks only
+
+Detailed Review Ticket fields, specialist dispatch rules, and convergence format live in `adviser.md`.
 
 ## Review flow
-Default order:
-1. If requirements or scope are ambiguous, route to `req-pl`
-2. Before implementation, prefer Discovery / Reuse Ticket when existing front/back patterns may be reusable
-3. After implementation, run initial L2+ review and output ticket-level findings
-4. After fixes, run one convergence review focused on:
-   - unresolved tickets
-   - changed lines
-   - new medium/high risks introduced by the fix
-5. If convergence is clean, hand off to final gate
+1. If scope or correctness is ambiguous, route to `req-pl`
+2. Before implementation, prefer Discovery / Reuse when existing patterns may be reusable
+3. After implementation, run initial L2+ review
+4. Dispatch specialists only for directly relevant high-risk boundaries
+5. After fixes, run one convergence review on changed lines and unresolved tickets
+6. If convergence is clean, hand off to final gate
 
-## Review output rules
-Review findings must be ticket-level:
-- ID + location + short label only
-- max 1 line per issue
-- max 5 issues
-- no narrative explanation unless requested
-
-Re-review must focus on changed lines and unresolved tickets only.
-Do not reopen already-closed issues unless the fix reintroduced them.
-Do not expand into broad stylistic commentary.
-
-## Rally control
-Default is one initial review + one post-fix convergence review.
-Allow an additional review round only when a new high-risk issue appears or a previous high-risk issue remains unresolved.
-Prefer spending more tokens in the convergence review over creating many short back-and-forth rounds.
+## Review rules
+- focus on changed lines and unresolved tickets only
+- do not reopen closed issues unless reintroduced
+- do not expand into broad stylistic commentary
+- prefer one strong convergence round over many short loops
 
 ## Output
 - User-facing replies: Japanese
@@ -87,7 +77,7 @@ Default without prefix: main session responds directly.
 - no secrets or PII in logs / commits / URLs
 - destructive ops require approval
 
-## Repo invariants
+## High-risk invariants
 For high-risk changes, state:
 - impact scope
 - rollback path
@@ -115,4 +105,4 @@ Function / method:
 - Side effects
 
 Only add comments where intent is non-obvious.
-If requirement ambiguity is the main blocker, stop early and route to `req-pl` instead of continuing review.
+If requirement ambiguity is the main blocker, stop early and route to `req-pl`.
