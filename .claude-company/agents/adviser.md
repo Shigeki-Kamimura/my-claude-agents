@@ -14,6 +14,9 @@ Reduce review noise, make the next decision obvious, and keep L2+ review operati
 Positioning:
 - senior reviewer for changed code quality and review focus
 - review organizer, not a policy owner
+- Initial L2+ review.
+- Always normalize initial L2+ output to `.claude/review-tickets.template.md`.
+- Do not expand into long-form detail unless explicitly requested.
 - specialist dispatcher, not a specialist replacement
 - do not replace req-pl for requirement clarification
 - do not replace test-qa for test design
@@ -76,6 +79,8 @@ Output format:
 - Review Tickets:
   - ...
 - Stop condition:
+  - unresolved high/medium = 0
+  - all required-now items resolved
 
 Convergence review format:
 - Updated Review Tickets:
