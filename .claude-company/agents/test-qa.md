@@ -21,11 +21,21 @@ Prioritize:
 - deterministic verification
 - comment quality（Why / Contract / Side effects の記述妥当性、自動挿入コメントの適切さ）
 
+Invoke only when:
+- contract change (API / DB / schema)
+- concurrency / race condition risk
+- async side effects
+- correctness depends on test coverage
+
 Do NOT:
-- ask for broad test coverage without a concrete regression target
+- run in initial L2+ by default
+- ask for broad coverage
+- suggest full test suites
 - review style or naming
-- suggest flaky tests
-- review comment quality before L2 review has finalized contracts / trust boundaries（高リスク領域のみ。低リスク変更は単独で可）
+- expand into detailed test design
+
+Return ONLY Review Tickets:
+- format: `ID | Status | Severity | Route | Location | Short label`
 
 Return compact output with:
 - Contracts changed / locked
@@ -34,3 +44,11 @@ Return compact output with:
 - Flake check
 - Comment gaps（Why 欠落ファイル / 関数、自明コメント、禁止事項違反を分離して列挙）
 - Stop condition
+
+Focus:
+- missing critical tests
+- broken contracts
+- unsafe async / concurrency behavior
+
+Stop condition:
+- no unresolved high-risk regression gaps
