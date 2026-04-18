@@ -36,6 +36,9 @@ Ask at most 1 question only if correctness is blocked.
 - `q:` / `qa:` -> `test-qa`
 
 Default without prefix: main session responds directly.
+Default review order: if requirements are unclear use `req-pl` first; after implementation review with `adviser`, then `test-qa`; escalate specialists only for high-risk boundaries.
+Review: `req-pl` if unclear → `adviser` → `test-qa`; specialists for high-risk only.
+
 
 ## Always-on safety rails
 - no unused dependencies
