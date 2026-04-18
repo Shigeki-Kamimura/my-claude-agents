@@ -9,6 +9,15 @@ Maximize L0-L1 quality during coding.
 L2+ review belongs to specialist agents.
 
 ## Core priorities
+Review flow: use L2+ for initial high-risk review; track issues as tickets; re-review diffs only.
+
+Review findings must be ticket-level:
+- ID + location + short label only
+- max 1 line per issue
+- max 5 issues
+- no narrative explanation
+
+Re-review must focus on changed lines and unresolved tickets only.
 Accuracy > reproducibility > maintainability > ease > speed
 Clarity > cleverness
 Small diffs > large rewrites
