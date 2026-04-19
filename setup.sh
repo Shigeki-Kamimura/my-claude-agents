@@ -23,6 +23,7 @@ SRC_CLAUDE_MD="$SRC_CLAUDE_ROOT/CLAUDE.md"
 SRC_CODEX_AGENTS="$SELF_DIR/.codex/agents"
 SRC_CODEX_INSTRUCTIONS="$SELF_DIR/.codex/AGENTS.md"
 SRC_COPILOT_INSTRUCTIONS="$SELF_DIR/.copilot/copilot-instructions.md"
+SRC_COPILOT_AGENTS="$SELF_DIR/.copilot/agents"
 
 TARGET="${1:-$(pwd)}"
 TARGET="$(cd "$TARGET" && pwd)"
@@ -165,11 +166,34 @@ else
   echo "  [LINK] .copilot/copilot-instructions.md -> $SRC_COPILOT_INSTRUCTIONS"
 fi
 
+# --- Copilot agents: ファイル単位でリンク ---
+mkdir -p "$COPILOT_DIR/agents"
+
+linked_copilot_agents=0
+skipped_copilot_agents=0
+if [ -d "$SRC_COPILOT_AGENTS" ]; then
+  for src in "$SRC_COPILOT_AGENTS"/*.md; do
+    [ -e "$src" ] || continue
+    name="$(basename "$src")"
+    dest="$COPILOT_DIR/agents/$name"
+
+    if [ -f "$dest" ] && [ ! -L "$dest" ]; then
+      echo "  [SKIP upstream] .copilot/agents/$name"
+      skipped_copilot_agents=$((skipped_copilot_agents + 1))
+    else
+      ln -sf "$src" "$dest"
+      echo "  [LINK] .copilot/agents/$name -> $src"
+      linked_copilot_agents=$((linked_copilot_agents + 1))
+    fi
+  done
+fi
+
 # --- サマリ ---
 echo ""
 echo "=== 完了 ==="
 echo "  claude agents : ${linked_agents} linked, ${skipped_agents} skipped (upstream)"
 echo "  claude skills : ${linked_skills} linked, ${skipped_skills} skipped (upstream)"
 echo "  codex agents  : ${linked_codex_agents} linked, ${skipped_codex_agents} skipped (upstream)"
+echo "  copilot agents: ${linked_copilot_agents} linked, ${skipped_copilot_agents} skipped (upstream)"
 echo ""
 echo "upstream を汚さないために .git/info/exclude を使用しています（.gitignore は変更していません）"
