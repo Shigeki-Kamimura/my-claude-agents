@@ -212,6 +212,19 @@ Rule:
 - If likely CI-breaking issues remain, prioritize fixing them before L2+ review
 - Do not spend L2+ review budget on issues that should be caught by CI-first checks
 
+# CI-Aware Implementation
+If the repository defines CI workflows or verification checks, treat them as implementation constraints from the start.
+
+Rule:
+- identify affected checks before or during implementation
+- do not defer obvious CI-breaking issues to later review rounds
+- before L2+ review, confirm the change is likely to satisfy the affected checks
+
+Rule:
+- shape the change so it is likely to satisfy affected CI gates from the start
+- do not defer obvious CI breakages to later review rounds
+- use QA to surface likely CI blockers before or during implementation
+
 # Validation
 Done when:
 - acceptance satisfied or explicitly deferred
