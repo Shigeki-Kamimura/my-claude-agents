@@ -188,6 +188,7 @@ HQ must provide:
 If touching >=3 files or cross-cutting areas (router / db / auth / build), add Mini CODEMAP.
 Rule: if you did not inspect it, do not assume it.
 
+
 # Comment Policy
 Add short reason-comments only for:
 - non-obvious branch
@@ -196,6 +197,20 @@ Add short reason-comments only for:
 - early return / guard precondition
 - async / transaction / trust boundary
 Do not restate obvious code.
+
+# Pre-Review Gate
+Before Claude L2+ review or human review, confirm the change is likely to pass the CI minimum gate.
+
+Minimum gate includes:
+- lint / format checks
+- typecheck
+- required tests
+- coverage checks where enforced
+- build / startup / E2E-related breakage for affected paths
+
+Rule:
+- If likely CI-breaking issues remain, prioritize fixing them before L2+ review
+- Do not spend L2+ review budget on issues that should be caught by CI-first checks
 
 # Validation
 Done when:
