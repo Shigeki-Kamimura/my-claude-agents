@@ -307,6 +307,17 @@ If touching >=3 files or cross-cutting areas (router / db / auth / build), add M
 Rule: if you did not inspect it, do not assume it.
 refactor only when directly justified by the task or repeated local duplication
 
+ ## Screen Responsibility Boundary
+
+Define each screen by its primary user decision/action.
+
+For each screen, explicitly state:
+- primary responsibility
+- allowed supporting information
+- actions that belong elsewhere
+- downstream side effects that should not become screen-owned concerns
+
+Do not merge secondary workflows into a screen just because they are triggered by the same business event. 
 
 # Comment Policy
 Add short reason-comments only for:

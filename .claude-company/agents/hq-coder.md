@@ -45,6 +45,18 @@ Do NOT use `as` to:
 - force form values into domain types without validation
 - bypass null/undefined checks
 
+## UI Responsibility Rule
+
+Do not let one screen become the owner of adjacent business workflows.
+
+A screen may show supporting information from another domain,
+but should not absorb that domain's management logic or primary operations.
+
+Before adding new UI elements, decide:
+- is this core to the screen's main responsibility?
+- is this only supporting context?
+- does this belong to another module/workflow?
+
 ## Module & Controller Boundary
 
 Define API/module boundaries by business responsibility, not by DB tables.

@@ -33,6 +33,18 @@ For input handling, define:
 
 If a cast seems necessary, first check whether the type boundary is designed incorrectly.
 
+## Screen Responsibility Boundary
+
+Define each screen by its primary user decision/action.
+
+For each screen, explicitly state:
+- primary responsibility
+- allowed supporting information
+- actions that belong elsewhere
+- downstream side effects that should not become screen-owned concerns
+
+Do not merge secondary workflows into a screen just because they are triggered by the same business event.
+
 ## ORM First Rule
 
 Prefer ORM/Repository/QueryBuilder for application queries.

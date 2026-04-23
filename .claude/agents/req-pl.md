@@ -30,6 +30,18 @@ For each feature, extract from DESIGN.md:
 - what must be delegated to shared/common layers
 - what must NOT be implemented ad hoc in this feature
 
+## Screen Responsibility Boundary
+
+Define each screen by its primary user decision/action.
+
+For each screen, explicitly state:
+- primary responsibility
+- allowed supporting information
+- actions that belong elsewhere
+- downstream side effects that should not become screen-owned concerns
+
+Do not merge secondary workflows into a screen just because they are triggered by the same business event.
+
 ## Module & Controller Boundary
 
 Define API/module boundaries by business responsibility, not by DB tables.
