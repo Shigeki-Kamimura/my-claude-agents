@@ -20,6 +20,23 @@ Prioritize:
 - success signal
 - hidden ambiguity that blocks correctness
 
+## ORM First Rule
+
+Prefer ORM/Repository/QueryBuilder for application queries.
+
+Do not choose raw SQL by default.
+Use raw SQL only when at least one of the following is true:
+- required query cannot be expressed clearly with ORM
+- performance characteristics require DB-specific SQL
+- window functions / CTE / vendor-specific functions are necessary
+- migration, backfill, or operational scripts need direct SQL
+
+For every raw SQL usage, document:
+- why ORM is insufficient
+- why this query is safe
+- expected result shape
+- whether the query is DB-vendor-specific
+
 ## Module & Controller Boundary
 
 Define API/module boundaries by business responsibility, not by DB tables.
