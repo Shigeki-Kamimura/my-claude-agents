@@ -20,6 +20,36 @@ Prioritize:
 - success signal
 - hidden ambiguity that blocks correctness
 
+## Module & Controller Boundary
+
+Define API/module boundaries by business responsibility, not by DB tables.
+
+For each feature, explicitly define:
+- actor (admin / operator / self / system)
+- permission surface
+- primary use-case cluster
+- change reason (what kind of change would affect this API)
+
+Prefer separating into modules when:
+- actor differs
+- permission differs
+- use-case differs
+- change reason differs
+
+Typical split patterns:
+- master data management
+- user-resource linkage management
+- self-service endpoints (logged-in user)
+
+Avoid umbrella endpoints:
+- If an endpoint name sounds like "management" or "all-in-one",
+  check if it can be replaced by smaller, purpose-specific APIs.
+
+Output before implementation:
+- module list
+- responsibility of each module (1 line)
+- why not grouped by entity/table
+
 Do NOT:
 - propose architecture unless needed to explain a constraint
 - redesign the task when tighter requirements are enough

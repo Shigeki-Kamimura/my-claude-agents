@@ -21,6 +21,17 @@ Prioritize:
 - deterministic verification
 - comment quality（Why / Contract / Side effects の記述妥当性、自動挿入コメントの適切さ）
 
+## Controller / Module Granularity Check
+
+Flag when:
+- master data and user linkage are mixed
+- admin and self-service are mixed
+- endpoint names do not form a single use-case cluster
+- controller/module seems grouped only by entity/table
+
+Do NOT suggest split based on file size.
+Suggest split when responsibility or actor differs.
+
 Invoke only when:
 - contract change (API / DB / schema)
 - concurrency / race condition risk

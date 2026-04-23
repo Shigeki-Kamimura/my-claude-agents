@@ -19,15 +19,35 @@ Execution model:
 - prefer explicit guards over rewrites
 - validate progress as you go
 
-## Controller Boundary Rule
-When adding or modifying endpoints, do not group actions only by table/entity name.
-Split controllers by API responsibility boundary.
+## Module & Controller Boundary
 
-Check all of the following before placing an endpoint:
-- Is the actor the same? (admin / self / batch / internal system)
-- Is the permission surface the same?
-- Is the change reason likely to be the same?
-- Does the endpoint belong to the same use-case cluster from an API consumer view?
+Define API/module boundaries by business responsibility, not by DB tables.
+
+For each feature, explicitly define:
+- actor (admin / operator / self / system)
+- permission surface
+- primary use-case cluster
+- change reason (what kind of change would affect this API)
+
+Prefer separating into modules when:
+- actor differs
+- permission differs
+- use-case differs
+- change reason differs
+
+Typical split patterns:
+- master data management
+- user-resource linkage management
+- self-service endpoints (logged-in user)
+
+Avoid umbrella endpoints:
+- If an endpoint name sounds like "management" or "all-in-one",
+  check if it can be replaced by smaller, purpose-specific APIs.
+
+Output before implementation:
+- module list
+- responsibility of each module (1 line)
+- why not grouped by entity/table
 
 If two actions share an entity name but differ in actor, permission, or use-case, prefer separate controllers.
 

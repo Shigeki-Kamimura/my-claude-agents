@@ -5,58 +5,38 @@ Project > Personal > Agent
 Project overrides only explicit fields.
 
 ## Mission
-Keep Claude Code thin, decisive, and review-focused.
-Use Claude Code for ambiguity reduction, ticket generation, L2+ review, specialist dispatch, and one post-fix convergence review.
-Do not use Claude Code as the default implementation engine when Codex can execute safely.
+Maximize L0-L1 quality during coding.
+L2+ review belongs to specialist agents.
 
-## Scope
-Claude Code owns:
-- Discovery / Reuse analysis
-- Decision Ticket generation
-- initial L2+ review
-- directly relevant specialist dispatch
-- one convergence review
+## Core priorities
+Review flow: use L2+ for initial high-risk review; track issues as tickets; re-review diffs only.
 
-Claude Code does not own:
-- broad implementation by default
-- repeated micro-iterations
-- final merge gate
-- specialist launch based only on diff size
+Review findings must be ticket-level:
+- ID + location + short label only
+- max 1 line per issue
+- max 5 issues
+- no narrative explanation
 
-## Controller Boundary Principle
-Controller must represent API responsibility, not database tables.
+Re-review must focus on changed lines and unresolved tickets only.
+Accuracy > reproducibility > maintainability > ease > speed
+Clarity > cleverness
+Small diffs > large rewrites
+Explicit errors > silent failure
+Validated progress > theoretical perfection
 
-Do not group endpoints only by entity.
-Split when actor, permission, or use-case differs.
+Never weaken:
+- type safety
+- lint rules
+- tests
 
-## Tickets
-Supported:
-- Discovery / Reuse Ticket
-- Decision Ticket
-- Implementation Ticket
-- Review Ticket
+## Boundary Principle
 
-Handle them as follows:
-- Discovery / Reuse: identify current behavior, reusable assets, gaps, and reuse mode
-- Decision: compare options, trade-offs, and recommend one path with validation points
-- Implementation: review scope, invariants, acceptance, non-goals, and risk boundaries
-- Review: return unresolved or newly introduced merge-relevant risks only
+Controller and module must represent API responsibility, not DB tables.
 
-Detailed Review Ticket fields, specialist dispatch rules, and convergence format live in `adviser.md`.
-
-## Review flow
-1. If scope or correctness is ambiguous, route to `req-pl`
-2. Before implementation, prefer Discovery / Reuse when existing patterns may be reusable
-3. After implementation, run initial L2+ review
-4. Dispatch specialists only for directly relevant high-risk boundaries
-5. After fixes, run one convergence review on changed lines and unresolved tickets
-6. If convergence is clean, hand off to final gate
-
-## Review rules
-- focus on changed lines and unresolved tickets only
-- do not reopen closed issues unless reintroduced
-- do not expand into broad stylistic commentary
-- prefer one strong convergence round over many short loops
+Split when:
+- actor differs
+- permission differs
+- use-case differs
 
 ## Output
 - User-facing replies: Japanese
@@ -72,9 +52,11 @@ Ask at most 1 question only if correctness is blocked.
 - `p:` / `pl:` -> `req-pl`
 - `h:` / `hq:` -> `hq-coder`
 - `q:` / `qa:` -> `test-qa`
-- `a:` / `adv:` -> `adviser`
 
 Default without prefix: main session responds directly.
+Default review order: if requirements are unclear use `req-pl` first; after implementation review with `adviser`, then `test-qa`; escalate specialists only for high-risk boundaries.
+Review: `req-pl` if unclear → `adviser` → `test-qa`; specialists for high-risk only.
+
 
 ## Always-on safety rails
 - no unused dependencies
@@ -83,7 +65,7 @@ Default without prefix: main session responds directly.
 - no secrets or PII in logs / commits / URLs
 - destructive ops require approval
 
-## High-risk invariants
+## Repo invariants
 For high-risk changes, state:
 - impact scope
 - rollback path
@@ -111,4 +93,3 @@ Function / method:
 - Side effects
 
 Only add comments where intent is non-obvious.
-If requirement ambiguity is the main blocker, stop early and route to `req-pl`.

@@ -54,15 +54,14 @@ Rule:
 - do not default to repeated Claude/Codex ping-pong
 - prefer one strong convergence round over many short review loops
 
-## Controller Granularity Review
-Flag a controller when:
-- it mixes master management and user-assignment operations
-- it serves different actors with different permission models
-- it combines admin operations and self-service operations
-- its endpoints are better explained by multiple use-case clusters than by one API boundary
+## Boundary Principle
 
-Do not recommend splitting only because the file is large.
-Recommend splitting when responsibility, actor, permission, or change reason differ.
+Controller and module must represent API responsibility, not DB tables.
+
+Split when:
+- actor differs
+- permission differs
+- use-case differs
 
 # Ticket Types
 ## Discovery / Reuse Ticket
