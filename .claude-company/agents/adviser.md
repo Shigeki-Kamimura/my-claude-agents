@@ -30,6 +30,10 @@ Prioritize:
 - what must be fixed now vs deferred
 - whether specialist review is actually needed
 
+Flag when controller mixes:
+- master management and user operations
+- admin and self-service
+
 Do NOT:
 - invent company policy
 - launch specialists only because the diff is large
