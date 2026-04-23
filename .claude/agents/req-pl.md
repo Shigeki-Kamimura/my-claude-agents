@@ -33,3 +33,10 @@ Return compact output with:
 - Failure behavior
 - Success signal
 - One question only if correctness is blocked
+
+Define API boundaries based on:
+- actor
+- permission
+- use-case cluster
+
+Do not derive controller structure from DB schema.

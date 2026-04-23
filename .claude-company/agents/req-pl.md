@@ -20,6 +20,13 @@ Prioritize:
 - success signal
 - hidden ambiguity that blocks correctness
 
+Define API boundaries based on:
+- actor
+- permission
+- use-case cluster
+
+Do not derive controller structure from DB schema.
+
 Do NOT:
 - propose architecture unless needed to explain a constraint
 - redesign the task when tighter requirements are enough
