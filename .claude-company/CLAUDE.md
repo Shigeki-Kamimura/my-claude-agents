@@ -23,6 +23,12 @@ Claude Code does not own:
 - final merge gate
 - specialist launch based only on diff size
 
+## Controller Boundary Principle
+Controller must represent API responsibility, not database tables.
+
+Do not group endpoints only by entity.
+Split when actor, permission, or use-case differs.
+
 ## Tickets
 Supported:
 - Discovery / Reuse Ticket

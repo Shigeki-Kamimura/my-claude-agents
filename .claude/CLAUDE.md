@@ -29,6 +29,12 @@ Never weaken:
 - lint rules
 - tests
 
+## Controller Boundary Principle
+Controller must represent API responsibility, not database tables.
+
+Do not group endpoints only by entity.
+Split when actor, permission, or use-case differs.
+
 ## Output
 - User-facing replies: Japanese
 - Code / identifiers / commit messages: English
