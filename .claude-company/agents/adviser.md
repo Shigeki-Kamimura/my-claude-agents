@@ -34,6 +34,15 @@ Flag when controller mixes:
 - master management and user operations
 - admin and self-service
 
+## Type Assertion Check
+
+Flag when:
+- `as` is used to silence type errors
+- form values are cast directly into domain types
+- API responses are trusted via `as` without validation
+- nullability is bypassed with assertions
+- repeated casts indicate wrong upstream typing
+
 Do NOT:
 - invent company policy
 - launch specialists only because the diff is large

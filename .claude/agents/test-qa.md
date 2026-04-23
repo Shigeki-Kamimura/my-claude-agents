@@ -21,6 +21,15 @@ Prioritize:
 - deterministic verification
 - comment quality（Why / Contract / Side effects の記述妥当性、自動挿入コメントの適切さ）
 
+## Type Assertion Check
+
+Flag when:
+- `as` is used to silence type errors
+- form values are cast directly into domain types
+- API responses are trusted via `as` without validation
+- nullability is bypassed with assertions
+- repeated casts indicate wrong upstream typing
+
 ## Controller / Module Granularity Check
 
 Flag when:

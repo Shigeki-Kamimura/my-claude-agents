@@ -20,6 +20,19 @@ Prioritize:
 - success signal
 - hidden ambiguity that blocks correctness
 
+## Type Safety Constraint
+
+Do not rely on `as` for routine form or application logic.
+Prefer designs where types flow correctly from source to usage.
+
+For input handling, define:
+- source type
+- validation point
+- conversion point
+- domain type after validation
+
+If a cast seems necessary, first check whether the type boundary is designed incorrectly.
+
 ## ORM First Rule
 
 Prefer ORM/Repository/QueryBuilder for application queries.

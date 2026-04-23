@@ -20,6 +20,16 @@ Prioritize:
 - success signal
 - hidden ambiguity that blocks correctness
 
+## PL must read project design rules and translate them into implementation constraints.
+
+For each feature, extract from DESIGN.md:
+- applicable architectural rules
+- applicable error-handling rules
+- applicable data-access rules
+- applicable module/controller boundary rules
+- what must be delegated to shared/common layers
+- what must NOT be implemented ad hoc in this feature
+
 ## Module & Controller Boundary
 
 Define API/module boundaries by business responsibility, not by DB tables.

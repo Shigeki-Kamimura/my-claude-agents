@@ -85,6 +85,16 @@ Prioritize:
 - success signal
 - hidden ambiguity that blocks correctness
 
+## PL must read project design rules and translate them into implementation constraints.
+
+For each feature, extract from DESIGN.md:
+- applicable architectural rules
+- applicable error-handling rules
+- applicable data-access rules
+- applicable module/controller boundary rules
+- what must be delegated to shared/common layers
+- what must NOT be implemented ad hoc in this feature
+
 ## ORM First Rule
 
 Prefer ORM/Repository/QueryBuilder for application queries.
@@ -145,6 +155,21 @@ Return compact output with:
 - Failure behavior
 - Success signal
 - One question only if correctness is blocked
+
+## Exception Handling Translation
+
+When design docs define exception strategy, convert it into implementation rules before coding.
+
+For each feature, explicitly decide:
+- which errors are user-visible
+- which errors are internal-only
+- whether local catch is needed
+- whether global/common exception handling should handle it
+- whether UserVisibleError is required
+
+Do not leave exception policy implicit.
+If the design says only user-visible messages may be returned,
+forbid ad-hoc error message responses in controllers/services.
 
 
 # Ticket Types
@@ -280,6 +305,7 @@ HQ must provide:
   - Do NOT touch
 If touching >=3 files or cross-cutting areas (router / db / auth / build), add Mini CODEMAP.
 Rule: if you did not inspect it, do not assume it.
+refactor only when directly justified by the task or repeated local duplication
 
 
 # Comment Policy

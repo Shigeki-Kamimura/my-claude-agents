@@ -29,6 +29,31 @@ For each feature, explicitly define:
 - primary use-case cluster
 - change reason (what kind of change would affect this API)
 
+## Type Assertion Rule
+
+Avoid `as` whenever possible.
+Treat `as` as a last resort, not a normal way to make TypeScript pass.
+
+Before using `as`, prefer:
+- narrowing with conditionals
+- proper function parameter typing
+- typed event handlers
+- type guards
+- schema/runtime validation
+- `satisfies` / `as const` when appropriate
+- adjusting upstream types instead of forcing downstream casts
+
+Allowed only when:
+- the runtime shape is already validated, or
+- a framework/library boundary requires a narrow cast, and
+- safer alternatives are impractical
+
+Do NOT use `as` to:
+- silence compiler errors
+- force API response shapes
+- force form values into domain types without validation
+- bypass null/undefined checks
+
 Prefer separating into modules when:
 - actor differs
 - permission differs
