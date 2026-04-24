@@ -1,33 +1,97 @@
 # CLAUDE.md
 
 ## Priority
+
 Project > Personal > Agent
-Project overrides only explicit fields.
+
+Project instructions override only explicit fields.
 
 ## Mission
-Maximize L0-L1 quality during coding.
-L2+ review belongs to specialist agents.
 
-## Core priorities
-Review flow: use L2+ for initial high-risk review; track issues as tickets; re-review diffs only.
+Keep the main session lightweight.
 
-Review findings must be ticket-level:
-- ID + location + short label only
-- max 1 line per issue
-- max 5 issues
-- no narrative explanation
+Use dedicated agents for:
+- requirement clarification
+- implementation
+- QA verification
+- L2+ review
+- convergence review
 
-Re-review must focus on changed lines and unresolved tickets only.
+Do not duplicate agent work in the main session.
+
+---
+
+## Core Priorities
+
 Accuracy > reproducibility > maintainability > ease > speed
-Clarity > cleverness
-Small diffs > large rewrites
-Explicit errors > silent failure
-Validated progress > theoretical perfection
+
+Prefer:
+- clear scope
+- small diffs
+- explicit behavior
+- validated progress
+- ticket-based review
 
 Never weaken:
 - type safety
 - lint rules
 - tests
+
+---
+
+## Role Routing
+
+Use agents by prefix:
+
+- `p:` / `pl:` -> `req-pl`
+- `h:` / `hq:` -> `hq-coder`
+- `q:` / `qa:` -> `test-qa`
+- `adv:` -> `adviser`
+
+Default without prefix:
+- answer directly when the task is simple
+- route to the appropriate agent when role ownership is clear
+- ask at most one question only if correctness is blocked
+
+---
+
+## Review Flow
+
+Default review order:
+
+1. `req-pl` if requirements, ownership, or acceptance are unclear
+2. `adviser` for L2+ review and Review Ticket normalization
+3. `test-qa` for regression / L0-L1 safety net
+4. specialists only for directly relevant high-risk boundaries
+
+Rules:
+- track findings as Review Tickets
+- prefer one strong convergence round over many short loops
+- re-review changed lines and unresolved tickets only
+- do not reopen closed issues unless reintroduced
+
+---
+
+## Review Output Constraints
+
+Review findings should be ticket-level.
+
+Use:
+- ID
+- severity
+- route
+- location
+- short label
+
+Avoid:
+- long narrative explanations
+- style-only findings
+- speculative improvements
+- broad redesign without concrete failure path
+
+Keep top risks to max 5 unless correctness clearly requires more.
+
+---
 
 ## Boundary Principle
 
@@ -37,42 +101,44 @@ Split when:
 - actor differs
 - permission differs
 - use-case differs
+- change reason differs
 
-## Output
-- User-facing replies: Japanese
-- Code / identifiers / commit messages: English
-- Comments / docstrings: concise Japanese
+Avoid:
+- screen-shaped APIs
+- umbrella `management` endpoints
+- mixing self-service and admin operations
+- mixing master data and user-linkage operations
+
+---
 
 ## Evidence
-Use relative path + line numbers.
-Do not invent missing facts.
-Ask at most 1 question only if correctness is blocked.
 
-## Role boundary
-- `p:` / `pl:` -> `req-pl`
-- `h:` / `hq:` -> `hq-coder`
-- `q:` / `qa:` -> `test-qa`
+Use:
+- relative path
+- line numbers when available
+- exact command names for validation
 
-Default without prefix: main session responds directly.
-Default review order: if requirements are unclear use `req-pl` first; after implementation review with `adviser`, then `test-qa`; escalate specialists only for high-risk boundaries.
-Review: `req-pl` if unclear → `adviser` → `test-qa`; specialists for high-risk only.
+Do not:
+- invent missing facts
+- assume uninspected files
+- claim validation was run when it was not
 
+---
 
-## Always-on safety rails
+## Always-on Safety Rails
+
 - no unused dependencies
-- no broad refactor outside scope
+- no unrelated broad refactors
 - no weakening lint / typecheck / tests
 - no secrets or PII in logs / commits / URLs
-- destructive ops require approval
+- destructive operations require approval
 
-## Repo invariants
-For high-risk changes, state:
-- impact scope
-- rollback path
-- targeted validation
+---
 
-High-risk:
-- DB schema / migration
+## High-Risk Areas
+
+High-risk changes include:
+- DB schema / migration / backfill
 - authn / authz / session
 - public API contracts
 - dependencies / lockfile
@@ -81,15 +147,22 @@ High-risk:
 - external integrations
 - async side effects
 
-## Comment minimum
-File header:
-- Why
-- Scope
-- Depends (optional)
+For high-risk changes, require:
+- impact scope
+- rollback path
+- targeted validation
 
-Function / method:
-- Why
-- Contract
-- Side effects
+---
 
-Only add comments where intent is non-obvious.
+## Comment Policy
+
+Add comments only when intent is non-obvious.
+
+Good comments explain:
+- why a branch exists
+- guard precondition
+- transaction / async boundary
+- trust boundary
+- magic number rationale
+
+Do not add comments that restate obvious code.

@@ -24,11 +24,43 @@ Use mainly:
 - when specialist review may be needed
 
 Prioritize:
-- realistic production risk in changed code
+
+- realistic production risk
 - issue ordering
-- hidden assumptions visible in the diff
+- hidden assumptions
 - what must be fixed now vs deferred
-- whether specialist review is actually needed
+- whether specialist review is needed
+
+## Design Review Focus (MANDATORY)
+
+When reviewing, explicitly check:
+
+- responsibility boundaries (actor / permission / use-case)
+- API shape vs screen-specific convenience
+- module/controller separation correctness
+- DESIGN.md consistency
+- ORM-first violations (unnecessary raw SQL)
+- exception handling policy violations
+- unsafe TypeScript `as` usage
+- unnecessary try/catch blocks
+
+Flag issues when:
+- responsibilities are mixed across domains
+- APIs are shaped for a single screen instead of business responsibility
+- logic is placed in the wrong layer (UI / controller / service)
+- existing patterns are ignored without reason
+
+## Anti-Noise Rule
+
+Do NOT report:
+- style-only issues
+- naming preferences without correctness impact
+- speculative improvements
+
+Focus only on:
+- correctness
+- safety
+- maintainability risk
 
 Do NOT:
 - invent company policy
