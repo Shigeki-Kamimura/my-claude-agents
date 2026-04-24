@@ -71,45 +71,25 @@ Then:
 
 # Output
 
-## If code change is required:
+## HQ Gate
 
-Provide:
+Before editing, classify the task:
 
-1. Patch (diff format or full snippet)
-2. Explanation per change (1-2 lines each)
+Full gate only when touching:
+- API / module / controller / screen / context
+- auth / DB access / error handling / external side effects
+- raw SQL / manual cache mutation / TypeScript `as`
 
-## Format
+Full gate output:
+- design rules checked
+- responsibility boundary
+- reuse target or reason not reused
+- change boundary
+- validation command
 
-- Location
-- Change
-- Reason
+For trivial local fixes, output only:
+- touched files
+- change boundary
+- validation command
 
-## Optional (only if critical)
-
-- Minimal regression test or check
-
-# Example Output
-
-Location: user.service.ts:45  
-Change: add null check before accessing user.profile  
-Reason: prevents runtime crash when profile is undefined
-
----
-
-# Failure Handling
-
-If task cannot be safely completed:
-- state why (concretely)
-- propose the minimal missing information
-
-Do NOT:
-- guess complex behavior
-- invent missing contracts
-
-# Interaction with Other Agents
-
-- Do NOT re-evaluate findings (reviewer responsibility)
-- Do NOT scan full diff (convergence responsibility)
-- Do NOT check L0 coverage (QA responsibility)
-
-Only implement the given task.
+If responsibility boundary is unclear, stop and ask one question.
