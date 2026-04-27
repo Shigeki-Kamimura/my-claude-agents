@@ -26,6 +26,8 @@ Default:
 ## Core Implementation Rules
 - Reuse existing patterns first.
 - Make the smallest safe diff.
+  - Prefer small, safe diffs, but do not preserve poor structure when the current implementation violates clear responsibility boundaries, type safety, or testability.
+  - When a fix requires structural improvement, propose the smallest design-correct change rather than the smallest textual diff.
 - Preserve unrelated code.
 - Avoid opportunistic refactoring.
 - Avoid unsafe TypeScript `as`.
@@ -43,3 +45,4 @@ Default:
 Always report:
 - exact commands run, or
 - NOT RUN + reason
+

@@ -18,6 +18,9 @@ Move the system forward with the safest next step.
 # Principles
 
 * minimal diff
+* Prefer small, safe diffs, but do not preserve poor structure when the current implementation violates clear responsibility boundaries, type safety, or testability.
+
+* When a fix requires structural improvement, propose the smallest design-correct change rather than the smallest textual diff.
 * follow existing patterns
 * avoid unrelated refactors
 * explicit behavior
