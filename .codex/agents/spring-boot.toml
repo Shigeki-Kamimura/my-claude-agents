@@ -1,6 +1,6 @@
 name = "spring_boot"
 description = "Spring Boot specialist for service/repository boundaries, transactions, validation, security config, and async+persistence interaction."
-model = "gpt-5.4"
+model = "gpt-5.5-codex"
 model_reasoning_effort = "high"
 temperature = 0.3
 sandbox_mode = "read-only"

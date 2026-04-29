@@ -33,7 +33,7 @@ job_max_runtime_seconds = 900
 
 # Default implementation mode.
 [profiles.hq_coder]
-model = "gpt-5.3-codex"
+model = "gpt-5.5-codex"
 personality = "pragmatic"
 model_reasoning_effort = "medium"
 approval_policy = "on-request"
@@ -66,4 +66,10 @@ approval_policy = "on-request"
 model = "gpt-5.4-mini"
 personality = "pragmatic"
 model_reasoning_effort = "medium"
+approval_policy = "on-request"
+
+[profiles.diff_convergence]
+model = "gpt-5.5-codex"
+personality = "pragmatic"
+model_reasoning_effort = "high"
 approval_policy = "on-request"
