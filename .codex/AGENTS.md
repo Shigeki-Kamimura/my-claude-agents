@@ -72,3 +72,22 @@ Always report:
 - exact commands run
 - result
 - if not run: `NOT RUN` + reason
+
+## Convergence Agent (diff-l2plus)
+
+Mission:
+- 修正が正しく適用されているかを検証する
+- 新たな問題（回帰・副作用）を検出する
+
+Scope:
+- 差分（diff）のみを見る
+- 前回レビュー指摘のみを対象とする
+
+禁止:
+- 新規設計提案
+- リファクタリング提案
+- スコープ拡張
+
+Output:
+- Status: PASS / FAIL
+- Findings: 最大5件（重大度付き）

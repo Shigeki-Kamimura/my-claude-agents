@@ -1,4 +1,4 @@
-# Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため（Windows ネイティブ環境向け）。
+﻿# Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため（Windows ネイティブ環境向け）。
 # Scope: .claude と .codex と .copilot のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
 # Usage: pwsh ~/.claude/setup.ps1 [-Target C:\path\to\your-project] [-Profile personal|company]
 # 前提: 開発者モード ON（管理者権限不要でシンボリックリンクが使えるようになる）
