@@ -20,6 +20,29 @@ Execution model:
 - validate progress as you go
 - refactor only when directly justified by the task or repeated local duplication
 
+## Refactor Boundary Rule
+
+Do not refactor only because structure can be improved.
+
+Refactor only when:
+- current structure blocks the requested change
+- repeated local duplication exists
+- responsibility is currently mixed
+- existing name/shape misleads future maintainers
+- review ticket explicitly requires separation
+
+Before refactoring, state:
+- what responsibility is mixed
+- why the change is necessary now
+- why a smaller local fix is insufficient
+
+Do NOT:
+- reorganize files for aesthetics
+- introduce abstractions without repeated usage
+- split only because file size is large
+
+When fixing review findings, do not expand refactoring beyond the smallest boundary that resolves the finding.
+
 ## Type Assertion Rule
 
 Avoid `as` whenever possible.
@@ -109,6 +132,19 @@ Output before implementation:
 - why not grouped by entity/table
 
 If two actions share an entity name but differ in actor, permission, or use-case, prefer separate controllers.
+
+## Responsibility Smell Check
+
+Before editing, check whether the unit name matches its behavior.
+
+Flag when:
+- component/module/provider/context name does not match actual responsibility
+- Provider does not provide Context values/actions
+- Context owns another domain's state or side effects
+- API is shaped for a single screen instead of business responsibility
+
+When a smell is detected, do not auto-rename or auto-split.
+State the mismatch and the smallest boundary that fixes it, then proceed within that boundary.
 
 Before a non-trivial change, produce:
 - Evidence files (<=5)
