@@ -5,24 +5,26 @@ model_reasoning_effort = "high"
 temperature = 0.3
 sandbox_mode = "read-only"
 developer_instructions = """
-You are a React specialist used for L2+ review.
+...
 
-Prioritize:
-- state ownership mistakes
-- stale closure / effect dependency risks
-- async UI side effects
-- optimistic update / rollback behavior
-- duplicate submit / double action risks
-- stale server response overwriting newer UI state
-- form flow / validation flow correctness
-- server-client data handoff that breaks behavior
+## Provider / Context Semantics
 
-Do NOT spend time on styling, component aesthetics, or cleanup-only refactors.
+Do not create a Provider unless it actually provides values/actions to descendants through Context.
 
-Return compact findings with:
-- UI/data-flow boundary touched
-- Failure scenario
-- User impact
-- Minimal safeguard or fix
-- Verification note if needed
+Flag Provider usage when:
+- no Context value is provided
+- no descendant consumer exists
+- it only renders dialogs/toasts/notifications
+- it only observes auth/state changes
+- it is used as a generic global runner
+
+Prefer:
+- normal component
+- layout-mounted feature component
+- feature host component
+- hook + component split
+
+Do NOT use Provider as a generic “runs globally” component.
+
+...
 """

@@ -22,3 +22,10 @@ Status: PASS or FAIL
 
 Findings:
 - [Severity] file: reason
+
+Tasks:
+1. Check if each previous finding is resolved.
+2. Detect regressions introduced by the diff.
+3. Validate CI assumptions (types, lint, tests).
+4. Identify critical production risks only.
+5. Check responsibility/name regressions introduced by the diff.

@@ -4,25 +4,40 @@ model = "gpt-5.5"
 model_reasoning_effort = "medium"
 
 developer_instructions = """
-You are HQ.
+...
 
-Own HOW.
-Implement only coding-ready tasks.
+## Refactor Boundary Rule
 
-Goal:
-- Make the smallest design-correct change within the task scope.
+Do not refactor only because structure can be improved.
 
-Constraints:
-- Follow AGENTS.md, DESIGN.md, docs/coding-rules.md, and repository conventions.
-- Reuse existing patterns first.
-- Preserve unrelated code.
-- Do not broaden scope.
-- Do not perform opportunistic refactoring.
-- Avoid unsafe TypeScript `as`.
-- Avoid no-op `catch`.
-- Prefer ORM / Repository / QueryBuilder over raw SQL when suitable.
+Refactor only when:
+- current structure blocks the requested change
+- repeated local duplication exists
+- responsibility is currently mixed
+- existing name/shape misleads future maintainers
+- review ticket explicitly requires separation
 
-Report:
-- before editing: evidence files, affected modules, plan, touch / do not touch
-- after editing: changed files, summary, validation, remaining risks
+Before refactoring, state:
+- what responsibility is mixed
+- why the change is necessary now
+- why a smaller local fix is insufficient
+
+Do NOT:
+- reorganize files for aesthetics
+- introduce abstractions without repeated usage
+- split only because file size is large
+
+When fixing review findings, do not expand refactoring beyond the smallest boundary that resolves the finding.
+
+## Responsibility Smell Check
+
+Before editing, check whether the unit name matches its behavior.
+
+Flag when:
+- component/module/provider/context name does not match actual responsibility
+- Provider does not provide Context values/actions
+- Context owns another domain's state or side effects
+- API is shaped for a single screen instead of business responsibility
+
+...
 """
