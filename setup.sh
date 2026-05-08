@@ -121,11 +121,11 @@ setup_target() {
     dest="$claude_dir/agents/$name"
 
     if [ -f "$dest" ] && [ ! -L "$dest" ]; then
-      echo "  [SKIP upstream] agents/$name"
+      echo "  [SKIP upstream] .claude/agents/$name"
       skipped_agents=$((skipped_agents + 1))
     else
       ln -sf "$src" "$dest"
-      echo "  [LINK] agents/$name -> $src"
+      echo "  [LINK] .claude/agents/$name -> $src"
       linked_agents=$((linked_agents + 1))
     fi
   done
@@ -143,11 +143,11 @@ setup_target() {
       dest="$claude_dir/skills/$name"
 
       if [ -d "$dest" ] && [ ! -L "$dest" ]; then
-        echo "  [SKIP upstream] skills/$name/"
+        echo "  [SKIP upstream] .claude/skills/$name/"
         skipped_skills=$((skipped_skills + 1))
       else
         ln -sfn "$src" "$dest"
-        echo "  [LINK] skills/$name/ -> $src"
+        echo "  [LINK] .claude/skills/$name/ -> $src"
         linked_skills=$((linked_skills + 1))
       fi
     done
@@ -156,33 +156,33 @@ setup_target() {
   # --- CLAUDE.md: upstream が持っていれば触らない ---
   local claude_md_dest="$claude_dir/CLAUDE.md"
   if [ -f "$claude_md_dest" ] && [ ! -L "$claude_md_dest" ]; then
-    echo "  [SKIP upstream] CLAUDE.md（upstream 優先）"
+    echo "  [SKIP upstream] .claude/CLAUDE.md（upstream 優先）"
   else
     ln -sf "$SRC_CLAUDE_MD" "$claude_md_dest"
     add_exclude ".claude/CLAUDE.md"
-    echo "  [LINK] CLAUDE.md -> $SRC_CLAUDE_MD"
+    echo "  [LINK] .claude/CLAUDE.md -> $SRC_CLAUDE_MD"
   fi
 
   # --- SKILL.md: upstream が持っていれば触らない ---
   if [ -f "$SRC_SKILL_MD" ]; then
     local skill_md_dest="$claude_dir/SKILL.md"
     if [ -f "$skill_md_dest" ] && [ ! -L "$skill_md_dest" ]; then
-      echo "  [SKIP upstream] SKILL.md（upstream 優先）"
+      echo "  [SKIP upstream] .claude/SKILL.md（upstream 優先）"
     else
       ln -sf "$SRC_SKILL_MD" "$skill_md_dest"
       add_exclude ".claude/SKILL.md"
-      echo "  [LINK] SKILL.md -> $SRC_SKILL_MD"
+      echo "  [LINK] .claude/SKILL.md -> $SRC_SKILL_MD"
     fi
   fi
 
   # --- settings.json: upstream が持っていれば触らない ---
   local settings_dest="$claude_dir/settings.json"
   if [ -f "$settings_dest" ] && [ ! -L "$settings_dest" ]; then
-    echo "  [SKIP upstream] settings.json（upstream 優先）"
+    echo "  [SKIP upstream] .claude/settings.json（upstream 優先）"
   else
     ln -sf "$SRC_SETTINGS" "$settings_dest"
     add_exclude ".claude/settings.json"
-    echo "  [LINK] settings.json -> $SRC_SETTINGS"
+    echo "  [LINK] .claude/settings.json -> $SRC_SETTINGS"
   fi
 
   # --- Codex: AGENTS.md ---
