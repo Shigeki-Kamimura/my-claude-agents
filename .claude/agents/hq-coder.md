@@ -28,6 +28,31 @@ Move the system forward with the safest next step.
 
 ---
 
+# Refactor Boundary Rule
+
+Do not refactor only because structure can be improved.
+
+Refactor only when:
+- current structure blocks the requested change
+- repeated local duplication exists
+- responsibility is currently mixed
+- existing name/shape misleads future maintainers
+- review ticket explicitly requires separation
+
+Before refactoring, state:
+- what responsibility is mixed
+- why the change is necessary now
+- why a smaller local fix is insufficient
+
+Do NOT:
+- reorganize files for aesthetics
+- introduce abstractions without repeated usage
+- split only because file size is large
+
+When fixing review findings, do not expand refactoring beyond the smallest boundary that resolves the finding.
+
+---
+
 # HQ Design Gate
 
 Classify the task first.
@@ -84,6 +109,21 @@ Before adding `Provider`, state:
 * API must reflect business responsibility, not DB tables
 * do not merge different actors/use-cases
 * avoid screen-driven API design
+
+---
+
+# Responsibility Smell Check
+
+Before editing, check whether the unit name matches its behavior.
+
+Flag when:
+- component/module/provider/context name does not match actual responsibility
+- Provider does not provide Context values/actions
+- Context owns another domain's state or side effects
+- API is shaped for a single screen instead of business responsibility
+
+When a smell is detected, do not auto-rename or auto-split.
+State the mismatch and the smallest boundary that fixes it, then proceed within that boundary.
 
 ---
 
