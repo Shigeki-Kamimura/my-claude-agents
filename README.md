@@ -48,6 +48,12 @@ git -C "$env:USERPROFILE\projects\my-claude-agents" pull
 ```bash
 # 対象プロジェクトのルートで実行（引数省略時はカレントディレクトリ）
 bash ~/projects/my-claude-agents/setup.sh /path/to/your-project
+
+# 複数プロジェクトへまとめて適用
+bash ~/projects/my-claude-agents/setup.sh ../guild*
+
+# profile 指定
+bash ~/projects/my-claude-agents/setup.sh --profile company /path/to/your-project
 ```
 
 **Windows ネイティブ（PowerShell）:**
@@ -61,15 +67,23 @@ pwsh "$env:USERPROFILE\projects\my-claude-agents\setup.ps1" -Target C:\path\to\y
    - upstream に同名の実ファイルがあれば skip（upstream 優先）
 2. `~/projects/my-claude-agents/.claude/skills/*/` を `.claude/skills/` へディレクトリ単位でシンボリックリンク
    - upstream に同名の実ディレクトリがあれば skip（upstream 優先）
-3. `~/projects/my-claude-agents/.claude/settings.json` をシンボリックリンク
+3. `~/projects/my-claude-agents/.claude/CLAUDE.md` と `SKILL.md` をシンボリックリンク
    - upstream が実ファイルを持っていれば skip（upstream 優先）
-4. リンクしたパスを `.git/info/exclude` に追記（`.gitignore` は変更しない）
+4. `~/projects/my-claude-agents/.claude/settings.json` をシンボリックリンク
+   - upstream が実ファイルを持っていれば skip（upstream 優先）
+5. `~/projects/my-claude-agents/.codex/AGENTS.md` と `.codex/config.toml` をシンボリックリンク
+   - Codex サブエージェント設定と既定プロファイルをプロジェクトへ反映
+   - upstream が実ファイルを持っていれば skip（upstream 優先）
+6. `~/projects/my-claude-agents/.codex/agents/*.toml` を `.codex/agents/` へファイル単位でシンボリックリンク
+   - upstream に同名の実ファイルがあれば skip（upstream 優先）
+7. リンクしたパスを `.git/info/exclude` に追記（`.gitignore` は変更しない）
 
 ### 結果イメージ
 
 ```
 .claude/                        # upstream の管理下
 ├── CLAUDE.md                   # upstream 実ファイル（触らない）
+├── SKILL.md  -> ~/projects/my-claude-agents/.claude/SKILL.md            # リンク（upstream が持てば skip）
 ├── settings.json -> ~/projects/my-claude-agents/.claude/settings.json   # リンク（upstream が持てば skip）
 ├── agents/
 │   ├── team-agent.md           # upstream 実ファイル（優先・skip）

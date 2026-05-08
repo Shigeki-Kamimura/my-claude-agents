@@ -24,8 +24,10 @@ $SrcAgents = Join-Path $SrcClaudeRoot "agents"
 $SrcSkills = Join-Path $SrcClaudeRoot "skills"
 $SrcSettings = Join-Path $SrcClaudeRoot "settings.json"
 $SrcClaudeMd = Join-Path $SrcClaudeRoot "CLAUDE.md"
+$SrcSkillMd = Join-Path $SrcClaudeRoot "SKILL.md"
 $SrcCodexAgents = Join-Path $SelfDir ".codex\agents"
 $SrcCodexInstructions = Join-Path $SelfDir ".codex\AGENTS.md"
+$SrcCodexConfig = Join-Path $SelfDir ".codex\config.toml"
 $SrcCopilotInstructions = Join-Path $SelfDir ".copilot\copilot-instructions.md"
 $SrcCopilotAgents = Join-Path $SelfDir ".copilot\agents"
 
@@ -127,6 +129,19 @@ if ((Test-Path $claudeMdDest) -and (Get-Item $claudeMdDest).LinkType -ne "Symbol
     Write-Host "  [LINK] CLAUDE.md -> $SrcClaudeMd"
 }
 
+# --- SKILL.md: upstream が持っていれば触らない ---
+if (Test-Path $SrcSkillMd) {
+    $skillMdDest = Join-Path $ClaudeDir "SKILL.md"
+    if ((Test-Path $skillMdDest) -and (Get-Item $skillMdDest).LinkType -ne "SymbolicLink") {
+        Write-Host "  [SKIP upstream] SKILL.md（upstream 優先）"
+    } else {
+        if (Test-Path $skillMdDest) { Remove-Item $skillMdDest -Force }
+        New-Item -ItemType SymbolicLink -Path $skillMdDest -Target $SrcSkillMd | Out-Null
+        Add-Exclude ".claude/SKILL.md"
+        Write-Host "  [LINK] SKILL.md -> $SrcSkillMd"
+    }
+}
+
 # --- settings.json: upstream が持っていれば触らない ---
 $settingsDest = Join-Path $ClaudeDir "settings.json"
 if ((Test-Path $settingsDest) -and (Get-Item $settingsDest).LinkType -ne "SymbolicLink") {
@@ -149,6 +164,16 @@ if ((Test-Path $codexInstructionsDest) -and (Get-Item $codexInstructionsDest).Li
     if (Test-Path $codexInstructionsDest) { Remove-Item $codexInstructionsDest -Force }
     New-Item -ItemType SymbolicLink -Path $codexInstructionsDest -Target $SrcCodexInstructions | Out-Null
     Write-Host "  [LINK] .codex/AGENTS.md -> $SrcCodexInstructions"
+}
+
+# --- Codex: config.toml ---
+$codexConfigDest = Join-Path $CodexDir "config.toml"
+if ((Test-Path $codexConfigDest) -and (Get-Item $codexConfigDest).LinkType -ne "SymbolicLink") {
+    Write-Host "  [SKIP upstream] .codex/config.toml（upstream 優先）"
+} else {
+    if (Test-Path $codexConfigDest) { Remove-Item $codexConfigDest -Force }
+    New-Item -ItemType SymbolicLink -Path $codexConfigDest -Target $SrcCodexConfig | Out-Null
+    Write-Host "  [LINK] .codex/config.toml -> $SrcCodexConfig"
 }
 
 # --- Codex agents: ファイル単位でリンク ---
