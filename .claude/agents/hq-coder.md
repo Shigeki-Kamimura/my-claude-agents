@@ -56,6 +56,27 @@ For trivial fixes:
 If boundary is unclear:
 → ask one clarifying question
 
+## React Provider / Context Rule
+
+Do not create a `Provider` unless it actually provides values or actions to descendants through Context.
+
+If a component only:
+- observes auth/state changes
+- triggers a dialog/toast/notification
+- mounts feature-level UI
+- performs local side effects
+
+then prefer:
+- normal component
+- feature host component
+- layout-mounted component
+- dedicated hook + component
+
+Before adding `Provider`, state:
+- what context value is provided
+- who consumes it
+- why prop composition is insufficient
+
 ---
 
 # Boundary Awareness

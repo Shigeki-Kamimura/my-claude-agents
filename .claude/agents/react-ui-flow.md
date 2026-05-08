@@ -27,3 +27,19 @@ Return compact findings with:
 - User impact
 - Minimal safeguard or fix
 - Verification note if needed
+
+## Provider / Context Semantics
+
+Flag Provider usage when:
+- no Context value is provided
+- no descendant consumer exists
+- the component only renders notification/dialog side effects
+- naming suggests shared state but implementation is local UI orchestration
+
+Prefer:
+- `<AwardNotification />`
+- `<AwardNotificationHost />`
+- `<UnreadAwardDialog />`
+- layout-mounted feature component
+
+Do not use Provider as a generic “runs globally” component.

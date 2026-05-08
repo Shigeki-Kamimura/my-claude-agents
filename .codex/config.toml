@@ -56,7 +56,7 @@ approval_policy = "on-request"
 # Use this when you want architecture / boundary / persistence / rollout risks,
 # and want to lighten the load on Browser Copilot.
 [profiles.l2plus_review]
-model = "gpt-5.4"
+model = "gpt-5.5"
 personality = "pragmatic"
 model_reasoning_effort = "high"
 approval_policy = "on-request"

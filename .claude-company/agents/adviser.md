@@ -30,6 +30,8 @@ Prioritize:
 - what must be fixed now vs deferred
 - whether specialist review is actually needed
 
+- React Provider / Context misuse when no descendant value is provided
+
 Flag when controller mixes:
 - master management and user operations
 - admin and self-service
