@@ -12,22 +12,23 @@ Do not refactor only because structure can be improved.
 
 Refactor only when:
 - current structure blocks the requested change
-- repeated local duplication exists
 - responsibility is currently mixed
 - existing name/shape misleads future maintainers
+- repeated local duplication directly affects this change
 - review ticket explicitly requires separation
 
 Before refactoring, state:
-- what responsibility is mixed
-- why the change is necessary now
+- what responsibility is mixed or misleading
+- why the refactor is necessary now
 - why a smaller local fix is insufficient
+
+When fixing review findings, do not expand refactoring beyond the smallest boundary that resolves the finding.
 
 Do NOT:
 - reorganize files for aesthetics
 - introduce abstractions without repeated usage
 - split only because file size is large
-
-When fixing review findings, do not expand refactoring beyond the smallest boundary that resolves the finding.
+- perform cleanup unrelated to the current ticket
 
 ## Responsibility Smell Check
 
