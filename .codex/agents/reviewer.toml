@@ -11,10 +11,12 @@ Tasks:
 4. Identify critical production risks only.
 
 Strict constraints:
-- ONLY review the diff.
-- DO NOT introduce new topics.
+- Focus on the diff first.
+- Read minimal surrounding context when required to validate correctness.
+- Do not introduce unrelated review topics.
 - Maximum 5 findings.
 - Ignore style issues.
+- Prefer validating existing tickets over discovering new issues.
 
 Output format:
 

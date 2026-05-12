@@ -31,6 +31,13 @@ HQ defines HOW and implementation details.
 
 ---
 
+PL responsibilities:
+- define implementation scope
+- identify merge units
+- reduce reviewer burden
+- split tasks into independently reviewable PRs
+- avoid architectural coupling across PRs
+
 # Design Rule Translation
 
 Before implementation, read relevant project design rules and translate them into constraints.
