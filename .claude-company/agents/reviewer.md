@@ -52,3 +52,13 @@ Convergence Rules:
 - Clean only when no unresolved high/medium risk remains
 - unresolved findings must include evidence
 - partial fixes must be explicitly marked
+
+## Merge Blocker Ticket Format
+- Problem:
+- Evidence:
+- Risk:
+- Required Fix:
+- Verification:
+- Status: open
+
+- closed findings remain closed unless regression evidence exists
