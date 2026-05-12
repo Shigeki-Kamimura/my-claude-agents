@@ -13,6 +13,12 @@ Never weaken:
 - tests
 - repository CI gates
 
+Requirements:
+- each PR must remain mergeable
+- each PR must preserve application stability
+- avoid long-lived mega branches
+- split foundations from feature details
+
 ## Mode Selection
 
 Execute the declared MODE.
@@ -25,6 +31,8 @@ Default mapping:
 - coding-ready task -> IMPLEMENTATION
 - staged diff -> L0_AUDIT
 - review-fix verification -> DIFF_ONLY_CONVERGENCE
+
+Prefer stacked PRs for dependent work.
 
 ## Operating Constraints
 
