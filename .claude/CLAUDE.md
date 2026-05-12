@@ -19,6 +19,18 @@ Use dedicated agents for:
 
 Do not duplicate agent work in the main session.
 
+## Cost Awareness
+
+Prefer:
+- targeted reads
+- grep before deep inspection
+- related modules only
+
+Avoid:
+- repository-wide scanning
+- repeated file reads
+- duplicate reviews
+
 ---
 
 ## Core Priorities
@@ -72,6 +84,19 @@ Rules:
 
 ---
 
+## Spec-grounded Merge Blocker Rule
+
+🔴 Merge Blocker に分類する場合は、必ず以下を揃える。
+
+- Code Evidence: 該当ファイル・行・実装内容
+- Spec Evidence: 該当する設計書・画面仕様・API仕様・権限定義の節番号
+- Impact: ユーザー影響 / セキュリティ影響 / データ不整合 / 仕様未達
+- Required Fix: merge 前に必要な修正方針
+- Verification: 修正後に確認すべき観点
+
+Spec Evidence がない場合でも、security / data integrity / auth boundary / production failure に該当する場合は Merge Blocker として扱ってよい。
+ただし、その場合は設計書ではなく production risk を根拠として明示する。
+
 ## Review Output Constraints
 
 Review findings should be ticket-level.
@@ -89,7 +114,17 @@ Avoid:
 - speculative improvements
 - broad redesign without concrete failure path
 
-Keep top risks to max 5 unless correctness clearly requires more.
+## Consistency Check Table
+
+レビュー本文の最後に、必ず整合性チェック表を出す。
+
+| Check | Result | Evidence |
+|---|---|---|
+| Route/View consistency | ✅/❌ | file/spec |
+| API/frontend consistency | ✅/❌ | file/spec |
+| Permission boundary | ✅/❌ | file/spec |
+| DB/transaction integrity | ✅/❌ | file/spec |
+| Tests added/updated | ✅/❌ | file |
 
 ---
 
