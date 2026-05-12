@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 # Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため。
 # Scope: .claude と .codex と .copilot のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
-# Usage: bash ~/.claude/setup.sh [--profile personal|company] [TARGET_PROJECT_DIR...]
+# Usage: bash ~/.claude/setup.sh [-p|-profile personal|company] [TARGET_PROJECT_DIR...]
 
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: setup.sh [--profile personal|company] [TARGET_PROJECT_DIR...]
+Usage: setup.sh [-p personal|company] [TARGET_PROJECT_DIR...]
 
 Examples:
   setup.sh
   setup.sh ../guildboard-training-management
-  setup.sh --profile company ../guild*
+  setup.sh -p personal ../guild*
 EOF
 }
 
-PROFILE="personal"
+PROFILE="company"
 TARGETS=()
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --profile)
+    -p|--profile)
       if [ "$#" -lt 2 ]; then
-        echo "ERROR: --profile には値が必要です" >&2
+        echo "ERROR: -p には値が必要です" >&2
         usage >&2
         exit 1
       fi
@@ -46,7 +46,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ "$PROFILE" != "personal" ] && [ "$PROFILE" != "company" ]; then
-  echo "ERROR: profile は personal または company を指定してください: $PROFILE" >&2
+  echo "ERROR: -p には personal または company を指定してください: $PROFILE" >&2
   usage >&2
   exit 1
 fi

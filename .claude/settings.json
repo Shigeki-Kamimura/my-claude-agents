@@ -11,7 +11,8 @@
       "Bash(pwd)",
       "Bash(ls *)",
       "Bash(find . *)",
-      "Bash(rg *)"
+      "Bash(rg *)",
+      "Bash(ln -s *)"
     ],
     "deny": [
       "Read(**/.env)",
