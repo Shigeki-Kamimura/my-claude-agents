@@ -189,6 +189,15 @@ For high-risk changes, require:
 
 ---
 
+## Backlog Ticket Reference
+
+Backlog tickets are manually fetched and stored outside the working repository.
+
+Canonical ticket directory:
+
+```bash
+~/work-flow-helper/projects/guildboard-training-management/output/raw/
+
 ## Comment Policy
 
 Add comments only when intent is non-obvious.

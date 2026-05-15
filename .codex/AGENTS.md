@@ -28,3 +28,12 @@ See:
 - CLAUDE.md
 - REVIEW_PLAYBOOK.md
 - agents/*.md
+
+## Backlog Ticket Reference
+
+Backlog tickets are manually fetched and stored outside the working repository.
+
+Canonical ticket directory:
+
+```bash
+~/work-flow-helper/projects/guildboard-training-management/output/raw/
