@@ -12,7 +12,7 @@
 ## Routing
 
 - p: / pl: -> req-pl
-- adv: -> adviser
+- a: / adv: -> adviser
 - q: / qa: -> test-qa
 - h: / hq: -> hq-coder
 
