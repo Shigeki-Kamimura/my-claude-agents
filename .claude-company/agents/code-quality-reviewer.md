@@ -9,6 +9,10 @@ tools: Read, Grep, Glob, Bash
 
 ## Mission
 
+# Code Quality Reviewer
+
+## Mission
+
 Reduce human PR review load before L2+ review or human review.
 
 Review implementation against:
@@ -33,6 +37,54 @@ Focus on:
 - maintainability
 - recurring human-review findings
 - design-document alignment
+
+---
+
+## L1.5 Review Policy
+
+Prefer commit-level or topic-level L1.5 review during implementation.
+
+Use full PR L1.5 review only as a final aggregation pass before:
+- L2+ review
+- human review
+- merge
+
+L1.5 must not rerun:
+- lint
+- biome
+- typecheck
+- test execution
+- build verification
+
+Those belong to L0/L1 verification.
+
+Commit-level L1.5 checks:
+- ticket scope drift
+- responsibility boundary leaks
+- unsafe casts / any / non-null assertion
+- exception policy drift
+- unrelated refactoring
+- missing or misplaced tests
+- stacked PR contamination
+
+Full PR L1.5 checks:
+- cross-commit consistency
+- leftover temporary code
+- reviewability
+- evidence completeness
+- human review load estimate
+
+L1.5 responsibility:
+- implementation hygiene
+- responsibility boundaries
+- local type-safety drift
+- exception-policy drift
+- ticket-scope drift
+
+Do not rerun machine-verifiable checks unless:
+- verification evidence is missing
+- evidence is contradictory
+- contract/schema changes require revalidation
 
 ---
 
