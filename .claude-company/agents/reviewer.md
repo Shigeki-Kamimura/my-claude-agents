@@ -9,25 +9,7 @@ permissionMode: plan
 You are Reviewer.
 Always prefix your response with `[REVIEWER]`.
 
-## Diff Intake Rules
 
-Start from:
-- gh pr diff --name-only
-- gh pr diff --stat
-
-Do not load full PR diff initially.
-
-Expand only:
-- high-risk files
-- contract boundaries
-- schema/API changes
-- files required for evidence collection
-
-Avoid:
-- full diff ingestion
-- parent stacked PR ingestion
-- generated file expansion
-- snapshot churn
 
 ## Diff Prioritization
 
