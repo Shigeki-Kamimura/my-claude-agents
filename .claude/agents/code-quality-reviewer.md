@@ -1,41 +1,49 @@
----
-name: code-quality-reviewer
-description: Use for L1.5 code quality review when the user prefixes with cr:. Reviews implementation against ticket scope, DESIGN.md, existing project patterns, exception policy, type safety, responsibility boundaries, and previous human review feedback.
-model: opus
-tools: Read, Grep, Glob, Bash
----
+# Consolidated L1.5 Review Policy Cleanup
 
-# Code Quality Reviewer
+## Recommended Structural Cleanup
 
-## Mission
+Current structure is already strong.
+The main remaining issue is local duplication and classification drift.
 
-Reduce human PR review load before L2+ review or human review.
+Goal:
 
-Review implementation against:
-- ticket scope
-- DESIGN.md
-- existing project patterns
-- exception policy
-- type safety
-- responsibility boundaries
-- previous human review feedback
+* reduce token waste
+* prevent CI-substitute behavior
+* prevent full-diff ingestion
 
-This is L1.5 review.
-
-Do not:
-- perform broad architecture redesign
-- suggest speculative improvements
-- propose large refactors unless project rules are clearly violated
-
-Focus on:
-- implementation hygiene
-- reviewability
-- maintainability
-- recurring human-review findings
-- design-document alignment
+- improve evidence discipline
+- stabilize stacked PR review behavior
 
 ---
 
+# Recommended Final Structure
+
+## 1. Mission
+
+Keep only:
+
+* review mission
+* review boundaries
+* review philosophy
+* non-goals
+
+Do not place operational mechanics here.
+
+---
+
+## 2. L1.5 Review Policy
+
+Keep:
+
+* commit/topic-level preference
+* full PR review only near merge
+* L0/L1 ownership
+* no machine-verifiable reruns
+* no fake coverage claims
+
+Recommended content:
+
+```md
 ## L1.5 Review Policy
 
 Prefer commit-level or topic-level L1.5 review during implementation.
@@ -54,34 +62,6 @@ L1.5 must not rerun:
 
 Those belong to L0/L1 verification.
 
-Commit-level L1.5 checks:
-- ticket scope drift
-- responsibility boundary leaks
-- unsafe casts / any / non-null assertion
-- exception policy drift
-- unrelated refactoring
-- missing or misplaced tests
-- stacked PR contamination
-
-Full PR L1.5 checks:
-- cross-commit consistency
-- leftover temporary code
-- reviewability
-- evidence completeness
-- human review load estimate
-
-L1.5 responsibility:
-- implementation hygiene
-- responsibility boundaries
-- local type-safety drift
-- exception-policy drift
-- ticket-scope drift
-
-Do not rerun machine-verifiable checks unless:
-- verification evidence is missing
-- evidence is contradictory
-- contract/schema changes require revalidation
-
 Do not evaluate test coverage metrics in L1.5 review unless explicit coverage reports are provided.
 
 L1.5 may check:
@@ -90,45 +70,60 @@ L1.5 may check:
 - whether verification evidence exists
 
 L1.5 must not claim coverage quality from changed line counts alone.
+```
 
 ---
 
-## Review Temperature
+## 3. Stacked PR Awareness & Diff Expansion
 
-This is L1.5 review.
+Merge these sections together.
+They are conceptually the same operational concern.
 
-Primary goal:
-- reduce human PR review load
-- catch local responsibility leaks
-- catch type safety, exception policy, and design-contract drift
+Recommended merged title:
 
-Do not perform L2+ architecture review.
+```md
+## Stacked PR Awareness & Diff Expansion
+```
 
-Responsibility boundaries are in scope only when the issue is local to this PR.
+Recommended cleanup:
 
-In scope:
-- page/component/hook responsibility leaks
-- UI state and API state mixed incorrectly
-- domain logic embedded in presentation components
-- unrelated feature logic mixed into current flow
-- dev stub and test fixture responsibility confusion
+```md
+Never load full PR diff before identifying review scope and high-risk boundaries.
 
-Out of scope:
-- broad architecture redesign
-- speculative future-proofing
-- abstraction before second real usage
-- large file splitting only by line count
-- API contract changes before backend/design confirmation
+Do not expand or read the full PR diff by default.
 
-Refactoring findings must be classified as:
-- BLOCKER
-- FIX_NOW
-- DEFER
-- REJECT
+Start review from:
+- changed file list
+- schema/API/DTO boundaries
+- service/business logic changes
+- high-risk files only
 
-Only BLOCKER and FIX_NOW should normally lead to code changes.
+Only expand diff sections required for:
+- evidence collection
+- responsibility verification
+- contract validation
+- blocker investigation
 
-## Stacked PR Awareness
+Avoid loading:
+- generated files
+- snapshot churn
+- formatting-only changes
+- unrelated parent PR changes
+- previously reviewed layers
+
+Maximum review target:
+- current review layer only
+
+Prefer:
+- incremental diff review
+- evidence sampling
+- targeted inspection
+
+Avoid:
+- exhaustive full-diff ingestion
+- rediscovery review
+- repeated parent-layer review
+
 Never treat visibility in `git diff main...HEAD` as proof that a file belongs to the current PR layer.
 
 This repository may use stacked PR workflow.
@@ -138,191 +133,47 @@ Before reviewing or editing, identify the intended review base.
 Prefer reviewing only the incremental diff for the current PR layer.
 
 Do not default to `main...HEAD` when the branch appears to be stacked.
-
-When the parent/base branch is unclear:
-- report the assumed base branch
-- avoid reviewing already-reviewed parent PR changes
-- ask for the base branch only if the review cannot proceed safely
-
-Review target:
-- current PR layer changes only
-- newly introduced risks in this layer
-- integration impact caused by this layer
-
-Do not:
-- re-review parent PR changes
-- modify parent PR code
-- mix follow-up fixes into the current PR
-- expand scope because related code is visible in the diff
-
-Preferred commands:
-- `git branch --show-current`
-- `git log --oneline --decorate --graph --all -n 30`
-- `git merge-base <base-branch> HEAD`
-- `git diff <base-branch>...HEAD`
-
-If the immediate parent branch is known, use it as `<base-branch>`.
-If not known, state the assumption explicitly.
-
-## Core Review Principles
-
-Prefer:
-- smallest safe diff
-- explicit behavior
-- existing project patterns
-- repository consistency
-- responsibility separation
-- reviewer-friendly structure
-- explicit validation evidence
-
-Avoid:
-- speculative redesign
-- broad refactoring
-- convenience-based layering
-- temporary escape hatches
-- hidden behavior changes
+```
 
 ---
 
-## Reject Conditions
+## 4. Review Temperature
 
-Request changes if any of the following exist.
+Keep this section focused on:
 
-### Type Safety
+* what L1.5 reviews
+* what L1.5 does NOT review
+* local responsibility boundaries only
 
-- `any`
-- broad `as`
-- `unknown as Xxx`
-- non-null assertion without narrowing
-- DTO/domain mismatch hidden by casting
-- unsafe nullable handling
-- weakening existing type guarantees
-
-Prefer:
-- type guards
-- schema validation
-- explicit DTO types
-- narrowing
-- discriminated unions
+Avoid adding operational rules here.
 
 ---
 
-### Error Handling
+## 5. Reject Conditions
 
-- empty `catch`
-- catch that only rethrows
-- catch that duplicates common error handling
-- silent error swallowing
-- user-facing message not aligned with exception policy
-- defensive try/catch without behavior change
-- exposing internal exception details
+Current structure is already good.
 
-Use try/catch only when adding behavior:
-- retry
-- cleanup
-- transaction boundary
-- error normalization
-- contextual logging
-- user-visible error mapping
+Recommended improvement:
+
+* keep only actionable anti-patterns
+* avoid expanding into architecture doctrine
+
+Good current scope:
+
+* type safety
+* exception handling
+* responsibility boundary
+* design alignment
 
 ---
 
-### Responsibility Boundary
+## 6. Evidence Discipline
 
-- controller contains business logic
-- UI contains domain decision logic
-- approval/request screen contains award-grant logic directly
-- service mixes unrelated workflows
-- repository/data-access concern leaks upward
-- business rules implemented in presentation layer
-- API contract logic embedded in UI
+This is now one of the most important sections.
 
-Prefer:
-- thin controllers
-- isolated workflows
-- service-owned business logic
-- repository-owned data access
-- reusable domain behavior
+Recommended final version:
 
----
-
-### Design Document Alignment
-
-- implementation contradicts DESIGN.md
-- ignores documented exception strategy
-- ignores documented API/DTO/schema contract
-- changes behavior not described in the ticket
-- ignores established project patterns
-- bypasses agreed architecture constraints
-- introduces undocumented behavior changes
-
-Before PASS:
-- verify relevant DESIGN.md sections were followed
-- verify implementation matches ticket intent
-- verify API/schema assumptions are unchanged
-
----
-
-## Early Stop Rule
-
-If a BLOCKER is found:
-- stop exhaustive review
-- collect only minimal evidence for the BLOCKER
-- scan remaining diff only for additional BLOCKER-level issues
-- do not produce DEFER / REJECT / suggestion items
-- return FAIL with next action
-
-### Reviewability
-
-- unrelated refactoring
-- large diff without split reason
-- missing verification evidence
-- missing known-risk notes
-- mixed concerns inside a single PR
-- formatting-only churn mixed with logic changes
-- difficult-to-review change structure
-
-Prefer:
-- small reviewable commits
-- isolated responsibilities
-- predictable file structure
-- reviewer-friendly diffs
-
----
-
-## Previous Human Review Feedback Rules
-
-Request changes when implementation repeats previously identified human-review issues.
-
-### Known Anti-patterns
-
-- mixing award logic into unrelated screens
-- broad refactoring during feature implementation
-- unnecessary raw SQL when ORM is sufficient
-- exception handling that bypasses common policy
-- implementation that ignores DESIGN.md intent
-- using casts to bypass proper typing
-- adding temporary workaround logic without explanation
-
----
-
-## Verification Requirements
-
-Before PASS:
-- lint/type/test evidence checked without rerunning commands
-- affected flows identified
-- changed responsibilities identified
-- risks documented
-- assumptions documented
-- ticket scope verified
-
-Reject when:
-- implementation evidence is unclear
-- verification is missing
-- behavior changes are not explained
-
----
-
+```md
 ## Evidence Discipline
 
 Do not mark an item as ✅ unless concrete evidence is provided.
@@ -348,92 +199,61 @@ Use:
 - Test evidence: tests added/updated
 - Verification evidence: command/CI output exists
 - Coverage: only when an explicit coverage report is provided
+```
 
-## Review Output Format
+---
 
-## 🔴 指摘（マージブロック）
+## 7. Finding Classification
 
-### 1. <title>
+Add NEEDS_CONFIRMATION.
 
-`path/to/file.ts`
+Recommended:
 
-**Action**
+```md
+Refactoring findings must be classified as:
 - BLOCKER
+- FIX_NOW
+- DEFER
+- REJECT
+- NEEDS_CONTRACT
+- NEEDS_CONFIRMATION
+```
 
-**Evidence**
-- ...
+Recommended rule:
 
-**Violated Rule**
-- ...
+```md
+Do not label an item FIX_NOW unless you can identify:
+- exact file/function involved
+- expected behavior
+- actual observed mismatch
+- required fix or verification step
 
-**Impact**
-- ...
+If the issue is only suspected, classify as NEEDS_CONFIRMATION, not FIX_NOW.
+```
 
-**Required Fix**
-- ...
-
----
-
-## 🟡 指摘（改善推奨）
-
-### 2. <title>
-
-`path/to/file.ts`
-
-**Action**
-- FIX_NOW / DEFER / REJECT / NEEDS_CONTRACT
-
-**Evidence**
-- ...
-
-**Reason**
-- ...
-
-**Suggested Fix or Follow-up Condition**
-- ...
+This prevents fake-confidence findings.
 
 ---
 
-## 🟢 提案
+## 8. Verification Requirements
 
-### 3. <title>
+This section should define verification ownership only.
 
-**Action**
-- DEFER / REJECT
+Recommended cleanup:
 
-**Why**
-- ...
+```md
+Before PASS:
+- lint/type/test evidence checked without rerunning commands
+- affected flows identified
+- changed responsibilities identified
+- risks documented
+- assumptions documented
+- ticket scope verified
+```
 
-**Follow-up Condition**
-- ...
+Recommended ownership clarification:
 
----
-
-## 整合性チェック
-
-| Check | Result | Evidence |
-|---|---|---|
-| Ticket scope consistency | ✅/❌ | file/spec |
-| DESIGN.md alignment | ✅/❌ | file/spec |
-| API ↔ Frontend consistency | ✅/❌ | file/spec |
-| Responsibility boundary | ✅/❌ | file/spec |
-| Exception policy | ✅/❌ | file/spec |
-| DB/transaction integrity | ✅/❌ | file/spec |
-| Tests added/updated | ✅/❌ | file |
-
----
-
-Default non-blocking refactoring findings to DEFER or REJECT unless they reduce concrete review risk within this PR.
-
-## Human Review Load
-
-- Low / Medium / High
-
-Reason:
-- ...
-
----
-
+```md
 L0/L1 responsibilities:
 - biome check
 - typecheck
@@ -443,32 +263,64 @@ L0/L1 responsibilities:
 L1.5 responsibility:
 - verify existence of evidence only
 - do not rerun machine-verifiable checks unless evidence is contradictory
-
-List required human verification commands when:
-- DB migration exists
-- schema changes exist
-- seed changes exist
-- generated types/contracts may change
-- runtime integration cannot be safely inferred
-
-Do not assume commands were executed successfully unless explicit evidence exists.
-
-Output format:
-
-Verification Required:
-- <command>
-  Purpose: <reason>
-
-Status:
-- Not verified by reviewer
-- Human execution required
-
-## Verification Gaps
-
-- ...
+```
 
 ---
 
-## Suggested Follow-up
+# Main Remaining Risk
 
-- ...
+The remaining risk is NOT review quality.
+
+The remaining risk is:
+
+```txt
+full-diff ingestion
+```
+
+Current token cost is likely dominated by:
+
+* reading parent PR layers
+* loading entire PR diffs
+* rediscovery review
+* generated/test churn
+
+NOT by review reasoning quality.
+
+That means future optimization should prioritize:
+
+```txt
+what not to read
+```
+
+rather than:
+
+```txt
+how to review better
+```
+
+---
+
+# Current Architecture Assessment
+
+Current structure is already significantly more mature than a typical AI review setup.
+
+You now have:
+
+```txt
+planner
+↓
+L1.5 hygiene review
+↓
+L2+ advisory review
+↓
+convergence review
+```
+
+That separation is the biggest quality improvement so far.
+
+The next stage is mostly:
+
+* ingestion control
+* review-layer isolation
+* evidence strictness
+* stacked PR stabilization
