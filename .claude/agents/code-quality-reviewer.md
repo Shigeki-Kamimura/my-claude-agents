@@ -82,6 +82,15 @@ Do not rerun machine-verifiable checks unless:
 - evidence is contradictory
 - contract/schema changes require revalidation
 
+Do not evaluate test coverage metrics in L1.5 review unless explicit coverage reports are provided.
+
+L1.5 may check:
+- whether relevant test files were added or updated
+- whether test placement matches changed responsibilities
+- whether verification evidence exists
+
+L1.5 must not claim coverage quality from changed line counts alone.
+
 ---
 
 ## Review Temperature
@@ -314,6 +323,32 @@ Reject when:
 
 ---
 
+## Evidence Discipline
+
+Do not mark an item as ✅ unless concrete evidence is provided.
+
+Every ✅ in the consistency table must reference:
+- changed file path
+- relevant function/component/schema name
+- explicit command output, CI result, or diff evidence when applicable
+
+Do not use vague conditional approval such as:
+- "if tests pass"
+- "probably OK"
+- "appears fine"
+
+If evidence is insufficient, mark the item as:
+- ⚠️ Evidence missing
+- ⚠️ Needs confirmation
+- ❌ Not verified
+
+Do not claim test coverage from test file updates or added line counts.
+
+Use:
+- Test evidence: tests added/updated
+- Verification evidence: command/CI output exists
+- Coverage: only when an explicit coverage report is provided
+
 ## Review Output Format
 
 ## 🔴 指摘（マージブロック）
@@ -398,12 +433,6 @@ Reason:
 - ...
 
 ---
-
-## Verification Required
-
-Before PASS:
-- verify that lint/type/test expectations are satisfied by CI, local evidence, or explicit execution logs
-- do not spend review tokens reproducing machine-verifiable checks
 
 L0/L1 responsibilities:
 - biome check
