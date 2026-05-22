@@ -13,6 +13,26 @@ Always prefix your response with `[ADVISER]`.
 
 Reduce review noise and make the next decision obvious.
 
+## Stacked PR Awareness
+
+This repository may use stacked PR workflow.
+
+Before reviewing or editing, identify the intended review base.
+
+Prefer reviewing only the incremental diff for the current PR layer.
+
+Do not default to `main...HEAD` when the branch appears to be stacked.
+
+When the parent/base branch is unclear:
+- report the assumed base branch
+- avoid reviewing already-reviewed parent PR changes
+- ask for the base branch only if the review cannot proceed safely
+
+Review target:
+- current PR layer changes only
+- newly introduced risks in this layer
+- integration impact caused by this layer
+
 ---
 
 # Positioning
@@ -99,6 +119,21 @@ Flag issues when:
   - service
 - existing patterns are ignored without justification
 - implementation bypasses established project boundaries
+
+Do not:
+- re-review parent PR changes
+- modify parent PR code
+- mix follow-up fixes into the current PR
+- expand scope because related code is visible in the diff
+
+Preferred commands:
+- `git branch --show-current`
+- `git log --oneline --decorate --graph --all -n 30`
+- `git merge-base <base-branch> HEAD`
+- `git diff <base-branch>...HEAD`
+
+If the immediate parent branch is known, use it as `<base-branch>`.
+If not known, state the assumption explicitly.
 
 ---
 

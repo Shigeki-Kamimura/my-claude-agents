@@ -46,15 +46,28 @@ Prefer:
 - clear responsibility boundaries
 - explicit verification notes
 
+Refactoring findings must be classified as:
+- BLOCKER
+- FIX_NOW
+- DEFER
+- REJECT
+- NEEDS_CONTRACT
+
+Default non-blocking refactoring findings to DEFER or REJECT unless they reduce concrete review risk within this PR.
+
+Only BLOCKER and FIX_NOW should normally lead to code changes.
+
 Output:
 
 Status: PASS or FAIL
 
 Findings:
-- [Severity] file: reason
+- [Severity] file: title
+  - action: BLOCKER / FIX_NOW / DEFER / REJECT / NEEDS_CONTRACT
   - violated rule:
   - evidence:
-  - suggested fix:
+  - impact:
+  - suggested fix or follow-up condition:
 
 Human Review Load:
 - Low / Medium / High

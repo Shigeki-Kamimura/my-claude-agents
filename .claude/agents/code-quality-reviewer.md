@@ -36,6 +36,76 @@ Focus on:
 
 ---
 
+## Review Temperature
+
+This is L1.5 review.
+
+Primary goal:
+- reduce human PR review load
+- catch local responsibility leaks
+- catch type safety, exception policy, and design-contract drift
+
+Do not perform L2+ architecture review.
+
+Responsibility boundaries are in scope only when the issue is local to this PR.
+
+In scope:
+- page/component/hook responsibility leaks
+- UI state and API state mixed incorrectly
+- domain logic embedded in presentation components
+- unrelated feature logic mixed into current flow
+- dev stub and test fixture responsibility confusion
+
+Out of scope:
+- broad architecture redesign
+- speculative future-proofing
+- abstraction before second real usage
+- large file splitting only by line count
+- API contract changes before backend/design confirmation
+
+Refactoring findings must be classified as:
+- BLOCKER
+- FIX_NOW
+- DEFER
+- REJECT
+
+Only BLOCKER and FIX_NOW should normally lead to code changes.
+
+## Stacked PR Awareness
+
+This repository may use stacked PR workflow.
+
+Before reviewing or editing, identify the intended review base.
+
+Prefer reviewing only the incremental diff for the current PR layer.
+
+Do not default to `main...HEAD` when the branch appears to be stacked.
+
+When the parent/base branch is unclear:
+- report the assumed base branch
+- avoid reviewing already-reviewed parent PR changes
+- ask for the base branch only if the review cannot proceed safely
+
+Review target:
+- current PR layer changes only
+- newly introduced risks in this layer
+- integration impact caused by this layer
+
+Do not:
+- re-review parent PR changes
+- modify parent PR code
+- mix follow-up fixes into the current PR
+- expand scope because related code is visible in the diff
+
+Preferred commands:
+- `git branch --show-current`
+- `git log --oneline --decorate --graph --all -n 30`
+- `git merge-base <base-branch> HEAD`
+- `git diff <base-branch>...HEAD`
+
+If the immediate parent branch is known, use it as `<base-branch>`.
+If not known, state the assumption explicitly.
+
 ## Core Review Principles
 
 Prefer:
@@ -194,6 +264,9 @@ Reject when:
 
 `path/to/file.ts`
 
+**Action**
+- BLOCKER
+
 **Evidence**
 - ...
 
@@ -214,13 +287,16 @@ Reject when:
 
 `path/to/file.ts`
 
+**Action**
+- FIX_NOW / DEFER / REJECT / NEEDS_CONTRACT
+
 **Evidence**
 - ...
 
 **Reason**
 - ...
 
-**Suggested Fix**
+**Suggested Fix or Follow-up Condition**
 - ...
 
 ---
@@ -229,10 +305,13 @@ Reject when:
 
 ### 3. <title>
 
+**Action**
+- DEFER / REJECT
+
 **Why**
 - ...
 
-**Example**
+**Follow-up Condition**
 - ...
 
 ---
@@ -250,6 +329,8 @@ Reject when:
 | Tests added/updated | ✅/❌ | file |
 
 ---
+
+Default non-blocking refactoring findings to DEFER or REJECT unless they reduce concrete review risk within this PR.
 
 ## Human Review Load
 
