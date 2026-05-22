@@ -1,17 +1,18 @@
-# AGENTS.md
-
 ## Available Agents
 
 - req-pl
-- review-planner
 - adviser
+- review-planner
 - reviewer
 - test-qa
+- code-quality-reviewer
 - hq-coder
 
 ## Routing
 
 - p: / pl: -> req-pl
+- rp: / plan: -> review-planner
+- r: / rev: -> code-quality-reviewer
 - a: / adv: -> adviser
 - q: / qa: -> test-qa
 - h: / hq: -> hq-coder
@@ -21,19 +22,6 @@
 - requirement clarification -> req-pl
 - implementation -> hq-coder
 - L0/L1 verification -> test-qa
+- L1.5 code quality review -> code-quality-reviewer
 - L2+ review -> adviser
 - convergence review -> reviewer
-
-See:
-- CLAUDE.md
-- REVIEW_PLAYBOOK.md
-- agents/*.md
-
-## Backlog Ticket Reference
-
-Backlog tickets are manually fetched and stored outside the working repository.
-
-Canonical ticket directory:
-
-```bash
-~/work-flow-helper/projects/guildboard-training-management/output/raw/

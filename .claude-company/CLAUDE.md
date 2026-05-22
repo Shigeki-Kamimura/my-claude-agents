@@ -6,6 +6,8 @@ Project > Personal > Agent
 
 Project instructions override only explicit fields.
 
+---
+
 ## Mission
 
 Keep the main session lightweight.
@@ -14,10 +16,13 @@ Use dedicated agents for:
 - requirement clarification
 - implementation
 - QA verification
+- code quality review
 - L2+ review
 - convergence review
 
 Do not duplicate agent work in the main session.
+
+---
 
 ## Cost Awareness
 
@@ -57,13 +62,15 @@ Use agents by prefix:
 
 - `p:` / `pl:` -> `req-pl`
 - `h:` / `hq:` -> `hq-coder`
+- `r:` / `rev:` -> `code-quality-reviewer`
 - `q:` / `qa:` -> `test-qa`
-- `adv:` -> `adviser`
+- `a:` / `adv:` -> `adviser`
+- `e:` / `e2e:` -> `e2e-qa`
 
 Default without prefix:
 - answer directly when the task is simple
-- route to the appropriate agent when role ownership is clear
-- ask at most one question only if correctness is blocked
+- route when role ownership is clear
+- ask at most one blocking question
 
 ---
 
@@ -71,118 +78,68 @@ Default without prefix:
 
 Default review order:
 
-1. `req-pl` if requirements, ownership, or acceptance are unclear
-2. `adviser` for L2+ review and Review Ticket normalization
-3. `test-qa` for regression / L0-L1 safety net
-4. specialists only for directly relevant high-risk boundaries
+1. `req-pl`
+2. `test-qa`
+3. `code-quality-reviewer`
+4. `adviser`
+5. specialists only for directly relevant high-risk boundaries
+6. `reviewer` for convergence only
 
 Rules:
 - track findings as Review Tickets
-- prefer one strong convergence round over many short loops
+- prefer one strong convergence round
 - re-review changed lines and unresolved tickets only
 - do not reopen closed issues unless reintroduced
 
 ---
 
-## Spec-grounded Merge Blocker Rule
-
-🔴 Merge Blocker に分類する場合は、必ず以下を揃える。
-
-- Code Evidence: 該当ファイル・行・実装内容
-- Spec Evidence: 該当する設計書・画面仕様・API仕様・権限定義の節番号
-- Impact: ユーザー影響 / セキュリティ影響 / データ不整合 / 仕様未達
-- Required Fix: merge 前に必要な修正方針
-- Verification: 修正後に確認すべき観点
-
-Spec Evidence がない場合でも、security / data integrity / auth boundary / production failure に該当する場合は Merge Blocker として扱ってよい。
-ただし、その場合は設計書ではなく production risk を根拠として明示する。
-
-## Review Output Constraints
-
-Review findings should be ticket-level.
-
-Use:
-- ID
-- severity
-- route
-- location
-- short label
-
-Avoid:
-- long narrative explanations
-- style-only findings
-- speculative improvements
-- broad redesign without concrete failure path
-
-## Consistency Check Table
-
-レビュー本文の最後に、必ず整合性チェック表を出す。
-
-| Check | Result | Evidence |
-|---|---|---|
-| Route/View consistency | ✅/❌ | file/spec |
-| API/frontend consistency | ✅/❌ | file/spec |
-| Permission boundary | ✅/❌ | file/spec |
-| DB/transaction integrity | ✅/❌ | file/spec |
-| Tests added/updated | ✅/❌ | file |
-
----
-
 ## Boundary Principle
 
-Controller and module must represent API responsibility, not DB tables.
-
-Split when:
-- actor differs
-- permission differs
-- use-case differs
-- change reason differs
+Controller and module represent API responsibility, not DB tables.
 
 Avoid:
 - screen-shaped APIs
-- umbrella `management` endpoints
-- mixing self-service and admin operations
-- mixing master data and user-linkage operations
+- umbrella management endpoints
+- mixed actor responsibilities
 
 ---
 
 ## Evidence
 
 Use:
-- relative path
+- relative paths
 - line numbers when available
-- exact command names for validation
+- exact validation commands
 
 Do not:
 - invent missing facts
 - assume uninspected files
-- claim validation was run when it was not
+- claim validation not actually performed
 
 ---
 
 ## Always-on Safety Rails
 
-- no unused dependencies
 - no unrelated broad refactors
-- no weakening lint / typecheck / tests
-- no secrets or PII in logs / commits / URLs
+- no weakening lint/type/test
+- no secrets or PII exposure
 - destructive operations require approval
 
 ---
 
 ## High-Risk Areas
 
-High-risk changes include:
-- DB schema / migration / backfill
-- authn / authz / session
+High-risk changes:
+- DB schema/migration
+- auth/authz/session
 - public API contracts
-- dependencies / lockfile
-- CI / tooling
-- secrets / PII
+- dependencies/lockfile
+- CI/tooling
+- secrets/PII
 - external integrations
 - async side effects
 
-For high-risk changes, require:
+Require:
 - impact scope
 - rollback path
 - targeted validation
@@ -191,22 +148,8 @@ For high-risk changes, require:
 
 ## Backlog Ticket Reference
 
-Backlog tickets are manually fetched and stored outside the working repository.
-
 Canonical ticket directory:
-
+- チケット名と現在いるプロジェクト(リポジトリ)と自明でない場合は必ずユーザーに質問すること
 ```bash
-~/work-flow-helper/projects/guildboard-training-management/output/raw/
-
-## Comment Policy
-
-Add comments only when intent is non-obvious.
-
-Good comments explain:
-- why a branch exists
-- guard precondition
-- transaction / async boundary
-- trust boundary
-- magic number rationale
-
-Do not add comments that restate obvious code.
+~/work-flow-helper/projects/
+```

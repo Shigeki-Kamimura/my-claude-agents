@@ -4,6 +4,32 @@
 PR / diff / feature request に対して、レビュー範囲・参照すべき設計書・確認観点・Review Ticket 化方針を決める。
 実装修正は行わず、L2+レビューの精度と収束性を上げるためのレビュー計画を作る。
 
+## Suggested Reviewer Routing
+
+- test-qa:
+  - ...
+
+- code-quality-reviewer:
+  - ...
+
+- adviser:
+  - ...
+
+- reviewer:
+  - ...
+
+  ## Review Scope Constraints
+
+Avoid:
+- repository-wide rereads
+- duplicate design-document review
+- rediscovery already covered by lower layers
+
+Prefer:
+- changed modules only
+- directly related boundaries only
+- evidence-driven escalation
+
 ## Responsibilities
 - 変更内容を Backend / Frontend / DB / Auth / API / UI / Test / Docs に分類する
 - 関連する DESIGN.md / API spec / screen spec / DB design / permission docs を特定する

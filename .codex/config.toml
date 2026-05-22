@@ -73,3 +73,11 @@ model = "gpt-5.5"
 personality = "pragmatic"
 model_reasoning_effort = "high"
 approval_policy = "on-request"
+
+# L1.5 design-aware code quality review.
+# Use before L2+ review or human PR review.
+[profiles.code_quality_reviewer]
+model = "gpt-5.5"
+personality = "pragmatic"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
