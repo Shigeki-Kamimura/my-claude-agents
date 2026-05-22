@@ -65,6 +65,7 @@ fi
 
 SRC_AGENTS="$SRC_CLAUDE_ROOT/agents"
 SRC_SKILLS="$SRC_CLAUDE_ROOT/skills"
+SRC_KNOWLEDGE="$SRC_CLAUDE_ROOT/knowledge"
 SRC_SETTINGS="$SRC_CLAUDE_ROOT/settings.json"
 SRC_CLAUDE_MD="$SRC_CLAUDE_ROOT/CLAUDE.md"
 SRC_SKILL_MD="$SRC_CLAUDE_ROOT/SKILL.md"
@@ -149,6 +150,29 @@ setup_target() {
         ln -sfn "$src" "$dest"
         echo "  [LINK] .claude/skills/$name/ -> $src"
         linked_skills=$((linked_skills + 1))
+      fi
+    done
+  fi
+
+  # --- knowledge: ファイル単位でリンク（upstream 実ファイルは skip） ---
+  mkdir -p "$claude_dir/knowledge"
+  add_exclude ".claude/knowledge"
+
+  local linked_knowledge=0
+  local skipped_knowledge=0
+  if [ -d "$SRC_KNOWLEDGE" ]; then
+    for src in "$SRC_KNOWLEDGE"/*.md; do
+      [ -e "$src" ] || continue
+      name="$(basename "$src")"
+      dest="$claude_dir/knowledge/$name"
+
+      if [ -f "$dest" ] && [ ! -L "$dest" ]; then
+        echo "  [SKIP upstream] .claude/knowledge/$name"
+        skipped_knowledge=$((skipped_knowledge + 1))
+      else
+        ln -sf "$src" "$dest"
+        echo "  [LINK] .claude/knowledge/$name -> $src"
+        linked_knowledge=$((linked_knowledge + 1))
       fi
     done
   fi
@@ -264,10 +288,11 @@ setup_target() {
 
   echo ""
   echo "=== 完了 ==="
-  echo "  claude agents : ${linked_agents} linked, ${skipped_agents} skipped (upstream)"
-  echo "  claude skills : ${linked_skills} linked, ${skipped_skills} skipped (upstream)"
-  echo "  codex agents  : ${linked_codex_agents} linked, ${skipped_codex_agents} skipped (upstream)"
-  echo "  copilot agents: ${linked_copilot_agents} linked, ${skipped_copilot_agents} skipped (upstream)"
+  echo "  claude agents   : ${linked_agents} linked, ${skipped_agents} skipped (upstream)"
+  echo "  claude skills   : ${linked_skills} linked, ${skipped_skills} skipped (upstream)"
+  echo "  claude knowledge: ${linked_knowledge} linked, ${skipped_knowledge} skipped (upstream)"
+  echo "  codex agents    : ${linked_codex_agents} linked, ${skipped_codex_agents} skipped (upstream)"
+  echo "  copilot agents  : ${linked_copilot_agents} linked, ${skipped_copilot_agents} skipped (upstream)"
   echo ""
   echo "upstream を汚さないために .git/info/exclude を使用しています（.gitignore は変更していません）"
 }

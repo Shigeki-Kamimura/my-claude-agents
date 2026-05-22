@@ -23,6 +23,7 @@ $SrcClaudeRoot = if ($Profile -eq "company") {
 
 $SrcAgents = Join-Path $SrcClaudeRoot "agents"
 $SrcSkills = Join-Path $SrcClaudeRoot "skills"
+$SrcKnowledge = Join-Path $SrcClaudeRoot "knowledge"
 $SrcSettings = Join-Path $SrcClaudeRoot "settings.json"
 $SrcClaudeMd = Join-Path $SrcClaudeRoot "CLAUDE.md"
 $SrcSkillMd = Join-Path $SrcClaudeRoot "SKILL.md"
@@ -115,6 +116,27 @@ if (Test-Path $SrcSkills) {
             New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
             Write-Host "  [LINK] skills/$($src.Name)/ -> $($src.FullName)"
             $linkedSkills++
+        }
+    }
+}
+
+# --- knowledge: ファイル単位でリンク（upstream 実ファイルは skip） ---
+New-Item -ItemType Directory -Path (Join-Path $ClaudeDir "knowledge") -Force | Out-Null
+Add-Exclude ".claude/knowledge"
+
+$linkedKnowledge = 0; $skippedKnowledge = 0
+if (Test-Path $SrcKnowledge) {
+    foreach ($src in (Get-ChildItem -Path $SrcKnowledge -Filter "*.md" -File)) {
+        $dest = Join-Path $ClaudeDir "knowledge\$($src.Name)"
+
+        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+            Write-Host "  [SKIP upstream] knowledge/$($src.Name)"
+            $skippedKnowledge++
+        } else {
+            if (Test-Path $dest) { Remove-Item $dest -Force }
+            New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
+            Write-Host "  [LINK] knowledge/$($src.Name) -> $($src.FullName)"
+            $linkedKnowledge++
         }
     }
 }
@@ -233,9 +255,10 @@ if (Test-Path $SrcCopilotAgents) {
 # --- サマリ ---
 Write-Host ""
 Write-Host "=== 完了 ===" -ForegroundColor Green
-Write-Host "  claude agents : $linkedAgents linked, $skippedAgents skipped (upstream)"
-Write-Host "  claude skills : $linkedSkills linked, $skippedSkills skipped (upstream)"
-Write-Host "  codex agents  : $linkedCodexAgents linked, $skippedCodexAgents skipped (upstream)"
-Write-Host "  copilot agents: $linkedCopilotAgents linked, $skippedCopilotAgents skipped (upstream)"
+Write-Host "  claude agents   : $linkedAgents linked, $skippedAgents skipped (upstream)"
+Write-Host "  claude skills   : $linkedSkills linked, $skippedSkills skipped (upstream)"
+Write-Host "  claude knowledge: $linkedKnowledge linked, $skippedKnowledge skipped (upstream)"
+Write-Host "  codex agents    : $linkedCodexAgents linked, $skippedCodexAgents skipped (upstream)"
+Write-Host "  copilot agents  : $linkedCopilotAgents linked, $skippedCopilotAgents skipped (upstream)"
 Write-Host ""
 Write-Host "upstream を汚さないために .git/info/exclude を使用しています（.gitignore は変更していません）"
