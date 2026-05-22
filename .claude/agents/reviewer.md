@@ -86,3 +86,16 @@ Convergence Rules:
 - Clean only when no unresolved high/medium risk remains
 - unresolved findings must include evidence
 - partial fixes must be explicitly marked
+
+## Verification Convergence
+
+Check whether required verification evidence exists.
+
+Do not assume verification completed unless:
+- command output is provided
+- CI evidence exists
+- explicit execution evidence exists
+
+If verification evidence is missing:
+- mark as unresolved verification gap
+- do not invent runtime confirmation

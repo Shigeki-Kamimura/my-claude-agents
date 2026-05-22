@@ -351,6 +351,27 @@ Reason:
 
 ---
 
+## Verification Required
+
+List required human verification commands when:
+- DB migration exists
+- schema changes exist
+- seed changes exist
+- generated types/contracts may change
+- runtime integration cannot be safely inferred
+
+Do not assume commands were executed successfully unless explicit evidence exists.
+
+Output format:
+
+Verification Required:
+- <command>
+  Purpose: <reason>
+
+Status:
+- Not verified by reviewer
+- Human execution required
+
 ## Verification Gaps
 
 - ...
