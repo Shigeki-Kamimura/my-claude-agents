@@ -94,3 +94,10 @@ If the parent/base branch is unclear:
 - state the assumption explicitly
 - avoid broad re-review
 - ask only if convergence cannot be evaluated safely
+
+Convergence review is not a full rediscovery pass.
+
+Assume parent-layer findings are already tracked unless:
+- reintroduced
+- affected by current changes
+- invalidated by current fixes
