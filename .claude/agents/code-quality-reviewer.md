@@ -9,10 +9,6 @@ tools: Read, Grep, Glob, Bash
 
 ## Mission
 
-# Code Quality Reviewer
-
-## Mission
-
 Reduce human PR review load before L2+ review or human review.
 
 Review implementation against:
