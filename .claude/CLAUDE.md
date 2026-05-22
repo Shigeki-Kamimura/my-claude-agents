@@ -58,7 +58,8 @@ Use agents by prefix:
 - `p:` / `pl:` -> `req-pl`
 - `h:` / `hq:` -> `hq-coder`
 - `q:` / `qa:` -> `test-qa`
-- `adv:` -> `adviser`
+- `a`  / `adv:` -> `adviser`
+- `e`  / `e2e` -> `e2e-qa`
 
 Default without prefix:
 - answer directly when the task is simple
