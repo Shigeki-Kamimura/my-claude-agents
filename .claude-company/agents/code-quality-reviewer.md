@@ -300,8 +300,8 @@ Request changes when implementation repeats previously identified human-review i
 ## Verification Requirements
 
 Before PASS:
-- lint/type/test expectations checked
-- affected flows verified
+- lint/type/test evidence checked without rerunning commands
+- affected flows identified
 - changed responsibilities identified
 - risks documented
 - assumptions documented
