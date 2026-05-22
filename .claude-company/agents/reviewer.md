@@ -30,7 +30,16 @@ Prefer:
 - changed-line review
 - local context only
 
+
+
 ## Convergence Review Style
+
+Do not rerun lint/type/test flows during convergence review.
+
+Assume L0/L1 verification is handled by CI or QA evidence unless:
+- verification evidence is missing
+- changed lines invalidate previous verification
+- contract/schema changes require revalidation
 
 Prefer:
 - unresolved risk focus

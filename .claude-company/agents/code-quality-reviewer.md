@@ -353,6 +353,20 @@ Reason:
 
 ## Verification Required
 
+Before PASS:
+- verify that lint/type/test expectations are satisfied by CI, local evidence, or explicit execution logs
+- do not spend review tokens reproducing machine-verifiable checks
+
+L0/L1 responsibilities:
+- biome check
+- typecheck
+- unit/integration test execution
+- build verification
+
+L1.5 responsibility:
+- verify existence of evidence only
+- do not rerun machine-verifiable checks unless evidence is contradictory
+
 List required human verification commands when:
 - DB migration exists
 - schema changes exist
