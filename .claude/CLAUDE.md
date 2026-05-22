@@ -62,7 +62,8 @@ Use agents by prefix:
 
 - `p:` / `pl:` -> `req-pl`
 - `h:` / `hq:` -> `hq-coder`
-- `r:` / `rev:` -> `code-quality-reviewer`
+- `cr:` / `cr:` -> `code-quality-reviewer`
+- `r`: / `rev:` -> `reviewer`
 - `q:` / `qa:` -> `test-qa`
 - `a:` / `adv:` -> `adviser`
 - `e:` / `e2e:` -> `e2e-qa`
