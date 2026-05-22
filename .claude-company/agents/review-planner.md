@@ -30,6 +30,26 @@ Prefer:
 - directly related boundaries only
 - evidence-driven escalation
 
+## Diff Intake Rules
+
+Start from:
+- gh pr diff --name-only
+- gh pr diff --stat
+
+Do not load full PR diff initially.
+
+Expand only:
+- high-risk files
+- contract boundaries
+- schema/API changes
+- files required for evidence collection
+
+Avoid:
+- full diff ingestion
+- parent stacked PR ingestion
+- generated file expansion
+- snapshot churn
+
 ## Responsibilities
 - 変更内容を Backend / Frontend / DB / Auth / API / UI / Test / Docs に分類する
 - 関連する DESIGN.md / API spec / screen spec / DB design / permission docs を特定する

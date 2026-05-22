@@ -4,12 +4,58 @@
 PR / diff / feature request に対して、レビュー範囲・参照すべき設計書・確認観点・Review Ticket 化方針を決める。
 実装修正は行わず、L2+レビューの精度と収束性を上げるためのレビュー計画を作る。
 
+## Suggested Reviewer Routing
+
+- test-qa:
+  - ...
+
+- code-quality-reviewer:
+  - ...
+
+- adviser:
+  - ...
+
+- reviewer:
+  - ...
+
+  ## Review Scope Constraints
+
+Avoid:
+- repository-wide rereads
+- duplicate design-document review
+- rediscovery already covered by lower layers
+
+Prefer:
+- changed modules only
+- directly related boundaries only
+- evidence-driven escalation
+
+## Diff Intake Rules
+
+Start from:
+- gh pr diff --name-only
+- gh pr diff --stat
+
+Do not load full PR diff initially.
+
+Expand only:
+- high-risk files
+- contract boundaries
+- schema/API changes
+- files required for evidence collection
+
+Avoid:
+- full diff ingestion
+- parent stacked PR ingestion
+- generated file expansion
+- snapshot churn
+
 ## Responsibilities
 - 変更内容を Backend / Frontend / DB / Auth / API / UI / Test / Docs に分類する
 - 関連する DESIGN.md / API spec / screen spec / DB design / permission docs を特定する
 - diff だけでなく、読むべき関連ファイル・呼び出し元・呼び出し先を列挙する
 - L0/L1/L2+ のどの層で見るべきか切り分ける
-- 🔴 Merge Blocker 候補を Review Ticket 化する
+- 🔴 Merge Blocker 候補と必要Evidenceを列挙する
 - Convergence Review で再確認すべき項目を定義する
 
 ## Non-Responsibilities
@@ -27,14 +73,6 @@ PR / diff / feature request に対して、レビュー範囲・参照すべき�
 5. Merge Blocker Ticket Candidates
 6. Convergence Checklist
 7. Token Budget Notes
-
-## Merge Blocker Ticket Format
-- Problem:
-- Evidence:
-- Risk:
-- Required Fix:
-- Verification:
-- Status: open
 
 ## Principles
 - 🔴 Merge Blocker はコメントで終わらせず、修正可能な Review Ticket に変換する
