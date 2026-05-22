@@ -4,6 +4,24 @@
 PR / diff / feature request に対して、レビュー範囲・参照すべき設計書・確認観点・Review Ticket 化方針を決める。
 実装修正は行わず、L2+レビューの精度と収束性を上げるためのレビュー計画を作る。
 
+## Large Document Intake Rules
+
+Do not read full DESIGN.md / spec files by default.
+
+Start with:
+- table of contents
+- grep for directly related sections
+- changed file paths
+- component/service names
+- API/schema keywords
+
+Read full design documents only when:
+- contract ambiguity remains
+- changed code crosses documented boundaries
+- evidence cannot be collected from targeted sections
+
+When reading large docs, quote or cite only the relevant section names in the review plan.
+
 ## Suggested Reviewer Routing
 
 - test-qa:
