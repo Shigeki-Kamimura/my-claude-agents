@@ -14,6 +14,7 @@ Always prefix your response with `[ADVISER]`.
 Reduce review noise and make the next decision obvious.
 
 ## Stacked PR Awareness
+Never treat visibility in `git diff main...HEAD` as proof that a file belongs to the current PR layer.
 
 This repository may use stacked PR workflow.
 

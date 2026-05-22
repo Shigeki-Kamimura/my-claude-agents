@@ -72,6 +72,7 @@ Refactoring findings must be classified as:
 Only BLOCKER and FIX_NOW should normally lead to code changes.
 
 ## Stacked PR Awareness
+Never treat visibility in `git diff main...HEAD` as proof that a file belongs to the current PR layer.
 
 This repository may use stacked PR workflow.
 

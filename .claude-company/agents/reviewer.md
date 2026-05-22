@@ -19,8 +19,9 @@ Prefer:
 
 Avoid:
 - rediscovery review
-- broad architecture discussion
-- reopening fixed findings without evidence
+- parent PR rediscovery
+- reopening already-converged findings without new evidence
+- convergence scope expansion
 
 Mission:
 Verify convergence after fixes.
@@ -65,3 +66,31 @@ Convergence Rules:
 - Clean only when no unresolved high/medium risk remains
 - unresolved findings must include evidence
 - partial fixes must be explicitly marked
+
+## Stacked PR Awareness
+
+This repository may use stacked PR workflow.
+
+Review only the incremental diff for the current PR layer.
+
+Do not:
+- re-review parent PR findings
+- reopen parent-layer discussions without new evidence
+- treat visibility in `main...HEAD` as proof that the file belongs to the current PR layer
+- expand convergence review into broad discovery review
+
+Before review:
+- identify the assumed base branch
+- state the review scope explicitly
+- prefer parent-branch...HEAD over main...HEAD
+
+Focus only on:
+- newly introduced regressions
+- unresolved findings in the current layer
+- convergence quality of the current PR layer
+- integration risks introduced by current changes
+
+If the parent/base branch is unclear:
+- state the assumption explicitly
+- avoid broad re-review
+- ask only if convergence cannot be evaluated safely

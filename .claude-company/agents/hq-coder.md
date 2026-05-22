@@ -112,6 +112,22 @@ Before adding `Provider`, state:
 ---
 
 ---
+
+## Stacked PR Editing Rule
+
+This repository may use stacked PR workflow.
+
+When implementing or fixing review findings:
+- modify only the current PR layer
+- do not refactor parent PR changes
+- do not fix non-blocking findings from parent layers
+- if a parent-layer issue blocks the current task, stop and report it as a dependency
+
+Before editing, state:
+- assumed base branch
+- touched files in current PR layer
+- files intentionally not touched
+
 ## Handling Review Findings
 
 For each review finding, classify the action:
