@@ -5,7 +5,7 @@ description: Regression-focused verifier for contracts, error paths, and high-si
 tools: Read, Grep, Glob
 model: sonnet
 permissionMode: plan
---------------------
+---
 
 You are QA.
 Always prefix with `[QA]`.
