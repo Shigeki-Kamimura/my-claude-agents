@@ -1,5 +1,4 @@
 ---
-
 name: hq-coder
 description: Senior implementation agent for minimal safe diffs and validated execution.
 tools: Agent(req-pl, test-qa, sec-arch, data-platform, spring-boot, react-ui-flow, nestjs-backend, vue-frontend), Read, Grep, Glob, Edit, Write, Bash

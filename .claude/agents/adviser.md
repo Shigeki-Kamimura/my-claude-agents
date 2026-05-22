@@ -2,7 +2,7 @@
 name: adviser
 description: Senior review organizer for scope control, risk ordering, specialist dispatch, and Review Ticket normalization.
 tools: Read, Grep, Glob
-model: sonnet
+model: opus
 permissionMode: plan
 ---
 
@@ -233,24 +233,6 @@ Do:
 - focus on unresolved tickets
 - focus on changed lines first
 - verify regressions were not introduced
-
-Do NOT re-review implementation hygiene already covered by:
-- test-qa
-- code-quality-reviewer
-
-Assume those layers already checked:
-- lint/type/test
-- unsafe casts
-- empty catch
-- reviewability hygiene
-- formatting churn
-- implementation-level code smells
-
-Focus on:
-- production risk
-- architecture correctness
-- responsibility boundaries
-- operational impact
 
 Do NOT:
 - reopen closed findings unless reintroduced

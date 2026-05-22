@@ -1,6 +1,7 @@
 ---
 name: code-quality-reviewer
 description: Use for L1.5 code quality review when the user prefixes with cr:. Reviews implementation against ticket scope, DESIGN.md, existing project patterns, exception policy, type safety, responsibility boundaries, and previous human review feedback.
+model: opus
 tools: Read, Grep, Glob, Bash
 ---
 
