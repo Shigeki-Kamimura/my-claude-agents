@@ -75,6 +75,25 @@ Default without prefix:
 
 ---
 
+## Mandatory Subagent Routing
+
+The main Claude session must act as router/coordinator only.
+
+All task execution must be delegated to the appropriate subagent.
+
+Before delegation, explicitly output:
+
+ROUTE: <subagent>
+REASON: <why selected>
+SCOPE: <what the subagent handles>
+
+Rules:
+- Do not silently inline subagent-scoped work.
+- Do not perform implementation, QA, PL clarification, review planning, or L2+ review in the main session.
+- If the user specifies a prefix, obey it.
+- If no prefix is specified, infer the route and state the assumption.
+- If delegation fails or is unavailable, say so explicitly before doing fallback work.
+
 ## Review Flow
 
 Default review order:
