@@ -67,6 +67,15 @@ Convergence Rules:
 - unresolved findings must include evidence
 - partial fixes must be explicitly marked
 
+## Early Stop Rule
+
+If a BLOCKER is found:
+- stop exhaustive review
+- collect only minimal evidence for the BLOCKER
+- scan remaining diff only for additional BLOCKER-level issues
+- do not produce DEFER / REJECT / suggestion items
+- return FAIL with next action
+
 ## Stacked PR Awareness
 
 This repository may use stacked PR workflow.
