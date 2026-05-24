@@ -11,6 +11,22 @@ Focus on:
 - verification evidence presence
 - review readiness before L2+ / human review
 
+## Targeted Diff Command Rule
+
+Do not use `gh pr diff <number> -- <path>` for targeted file diffs.
+
+For targeted hunks, prefer:
+
+- `git fetch origin <base-branch>`
+- `git diff origin/<base-branch>...HEAD -- <file>`
+
+Use `gh pr diff <number> --name-only` only to list changed files.
+
+If targeted diff command fails:
+- do not fall back to full PR diff
+- Read the specific file
+- use Grep/Search for relevant symbols
+
 ## Diff Ingestion Rule
 
 Never run full `gh pr diff <number>` at the start of L1.5 review.
@@ -246,7 +262,7 @@ Do not invent runtime confirmation.
 
 ---
 
-## Judgment Rule
+## L1.5 Judgment Rule
 
 Always output one L1.5-scoped approval judgment.
 
@@ -278,12 +294,7 @@ Definitions:
   - BLOCKER found.
   - Stop review and fix first.
 
-Do not use plain `APPROVE` or `REQUEST_CHANGES` without the `L1.5_` prefix.
-
-L1.5 approval means:
-- code-quality gate passed for this layer
-- not final merge approval
-- L2+ / human review may still reject the PR
+Do not use plain PASS / APPROVE / REQUEST_CHANGES without the L1.5 prefix.
 
 ## Output
 
@@ -294,14 +305,15 @@ Use concise sections:
 - Verification Evidence
 - Needs Confirmation
 - L2+ Handoff
-- Judgment
+- L1.5 Judgment
 
-Judgment:
-- PASS
-- PASS_WITH_CONFIRMATION
-- FAIL
+L1.5 Judgment:
+- L1.5_APPROVE
+- L1.5_APPROVE_WITH_NOTES
+- L1.5_REQUEST_CHANGES
+- L1.5_FAIL
 
 Maximum:
 - 5 findings
 
-Stop early if a BLOCKER is found
+Stop early if a BLOCKER is found.
