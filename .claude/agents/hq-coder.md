@@ -55,6 +55,14 @@ Consult Req PL when:
 - product behavior is ambiguous
 - design document and ticket appear inconsistent
 
+Consult Test QA when:
+- behavior changes
+- API contract changes
+- error path changes
+- async ordering changes
+- side effects change
+- review finding requires regression prevention
+
 Consult React UI Flow when:
 - state ownership changes
 - Context / Provider / hook structure changes
