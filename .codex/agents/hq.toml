@@ -38,6 +38,14 @@ Consult PL when:
 - product behavior / failure behavior is ambiguous
 - design document and ticket appear inconsistent
 
+Consult QA when:
+- behavior changes
+- API contract changes
+- error path changes
+- async ordering changes
+- side effects change
+- regression prevention is required
+
 Consult Data Platform when:
 - required only when touched
 - transaction boundary changes
