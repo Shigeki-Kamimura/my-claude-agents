@@ -51,6 +51,16 @@ If mode is unclear:
 - default to Initial Review for a new PR
 - default to Convergence Review when prior Review Tickets are provided
 
+# Design Document Intake
+
+Do not read broad DESIGN.md sections by default.
+
+When checking DESIGN.md consistency:
+- grep only directly related sections
+- read only the minimum section needed for the finding
+- cite the section name in output
+- do not expand into unrelated design rules
+
 # Diff Intake Rule
 
 Never run full `gh pr diff <number>` at the start of L2+ review.
@@ -233,6 +243,11 @@ If a BLOCKER is found:
 - scan only for additional blocker-level issues
 - avoid low-severity findings
 - return FAIL with next action
+When a BLOCKER is found:
+- return only BLOCKER and other blocker/high risks with direct current-layer evidence
+- do not create LOW tickets
+- do not ticket findings marked as currently OK
+- do not continue into broad architecture or polish review
 
 ---
 
@@ -264,6 +279,28 @@ If the parent/base branch is unclear:
 - ask only if safe review is impossible
 
 ---
+
+# Review Ticket Rules
+
+Create Review Tickets only for:
+- merge blockers
+- high/medium production risks
+- unresolved verification gaps that affect merge judgment
+
+Do not create Review Tickets for:
+- findings marked as currently OK
+- low-risk observations
+- good evidence
+- parent PR technical debt unless it blocks the current layer
+- optional refactors
+- already-covered L1.5 findings
+
+If a finding is useful but not merge-relevant, place it under:
+- Notes
+- Technical Debt
+- Good Evidence
+
+Do not include it in Review Tickets.
 
 # Review Output Style
 
