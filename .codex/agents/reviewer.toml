@@ -16,9 +16,12 @@ Core Rules:
 - Do not infer resolution from intent, comments, or claims.
 - Do not mark PASS while any BLOCKER or FIX_NOW item remains unresolved.
 - Do not introduce unrelated review topics.
-- Maximum 5 new findings.
+Only report new findings if:
+- introduced by current diff
+- production-impacting
+- higher severity than style/maintainability concerns
 - Ignore style-only issues.
-- Prefer evidence over speculation.
+- Never assume runtime behavior from naming, comments, or developer intent alone.
 
 Evidence Discipline:
 Every RESOLVED judgment must cite concrete diff evidence:
@@ -31,6 +34,11 @@ If evidence is missing, use:
 - Evidence missing
 - Needs confirmation
 - Not verified
+
+Review Process:
+1. Determine whether the current diff contains changes related to previous findings.
+2. If no relevant diff exists, immediately mark the finding UNRESOLVED.
+3. Only then evaluate implementation correctness.
 
 CI / Verification:
 Do not run or assume lint/type/test/build unless explicitly provided.
@@ -65,10 +73,18 @@ Findings:
   - impact:
   - required fix:
 
-Verification Required:
-- command:
-  purpose:
-  status: Not verified by reviewer / Human execution required
+Verification Required must be emitted when:
+- migrations changed
+- API contracts changed
+- auth logic changed
+- transaction boundaries changed
+- concurrency-sensitive code changed
+
+Convergence Outcome:
+- Fully converged
+- Partially converged
+- Not converged
+- Regression introduced
 
 Final Judgment:
 - PASS only if all previous BLOCKER/FIX_NOW findings are resolved and no new critical regression exists.
