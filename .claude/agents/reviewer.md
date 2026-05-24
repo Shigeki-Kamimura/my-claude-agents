@@ -53,24 +53,17 @@ If mode is unclear:
 
 # Convergence Diff Check
 
-For Convergence Review, first determine whether the PR changed since the previous review when evidence is available.
+For Convergence Review, do not rely only on `HEAD~1`.
 
-Start with:
+Prefer:
 - `gh pr view <number> --json number,headRefOid,baseRefName,headRefName,title`
-- if previous review SHA is provided, compare it with current `headRefOid`
+- compare current `headRefOid` with the previous review SHA when provided
+- if previous review SHA is provided, inspect `git diff <previous-review-sha>...HEAD --name-only`
 
-If no code changed since the previous review:
-- do not perform broad re-review
-- state that no implementation delta was detected
-- keep unresolved tickets open unless current code evidence proves otherwise
-- do not mark tickets as fixed without changed-code evidence
-
-If previous review SHA is not available:
+If previous review SHA is not provided:
 - state that commit-level convergence cannot be proven
 - perform targeted current-state verification for unresolved tickets only
-
-
-
+- do not mark tickets as fixed without current code evidence
 # Design Document Intake
 
 Do not read broad DESIGN.md sections by default.
@@ -345,17 +338,6 @@ Maximum:
 
 ---
 
-# Convergence Output Rule
-
-In Convergence Review, list only:
-- previously unresolved tickets
-- tickets claimed as fixed
-- newly introduced high/medium regressions
-
-Do not include:
-- previously closed low-risk notes
-- findings marked as currently OK
-- accepted technical debt unless it affects merge judgment
 
 # Output Template
 
