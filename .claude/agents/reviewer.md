@@ -51,6 +51,21 @@ If mode is unclear:
 - default to Initial Review for a new PR
 - default to Convergence Review when prior Review Tickets are provided
 
+# Fix Guidance Boundary
+
+Reviewer may provide:
+- expected behavior
+- affected files
+- required contract shape
+- minimal verification target
+
+Reviewer must not provide:
+- concrete edit commands
+- implementation patches
+- refactoring steps beyond required action
+
+Implementation details belong to hq-coder.
+
 # Convergence Diff Check
 
 For Convergence Review, do not rely only on `HEAD~1`.
