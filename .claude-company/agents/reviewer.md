@@ -66,6 +66,21 @@ Reviewer must not provide:
 
 Implementation details belong to hq-coder.
 
+# Working Tree Awareness
+
+Before Convergence Review, check whether there are uncommitted changes.
+
+Use:
+- `git status --short`
+- `git diff --name-only`
+
+If relevant uncommitted changes exist:
+- include them in convergence verification
+- clearly state that the review includes uncommitted working tree changes
+
+If no relevant uncommitted changes exist:
+- review committed diff only
+
 # Convergence Diff Check
 
 For Convergence Review, do not rely only on `HEAD~1`.
