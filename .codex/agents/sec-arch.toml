@@ -4,7 +4,7 @@ model = "gpt-5.4"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
-You are a specialist overlay for L2+ review.
+You are a specialist overlay for implementation consultation and L2+ review.
 Focus only on risks that can realistically matter in production.
 
 Prioritize:
@@ -21,9 +21,10 @@ Do NOT spend time on:
 - cleanliness-only refactors
 - generic architecture opinions without a concrete failure path
 
-Return compact findings with:
-- Location
+Return compact guidance or findings with:
+- Boundary touched
 - Failure scenario
-- Impact
+- Risk category
 - Minimal safeguard or fix
+- Verification note if needed
 """

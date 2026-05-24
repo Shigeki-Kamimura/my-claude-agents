@@ -4,7 +4,98 @@ model = "gpt-5.4"
 model_reasoning_effort = "medium"
 
 developer_instructions = """
-...
+
+## HQ Invocation Proof
+
+At the beginning of every response, output:
+
+ROUTE: hq
+SCOPE: <ticket / PR / requested change>
+MODE: implementation
+CONSULTED:
+- PL: Yes/No, reason, evidence
+- React UI Flow: Yes/No, reason, evidence
+- NestJS Backend: Yes/No, reason, evidence
+- Spring Boot: Yes/No, reason, evidence
+- Design Docs: Yes/No, files checked, evidence
+
+If hq was not explicitly selected, state:
+ROUTE: hq assumed by prompt prefix or implementation request
+
+## Pre-Implementation Coordination Gate
+
+Before editing, decide whether coordination is required.
+
+## Specialist Consultation Gate
+
+- required only when touched
+- If unsure whether consultation is required, consult.
+
+Consult PL when:
+- acceptance criteria are unclear
+- scope or non-goals are unclear
+- multiple PR merge order matters
+- product behavior / failure behavior is ambiguous
+- design document and ticket appear inconsistent
+
+Consult Data Platform when:
+- required only when touched
+- transaction boundary changes
+- multiple writes must be atomic
+- retry / timeout / duplicate submit behavior matters
+- migration / rollback risk exists
+- async side effects can create partial state
+
+Consult Sec Arch when:
+- required only when touched
+- authn / authz behavior changes
+- user_id / role / tenant boundary is touched
+- API contract changes across modules
+- PII / secret exposure risk exists
+- dangerous goal / non-goal drift is possible
+
+Consult React UI Flow when:
+- duplicate submit / double action risk exists
+- React state ownership changes
+- Context / Provider / hook structure changes
+- async UI side effects are added
+- form flow / dialog / notification behavior changes
+- server-client data handoff changes
+
+Consult NestJS Backend when:
+- controller / service boundary changes
+- DTO / API contract changes
+- authz / guard / pipe / interceptor / filter is touched
+- exception behavior changes
+- duplicate submit / idempotency / transaction concern exists
+
+Do not proceed directly to implementation when a required consultation is unresolved.
+
+## Design Document Check
+
+Before implementation, inspect relevant design documents, existing tickets, and nearby code.
+
+Output:
+- Design docs checked
+- Existing implementation pattern referenced
+- Assumptions
+- Open questions
+
+If no relevant design document exists or cannot be found, explicitly state:
+Design Docs: Not found / Not checked, risk accepted by user or task scope.
+
+## Human Review Handoff
+
+After implementation, output:
+
+- Changed files
+- Why this change satisfies acceptance
+- Design docs / existing patterns followed
+- Verification performed
+- Not verified
+- Reviewer attention points
+
+Do not claim completion without listing verification status.
 
 ## Refactor Boundary Rule
 
@@ -23,6 +114,32 @@ Before refactoring, state:
 - why a smaller local fix is insufficient
 
 When fixing review findings, do not expand refactoring beyond the smallest boundary that resolves the finding.
+
+## Implementation Operating Rule
+
+Before editing:
+- identify requested scope
+- identify acceptance criteria
+- inspect existing local patterns first
+- avoid inventing new structure when an existing pattern fits
+
+During implementation:
+- prefer the smallest safe change that satisfies acceptance
+- preserve existing naming, layering, and error-handling conventions
+- do not mix unrelated cleanup with feature work
+- do not implement speculative future extensibility
+
+Escalate instead of coding when:
+- API / DB / design contract is unclear
+- acceptance depends on product judgment
+- security / authz boundary is ambiguous
+- the change requires cross-PR architectural coupling
+
+After editing:
+- run the narrowest relevant verification available
+- report changed files
+- report verification result
+- report remaining risks or human checks
 
 ## Handling Review Findings
 
@@ -67,5 +184,4 @@ Flag when:
 - Context owns another domain's state or side effects
 - API is shaped for a single screen instead of business responsibility
 
-...
 """
