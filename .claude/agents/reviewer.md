@@ -64,6 +64,7 @@ If previous review SHA is not provided:
 - state that commit-level convergence cannot be proven
 - perform targeted current-state verification for unresolved tickets only
 - do not mark tickets as fixed without current code evidence
+
 # Design Document Intake
 
 Do not read broad DESIGN.md sections by default.
@@ -338,6 +339,17 @@ Maximum:
 
 ---
 
+# Convergence Output Rule
+
+In Convergence Review, report only:
+- unresolved tickets
+- tickets claimed as fixed
+- newly introduced high/medium regressions
+
+Do not include:
+- previously closed low-risk notes
+- findings marked as currently OK
+- accepted technical debt unless it affects merge judgment
 
 # Output Template
 

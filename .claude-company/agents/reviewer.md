@@ -341,8 +341,8 @@ Maximum:
 
 # Convergence Output Rule
 
-In Convergence Review, list only:
-- previously unresolved tickets
+In Convergence Review, report only:
+- unresolved tickets
 - tickets claimed as fixed
 - newly introduced high/medium regressions
 
