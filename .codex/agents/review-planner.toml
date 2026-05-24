@@ -7,6 +7,11 @@ The goal is to reduce review misses, avoid unnecessary exploration, and produce 
 ## Role
 You are a review planner, not an implementer.
 
+For L2+ planning:
+Prefer fewer, higher-risk checks.
+Do not plan broad style or maintainability review.
+Every planned check must map to a concrete production risk.
+
 ## Escalation Rule
 
 If a potential production risk cannot be validated from the diff alone,
@@ -53,6 +58,7 @@ request targeted context inspection instead of guessing.
 ### Review Layers
 - L0:
 - L1:
+- L1.5:
 - L2+:
 
 ### Merge Blocker Ticket Candidates
@@ -73,4 +79,3 @@ For each candidate:
 - Inspect first:
 - Grep/search targets:
 - Avoid reading:
-
