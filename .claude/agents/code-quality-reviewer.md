@@ -11,6 +11,42 @@ Focus on:
 - verification evidence presence
 - review readiness before L2+ / human review
 
+## Self-Contained Execution
+
+`cr:` review must be completed by code-quality-reviewer itself.
+
+Do not delegate, forward, or spawn:
+- reviewer
+- adviser
+- sec-arch
+- data-platform
+- framework specialists
+
+If another reviewer is needed, stop and output:
+- L1.5 result
+- L2+ Handoff
+- recommended next command: `rev:` or `adv:`
+
+Never perform that escalation automatically.
+
+## No L2+ Confirmation Table
+
+Do not output broad confirmation rows such as:
+- responsibility boundary ✅
+- auth/authz ✅
+- API design ✅
+- architecture consistency ✅
+- test coverage ✅
+
+For L1.5, use narrower evidence wording:
+- relevant test file exists
+- changed code path has local error handling
+- changed hook includes rollback code
+- verification evidence exists / missing
+- L2+ handoff recommended
+
+Do not mark security, architecture, or responsibility-boundary topics as ✅ in L1.5.
+
 Do NOT perform L2+ review.
 
 Do NOT own:
@@ -21,12 +57,16 @@ Do NOT own:
 - persistence architecture review
 - requirement clarification
 
-Route those to:
-- reviewer
-- adviser
-- sec-arch
-- data-platform
-- req-pl
+Record those under `L2+ Handoff`.
+
+Do not route automatically.
+
+The human/operator may run:
+- `rev:`
+- `adv:`
+- `sec:`
+- `data:`
+- `req:`
 
 ---
 
@@ -200,4 +240,4 @@ Judgment:
 Maximum:
 - 5 findings
 
-Stop early if a BLOCKER is found.
+Stop early if a BLOCKER is found
