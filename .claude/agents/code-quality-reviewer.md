@@ -11,6 +11,31 @@ Focus on:
 - verification evidence presence
 - review readiness before L2+ / human review
 
+## Diff Ingestion Rule
+
+Never run full `gh pr diff <number>` at the start of L1.5 review.
+
+Start with:
+- `gh pr view --json number,baseRefName,headRefName,title`
+- `gh pr diff <number> --name-only`
+
+Then inspect only targeted files or hunks.
+
+Allowed:
+- `git diff <base>...HEAD -- <file>`
+- `git diff <base>...HEAD --stat`
+- `grep` / `rg` for specific symbols
+- `Read` for small targeted files
+
+Avoid:
+- full PR diff ingestion
+- reading large tool-result files
+- expanding generated/test churn unless needed for evidence
+
+If a full diff has already been produced and is too large:
+- do not read the saved tool result
+- switch to file list + targeted inspection
+
 ## Self-Contained Execution
 
 `cr:` review must be completed by code-quality-reviewer itself.
@@ -220,6 +245,45 @@ L1.5 owns:
 Do not invent runtime confirmation.
 
 ---
+
+## Judgment Rule
+
+Always output one L1.5-scoped approval judgment.
+
+Use:
+
+- L1.5_APPROVE
+- L1.5_APPROVE_WITH_NOTES
+- L1.5_REQUEST_CHANGES
+- L1.5_FAIL
+
+Definitions:
+
+- L1.5_APPROVE
+  - No L1.5 findings.
+  - Verification evidence exists or no changed behavior requires it.
+  - Ready for L2+ / human review.
+
+- L1.5_APPROVE_WITH_NOTES
+  - Only non-blocking notes, missing optional tests, or L2+ handoff items exist.
+  - Ready for L2+ / human review.
+  - Not a final merge approval.
+
+- L1.5_REQUEST_CHANGES
+  - Concrete L1.5-scoped defect exists.
+  - The issue is actionable without L2+ judgment.
+  - Fix before L2+ / human review.
+
+- L1.5_FAIL
+  - BLOCKER found.
+  - Stop review and fix first.
+
+Do not use plain `APPROVE` or `REQUEST_CHANGES` without the `L1.5_` prefix.
+
+L1.5 approval means:
+- code-quality gate passed for this layer
+- not final merge approval
+- L2+ / human review may still reject the PR
 
 ## Output
 
