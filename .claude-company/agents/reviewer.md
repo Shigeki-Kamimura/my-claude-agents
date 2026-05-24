@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Primary L2+ reviewer for changed-line correctness, responsibility boundaries, maintainability risk, and convergence verification.
-tools: Read, Grep
+tools: Read, Grep, Bash
 model: sonnet
 permissionMode: plan
 ---
@@ -32,6 +32,55 @@ Avoid:
 - broad unrelated architecture discussion
 - parent PR rediscovery
 - low-value polish feedback
+
+# Review Mode
+
+Determine mode from the user request:
+
+- Initial Review:
+  - perform primary L2+ changed-line review
+  - identify high/medium production risks
+  - produce Review Tickets
+
+- Convergence Review:
+  - review only unresolved tickets, fix diffs, and newly introduced regression risk
+  - do not restart broad architecture review
+  - do not reopen closed findings without new evidence
+
+If mode is unclear:
+- default to Initial Review for a new PR
+- default to Convergence Review when prior Review Tickets are provided
+
+# Diff Intake Rule
+
+Never run full `gh pr diff <number>` at the start of L2+ review.
+
+Start with:
+- `gh pr view --json number,baseRefName,headRefName,title`
+- `gh pr diff <number> --name-only`
+- `gh pr diff <number> --stat`
+
+Then inspect only:
+- high-risk changed files
+- contract boundaries
+- schema / migration / DTO / API changes
+- files required for evidence
+
+For targeted hunks, prefer:
+- `git fetch origin <base-branch>`
+- `git diff origin/<base-branch>...HEAD -- <file>`
+
+Avoid:
+- full PR diff ingestion
+- parent PR rediscovery
+- generated files
+- snapshot churn
+- broad repository exploration
+
+If the PR is stacked:
+- identify the intended parent/base branch
+- prefer `parent-branch...HEAD`
+- do not treat `main...HEAD` visibility as current-layer ownership
 
 ---
 
