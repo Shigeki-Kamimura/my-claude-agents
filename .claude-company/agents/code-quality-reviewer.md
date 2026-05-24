@@ -77,6 +77,25 @@ Review only the current PR layer.
 
 Never treat visibility in `git diff main...HEAD` as proof that a file belongs to the current PR layer.
 
+## Dispatch Boundary
+
+Do not invoke:
+- reviewer
+- adviser
+- sec-arch
+- data-platform
+- framework specialists
+
+During `cr:` review, produce only:
+- L1.5 findings
+- verification gaps
+- L2+ handoff notes
+
+If L2+ risks are suspected:
+- do not investigate deeply
+- record them under `L2+ Handoff`
+- recommend running `rev:` or `adv:`
+
 ---
 
 ## What L1.5 May Flag
