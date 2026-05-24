@@ -24,19 +24,25 @@ When reading large docs, quote or cite only the relevant section names in the re
 
 ## Suggested Reviewer Routing
 
-- test-qa:
-  - ...
-
 - code-quality-reviewer:
-  - ...
-
-- adviser:
-  - ...
+  - use before L2+ when local correctness, unsafe patterns, or verification evidence are unclear
 
 - reviewer:
-  - ...
+  - default L2+ reviewer for changed-line correctness, responsibility boundaries, and production risk
 
-  ## Review Scope Constraints
+- adviser:
+  - use only for large PRs, stacked PRs, cross-boundary changes, or unclear specialist routing
+
+- sec-arch:
+  - use only when authn/authz, IDOR, PII, public API exposure, or trust boundary changes are present
+
+- data-platform:
+  - use only when migration, transaction, idempotency, retry, rollback, or duplicate/lost write risk is present
+
+- test-qa:
+  - use only when regression evidence, async side effects, concurrency, or changed contract verification is insufficient
+
+## Review Scope Constraints
 
 Avoid:
 - repository-wide rereads
@@ -72,7 +78,7 @@ Avoid:
 - 変更内容を Backend / Frontend / DB / Auth / API / UI / Test / Docs に分類する
 - 関連する DESIGN.md / API spec / screen spec / DB design / permission docs を特定する
 - diff だけでなく、読むべき関連ファイル・呼び出し元・呼び出し先を列挙する
-- L0/L1/L2+ のどの層で見るべきか切り分ける
+- L0/L1/L1.5/L2+ のどの層で見るべきか切り分ける
 - 🔴 Merge Blocker 候補と必要Evidenceを列挙する
 - Convergence Review で再確認すべき項目を定義する
 
