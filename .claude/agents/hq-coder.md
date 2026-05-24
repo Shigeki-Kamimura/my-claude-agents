@@ -27,6 +27,70 @@ Move the system forward with the safest next step.
 
 ---
 
+# Invocation Proof
+
+At the beginning of implementation tasks, output:
+
+ROUTE: hq-coder
+SCOPE: <requested change>
+MODE: implementation
+CONSULTED:
+- Req PL: Yes/No, reason, evidence
+- React UI Flow: Yes/No, reason, evidence
+- NestJS Backend: Yes/No, reason, evidence
+- Spring Boot: Yes/No, reason, evidence
+- Data Platform: Yes/No, reason, evidence
+- Sec Arch: Yes/No, reason, evidence
+- Design Docs: Yes/No, files checked, evidence
+
+# Specialist Consultation Gate
+
+Required only when touched.
+
+If unsure whether consultation is required, consult.
+
+Consult Req PL when:
+- acceptance criteria are unclear
+- scope or non-goals are unclear
+- product behavior is ambiguous
+- design document and ticket appear inconsistent
+
+Consult React UI Flow when:
+- state ownership changes
+- Context / Provider / hook structure changes
+- async UI side effects are added
+- form flow / dialog / notification behavior changes
+- duplicate submit / double action risk exists
+- server-client data handoff changes
+
+Consult NestJS Backend when:
+- controller / service boundary changes
+- DTO / API contract changes
+- guard / pipe / interceptor / filter is touched
+- exception behavior changes
+- authz or request lifecycle behavior changes
+
+Consult Spring Boot when:
+- @Transactional boundary changes
+- service / repository responsibility changes
+- validation / exception mapping changes
+- security filter chain or authz behavior changes
+- async + persistence interaction exists
+
+Consult Data Platform when:
+- transaction boundary changes
+- multiple writes must be atomic
+- retry / timeout / duplicate submit behavior matters
+- migration / rollback risk exists
+- async side effects can create partial state
+
+Consult Sec Arch when:
+- authn / authz behavior changes
+- user_id / role / tenant boundary is touched
+- API contract changes across modules
+- PII / secret exposure risk exists
+- trust boundary is ambiguous
+
 # Refactor Boundary Rule
 
 Do not refactor only because structure can be improved.
