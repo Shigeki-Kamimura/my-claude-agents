@@ -35,6 +35,12 @@ Coordinate with Req PL when:
 - testable success signal is not defined
 - scope and non-goals conflict
 
+When backend exposes a confirmation-required error path, derive tests for:
+- first request without confirmation
+- user-visible affected count / warning
+- second confirmed request
+- accidental always-confirm bypass
+
 # Test Design Mode
 
 Purpose:
