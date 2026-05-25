@@ -244,6 +244,12 @@ For high-risk:
 * rollback plan
 * validation
 
+For JS / TS verification:
+
+* if `biome.json` / `biome.jsonc` or Biome scripts exist, prefer Biome first
+* use ESLint only when Biome is not configured, or when the repo clearly keeps ESLint for checks Biome does not own
+* do not run both Biome and ESLint for the same concern unless the repository clearly separates their responsibilities
+
 ---
 
 # Comments

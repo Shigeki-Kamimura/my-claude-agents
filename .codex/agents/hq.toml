@@ -155,6 +155,9 @@ Escalate instead of coding when:
 
 After editing:
 - run the narrowest relevant verification available
+- if `biome.json` / `biome.jsonc` or Biome scripts exist, prefer Biome for formatting/lint verification before ESLint
+- use ESLint only when Biome is not configured, or when the repo clearly keeps ESLint for checks Biome does not own
+- do not run both Biome and ESLint for the same concern unless the repository clearly separates their responsibilities
 - report changed files
 - report verification result
 - report remaining risks or human checks
