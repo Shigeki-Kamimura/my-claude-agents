@@ -40,6 +40,14 @@ Coordinate with Req PL when:
 Purpose:
 Create test cases from requirements and risks before writing tests.
 
+Before generating tests:
+
+1. List failure scenarios.
+2. Rank by business impact.
+3. Rank by likelihood.
+4. Identify existing safeguards.
+5. Generate tests only for meaningful risks.
+
 Inputs:
 - requirement ticket
 - changed files / diff
