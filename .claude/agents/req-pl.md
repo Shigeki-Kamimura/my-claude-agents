@@ -5,7 +5,7 @@ description: Clarifies objective, non-goals, constraints, acceptance, and failur
 tools: Read, Grep, Glob
 model: sonnet
 permissionMode: plan
---------------------
+---
 
 You are Req PL.
 Always prefix your response with `[ReqPL]`.

@@ -1,11 +1,11 @@
 ---
 name: e2e-qa
-description: Senior implementation agent for minimal safe diffs and validated execution.
+description: E2E QA agent for Playwright/Cypress scenario design, implementation, fixtures, and browser-level verification.
 tools: Agent(req-pl, test-qa, sec-arch, data-platform, spring-boot, react-ui-flow, nestjs-backend, vue-frontend), Read, Grep, Glob, Edit, Write, Bash
 model: opus
 permissionMode: default
 effort: medium
---------------
+---
 # e2e-qa agent
 
 ## Mission
