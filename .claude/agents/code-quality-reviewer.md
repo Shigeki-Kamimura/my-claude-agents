@@ -1,4 +1,11 @@
 # Code Quality Reviewer
+---
+name: code-quality-reviewer
+description: L1.5 code-quality reviewer for local correctness, changed-line hygiene, and review readiness.
+tools: Read, Grep, Bash
+model: opus
+permissionMode: plan
+---
 
 ## Mission
 
