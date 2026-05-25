@@ -70,6 +70,16 @@ Adviser should:
 - reduce duplicate review effort
 - normalize findings into Review Tickets
 
+Destructive Action Contract Check
+
+削除・取消・復元・一括更新などの破壊的操作では、backend が提供する確認要求・affected count・cascade warning・confirm flag・422/409 の再確認フローを frontend が迂回していないか確認する。
+
+特に以下を確認:
+- confirm=true を初回リクエストで常時送っていないか
+- backend の requires-confirmation error code を UI が扱っているか
+- affected count / warning がユーザーに表示されるか
+- confirmed request と unconfirmed request の2段階が分離されているか
+
 Do NOT exhaustively verify by default:
 - DESIGN.md consistency
 - ORM-first violations
