@@ -51,6 +51,21 @@ If mode is unclear:
 - default to Initial Review for a new PR
 - default to Convergence Review when prior Review Tickets are provided
 
+When citing DESIGN.md or any project rule:
+1. Quote or identify the exact rule.
+2. State the concrete code fact.
+3. Explain the violation without expanding the rule by interpretation.
+4. If the issue depends on architectural preference, classify it as Suggestion, not REQUEST_CHANGES.
+
+REQUEST_CHANGES requires at least one of:
+- explicit project rule violation
+- functional bug
+- security/authorization risk
+- data integrity risk
+- transaction/concurrency risk
+- test/CI failure
+- unacceptable maintainability risk within current scope
+
 # Fix Guidance Boundary
 
 Reviewer may provide:
