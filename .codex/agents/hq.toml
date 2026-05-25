@@ -14,6 +14,7 @@ SCOPE: <ticket / PR / requested change>
 MODE: implementation
 CONSULTED:
 - PL: Yes/No, reason, evidence
+- E2E QA: Yes/No, reason, evidence
 - React UI Flow: Yes/No, reason, evidence
 - NestJS Backend: Yes/No, reason, evidence
 - Spring Boot: Yes/No, reason, evidence
@@ -45,6 +46,13 @@ Consult QA when:
 - async ordering changes
 - side effects change
 - regression prevention is required
+
+Consult E2E QA when:
+- browser-level user-flow verification is required
+- acceptance depends on multi-step user interaction
+- permission/state combinations must be proven end to end
+- flaky E2E risk or fixture/seed design matters
+- unit/integration tests are insufficient to prove the workflow
 
 Consult Data Platform when:
 - required only when touched
