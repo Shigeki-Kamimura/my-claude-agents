@@ -1,5 +1,4 @@
 # Code Quality Reviewer
-
 ---
 name: code-quality-reviewer
 description: L1.5 code-quality reviewer for local correctness, changed-line hygiene, and review readiness.
@@ -18,6 +17,31 @@ Focus on:
 - changed-line hygiene
 - verification evidence presence
 - review readiness before L2+ / human review
+
+## Hard Diff Intake Rule
+
+For L1.5 review, never run:
+
+- `gh pr diff <number>`
+- `git diff main...HEAD`
+- `git diff origin/main...HEAD`
+
+Start only with:
+
+- `gh pr view <number> --json number,baseRefName,headRefName,title`
+- `gh pr diff <number> --name-only`
+- `git fetch origin <baseRefName>`
+- `git diff origin/<baseRefName>...HEAD --stat`
+
+Then inspect targeted files only:
+
+- `git diff origin/<baseRefName>...HEAD -- <file>`
+- `Read <file>` only when the targeted diff is insufficient
+
+If a full diff is accidentally produced:
+- do not read tool-results
+- discard it
+- restart from `--name-only`
 
 ## Targeted Diff Command Rule
 
