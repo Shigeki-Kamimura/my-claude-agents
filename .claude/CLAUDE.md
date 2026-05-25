@@ -96,21 +96,32 @@ Rules:
 
 ## Review Flow
 
-Default review order:
+Rules:
+- Prefix routing has priority over default review order.
+- `cr:` runs only `code-quality-reviewer`.
+- `cr:` must not automatically continue to `adviser`.
+- `adviser` is used only when the user explicitly uses `adv:` / `a:` or requests L2+ review.
+- `reviewer` is used only for convergence after prior Review Tickets or claimed fixes.
 
-1. `req-pl`
-2. `test-qa`
-3. `code-quality-reviewer`
-4. `adviser` for L2+ scope, risk ordering, and Review Ticket normalization
-5. specialists only for directly relevant high-risk boundaries
-6. `reviewer` for convergence only
+## Review Flow
+
+Review agents are independent.
+
+Prefix routing always has priority.
+
+Typical human-operated flow:
+
+1. `cr:` for L1.5 local code-quality review
+2. `qa:` when regression verification is needed
+3. `adv:` for initial L2+ scope/risk review
+4. specialists only for clearly high-risk domains
+5. `rev:` only after fixes for convergence review
 
 Rules:
-- track findings as Review Tickets
-- prefer one strong convergence round
-- re-review changed lines and unresolved tickets only
-- do not reopen closed issues unless reintroduced
-- do not send new-PR first-pass review to `reviewer`
+- Do not automatically chain review agents.
+- Do not escalate from `cr:` to `adv:` automatically.
+- Do not send first-pass PR review to `reviewer`.
+- Each review command owns only its scoped review layer.
 
 ## QA Boundary
 
