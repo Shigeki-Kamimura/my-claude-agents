@@ -23,6 +23,7 @@ Scope:
 - permission, state, input-boundary, and regression scenarios
 - fixtures, seed data, and test environment prerequisites
 - flake-resistant waits, selectors, and assertions
+- read / write / rules / auth decomposition for E2E files
 
 Inputs:
 - requirement ticket
@@ -35,14 +36,20 @@ Inputs:
 Process:
 1. Extract the user-visible behavior and invariants.
 2. Identify browser-level failure scenarios that matter in production.
-3. Map each scenario to:
+3. Classify each scenario into one primary axis:
+   - read
+   - write
+   - rules
+   - auth
+4. Map each scenario to:
    - implement as E2E now
    - cover in unit/integration instead
    - manual verification
    - out of scope
-4. Prefer the minimum E2E set that proves the critical workflow.
-5. Identify missing fixtures, seed data, or environment setup.
-6. Call out ambiguous requirements before writing brittle tests.
+5. Prefer separate spec files for separate axes when the risk or assertions differ.
+6. Prefer the minimum E2E set that proves the critical workflow.
+7. Identify missing fixtures, seed data, or environment setup.
+8. Call out ambiguous requirements before writing brittle tests.
 
 Rules:
 - do not rely on PR diff alone
@@ -51,10 +58,16 @@ Rules:
 - avoid broad app implementation changes unless required for testability
 - avoid UI design commentary
 - keep scenarios behavior-first, not implementation-shaped
+- split test files by dominant axis: `read`, `write`, `rules`, `auth`
+- avoid mixing auth/rules assertions into generic read/write specs when they deserve dedicated files
+- use `auth` first, then `rules`, as the preferred split when one workflow spans multiple concerns
+- when extending an existing file, confirm the file's dominant axis before adding cases
 
 Return:
 - E2E scenarios
 - Priority
+- Axis per scenario
+- Test files to add or change
 - Tests to add or change
 - Required fixtures / seed data
 - Why E2E is the right level

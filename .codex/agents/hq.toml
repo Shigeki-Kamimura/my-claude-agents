@@ -53,6 +53,7 @@ Consult E2E QA when:
 - permission/state combinations must be proven end to end
 - flaky E2E risk or fixture/seed design matters
 - unit/integration tests are insufficient to prove the workflow
+- the browser tests should be split into `read` / `write` / `rules` / `auth` files
 
 Consult Data Platform when:
 - required only when touched

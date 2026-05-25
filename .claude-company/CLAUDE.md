@@ -117,6 +117,8 @@ Rules:
 - `test-qa` owns unit/integration regression planning and high-signal verification gaps.
 - `e2e-qa` owns Playwright/Cypress scenario design and implementation for user-flow coverage.
 - Use `e2e-qa` only when behavior must be proven through browser-level user actions.
+- Prefer structuring E2E by `read` / `write` / `rules` / `auth`.
+- Split browser tests by dominant risk axis instead of feature size alone.
 
 ---
 

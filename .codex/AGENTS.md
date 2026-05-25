@@ -38,6 +38,7 @@ Rules:
 - Implementation must route to hq.
 - L0/L1 verification must route to qa.
 - Browser-level E2E design/verification must route to e2e-qa.
+- Prefer E2E decomposition by `read` / `write` / `rules` / `auth`.
 - Requirement clarification must route to pl.
 - Review planning must route to review-planner.
 - L2+ review/convergence review must route to reviewer.
@@ -59,6 +60,7 @@ Never silently inline delegated work.
 - implementation -> hq-coder
 - L0/L1 verification -> test-qa
 - browser-level E2E design/verification -> e2e-qa
+  organize by `read` / `write` / `rules` / `auth`
 - L1.5 code quality review -> code-quality-reviewer
 - L2+ review -> adviser
 - convergence review -> reviewer
