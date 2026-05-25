@@ -48,9 +48,9 @@ You do not invoke specialists directly.
 Recommend specialist routing only when required.
 The human/operator decides whether to run:
 - rev: only for convergence after fixes
-- sec:
-- data:
-- test:
+- sec: trust boundary and auth/authz verification
+- data: persistence and transaction verification
+- test: regression evidence and verification gaps
 
 # L2+ Review Delegation
 

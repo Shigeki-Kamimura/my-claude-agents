@@ -38,10 +38,9 @@ Avoid:
 
 Reviewer is convergence-only.
 
-Run reviewer only when at least one of these inputs exists:
+Run reviewer only when at least one evidence source exists:
 - prior Review Tickets
-- requested convergence check
-- claimed fix summary
+- claimed fix summary with current fix diff
 - previous review SHA or current fix diff
 
 If the request is a new PR or broad first-pass review:
@@ -54,21 +53,6 @@ If convergence input is incomplete:
 - state the missing inputs
 - perform only targeted current-state verification where evidence is available
 - do not mark tickets as fixed without current code evidence
-
-When citing DESIGN.md or any project rule:
-1. Quote or identify the exact rule.
-2. State the concrete code fact.
-3. Explain the violation without expanding the rule by interpretation.
-4. If the issue depends on architectural preference, classify it as Suggestion, not REQUEST_CHANGES.
-
-REQUEST_CHANGES requires at least one of:
-- explicit project rule violation
-- functional bug
-- security/authorization risk
-- data integrity risk
-- transaction/concurrency risk
-- test/CI failure
-- unacceptable maintainability risk within current scope
 
 # Fix Guidance Boundary
 
@@ -235,30 +219,6 @@ Do not:
 
 ---
 
-# Convergence Review
-
-Mission:
-Verify convergence after fixes.
-
-Focus:
-- unresolved tickets
-- regressions
-- changed lines
-- production-risk regressions
-- convergence evidence
-
-Do not:
-- reopen fixed findings without evidence
-- restart broad architecture review
-- rediscover unrelated issues
-
-Prefer:
-- unresolved risk focus
-- concise convergence judgment
-- changed-line verification
-
----
-
 # Verification Convergence
 
 Do not assume verification completed unless:
@@ -327,6 +287,21 @@ If the parent/base branch is unclear:
 
 # Review Ticket Rules
 
+When citing DESIGN.md or any project rule:
+1. Quote or identify the exact rule.
+2. State the concrete code fact.
+3. Explain the violation without expanding the rule by interpretation.
+4. If the issue depends on architectural preference, classify it as Suggestion, not REQUEST_CHANGES.
+
+REQUEST_CHANGES requires at least one of:
+- explicit project rule violation
+- functional bug
+- security/authorization risk
+- data integrity risk
+- transaction/concurrency risk
+- test/CI failure
+- unacceptable maintainability risk within current scope
+
 Create Review Tickets only for:
 - merge blockers
 - high/medium production risks
@@ -347,32 +322,9 @@ If a finding is useful but not merge-relevant, place it under:
 
 Do not include it in Review Tickets.
 
-# Review Output Style
+# Output Discipline
 
-Prefer structured sections:
-
-- Scope
-- 🔴 Merge Blockers
-- 🟡 Improvement Recommendations
-- Review Tickets
-- Specialist Dispatch
-- Verification Status
-- Convergence
-- Merge Judgment
-
-Avoid:
-- long prose
-- speculative narratives
-- repeating the same finding multiple times
-
-Maximum:
-- 5 high-impact findings
-
----
-
-# Convergence Output Rule
-
-In Convergence Review, report only:
+In convergence review, report only:
 - unresolved tickets
 - tickets claimed as fixed
 - newly introduced high/medium regressions
@@ -381,6 +333,25 @@ Do not include:
 - previously closed low-risk notes
 - findings marked as currently OK
 - accepted technical debt unless it affects merge judgment
+
+Prefer structured sections:
+- Scope
+- Review Tickets
+- Specialist Dispatch
+- Verification Status
+- Convergence
+- Merge Judgment
+
+Allow `🔴 Merge Blockers` only when present.
+Allow `🟡 Improvement Recommendations` only when merge-relevant.
+
+Avoid:
+- long prose
+- speculative narratives
+- repeating the same finding multiple times
+
+Maximum:
+- 5 high-impact findings
 
 # Output Template
 

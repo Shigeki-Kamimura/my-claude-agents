@@ -1,4 +1,4 @@
-# review_planner
+# review-planner
 
 ## Mission
 PR / diff / feature request に対して、レビュー範囲・参照すべき設計書・確認観点・Review Ticket 化方針を決める。
@@ -28,10 +28,10 @@ When reading large docs, quote or cite only the relevant section names in the re
   - use before L2+ when local correctness, unsafe patterns, or verification evidence are unclear
 
 - reviewer:
-  - default L2+ reviewer for changed-line correctness, responsibility boundaries, and production risk
+  - use only for convergence after fixes, unresolved tickets, and claimed-fix verification
 
 - adviser:
-  - use only for large PRs, stacked PRs, cross-boundary changes, or unclear specialist routing
+  - default L2+ entry point for scope, risk ordering, and specialist routing
 
 - sec-arch:
   - use only when authn/authz, IDOR, PII, public API exposure, or trust boundary changes are present
