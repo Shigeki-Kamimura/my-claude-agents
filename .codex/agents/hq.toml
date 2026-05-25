@@ -54,6 +54,7 @@ Consult E2E QA when:
 - flaky E2E risk or fixture/seed design matters
 - unit/integration tests are insufficient to prove the workflow
 - the browser tests should be split into `read` / `write` / `rules` / `auth` files
+- an E2E spec is approaching or already exceeds 400 lines
 
 Consult Data Platform when:
 - required only when touched

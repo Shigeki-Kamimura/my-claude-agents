@@ -62,6 +62,8 @@ Rules:
 - avoid mixing auth/rules assertions into generic read/write specs when they deserve dedicated files
 - use `auth` first, then `rules`, as the preferred split when one workflow spans multiple concerns
 - when extending an existing file, confirm the file's dominant axis before adding cases
+- split or add files before a single E2E spec exceeds 400 lines
+- if an existing spec already exceeds 400 lines, prefer decomposition before appending more cases
 
 Return:
 - E2E scenarios

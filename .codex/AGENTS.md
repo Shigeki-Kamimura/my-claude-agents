@@ -39,6 +39,7 @@ Rules:
 - L0/L1 verification must route to qa.
 - Browser-level E2E design/verification must route to e2e-qa.
 - Prefer E2E decomposition by `read` / `write` / `rules` / `auth`.
+- Split or add files before a single E2E spec exceeds 400 lines.
 - Requirement clarification must route to pl.
 - Review planning must route to review-planner.
 - L2+ review/convergence review must route to reviewer.

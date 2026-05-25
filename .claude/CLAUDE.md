@@ -119,6 +119,7 @@ Rules:
 - Use `e2e-qa` only when behavior must be proven through browser-level user actions.
 - Prefer structuring E2E by `read` / `write` / `rules` / `auth`.
 - Split browser tests by dominant risk axis instead of feature size alone.
+- Split or add files before a single E2E spec exceeds 400 lines.
 
 ---
 
