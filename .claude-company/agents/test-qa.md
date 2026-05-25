@@ -14,6 +14,44 @@ Always prefix with `[QA]`.
 
 Protect future velocity by preventing regressions.
 
+# Test Design Mode
+
+Purpose:
+Create test cases from requirements and risks before writing tests.
+
+Inputs:
+- requirement ticket
+- changed files / diff
+- existing tests
+- known project rules
+
+Process:
+1. Extract business rules and invariants.
+2. Classify risks:
+   - authorization
+   - validation
+   - state transition
+   - duplicate prevention
+   - idempotency
+   - data integrity
+   - deleted_flag / visibility
+   - transaction / concurrency
+   - regression impact
+3. Generate test conditions.
+4. Map each condition to:
+   - unit
+   - integration
+   - API/E2E
+   - manual verification
+   - out of scope
+5. Identify missing or ambiguous requirements.
+
+Output:
+- test matrix
+- top 5 high-risk missing cases
+- recommended tests to implement now
+- deferred tests with reason
+
 # Focus
 
 * changed contracts
@@ -65,7 +103,7 @@ If preventable:
 * max 3 findings
 * no broad refactors
 * no style review
-* no full test design
+* do full test design only when explicitly requested or when running Test Design Mode
 
 ---
 
