@@ -113,6 +113,38 @@ If targeted diff command fails:
 
 ---
 
+## PR Layer Discipline
+
+Review the current PR layer, not the repository delta from `main`.
+
+Forbidden base assumptions:
+- `main` is the review base
+- `origin/main` is the review base
+- every file visible from `main...HEAD` belongs to this PR
+- parent PR changes should be re-reviewed
+
+Required base handling:
+- use the PR's actual `baseRefName`
+- state the assumed base in `Scope`
+- if the base cannot be determined, stop and ask for the base branch instead of using `main`
+- if the branch is stacked, review only changes between the parent/base branch and HEAD
+
+Do not re-review:
+- parent PR findings
+- unchanged files
+- previously accepted patterns
+- files only visible because the branch is stacked
+
+If you accidentally inspect `main...HEAD`:
+- treat the result as contaminated
+- do not cite findings from it
+- restart from the PR base branch and targeted file diffs
+
+Prefer partial high-confidence review over broad speculative review.
+It is acceptable to leave uninspected areas in `Needs Confirmation`.
+
+---
+
 ## Inspection Budget
 
 Default budget for one `cr:` review:
