@@ -68,6 +68,34 @@ When using tests as merge evidence:
 - distinguish tested behavior from assumed behavior
 - do not mark verification sufficient from filenames alone
 
+E2E Evidence Rule:
+When using E2E tests as merge evidence:
+- inspect relevant E2E spec files or execution output
+- state exact covered behavior
+- distinguish tested behavior from assumed behavior
+- do not mark verification sufficient from filenames alone
+- do not treat newly added tests as evidence unless execution evidence exists
+- if E2E was blocked by fixture/factory/seed/type issues, mark verification insufficient
+
+For each E2E claim include:
+- spec file
+- behavior
+- positive/negative case
+- execution evidence or missing evidence
+
+E2E Boundary Violation Check:
+Review for:
+- E2E agent modifying fixtures/factories/seeds/app source excessively
+- shared infra changed only to make tests pass
+- E2E compensating for unclear requirements
+- production behavior silently reshaped for testability
+- E2E scope exceeding verification responsibility
+
+If detected:
+- emit a merge-relevant finding
+- require routing to req-pl / qa / hq-coder
+- do not silently accept the workaround
+
 Review Process:
 1. Determine whether the current diff contains changes related to previous findings.
 2. If no relevant diff exists, immediately mark the finding UNRESOLVED.
