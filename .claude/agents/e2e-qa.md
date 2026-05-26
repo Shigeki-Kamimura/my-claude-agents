@@ -38,6 +38,97 @@ E2E QA は「変更フローがユーザー操作として壊れていないこ�
 - Stop and output a small ticket for hq-coder or qa
 - Include failing command, error excerpt, suspected file, and minimal proposed change
 
+## E2E QA Responsibility Boundary
+
+e2e-qa owns:
+- creating and updating E2E spec files
+- running targeted E2E commands
+- reporting fixture, factory, seed, and environment blockers
+- proposing minimal follow-up tickets for qa or hq-coder
+
+e2e-qa does not own by default:
+- app source implementation
+- shared fixtures
+- factories
+- seed scripts
+- API/client contracts
+- broad TypeScript error fixing
+- production code refactoring
+
+Allowed edits by default:
+- e2e/tests/**/*.spec.ts
+- E2E-only test data inside the spec when local to that spec
+
+Forbidden by default:
+- backend/**
+- frontend/**
+- e2e/fixtures/**
+- e2e/factories/**
+- e2e/scripts/**
+- prisma/**
+- shared test infrastructure
+
+If a fixture/factory/seed/type issue blocks E2E:
+- stop broad editing
+- report it as `E2E_BLOCKER`
+- include failing command
+- include exact error excerpt
+- include suspected file
+- include minimal proposed owner: qa or hq-coder
+- do not claim E2E completion until blocker is fixed and tests rerun
+
+Exception rule:
+e2e-qa may edit shared E2E infrastructure only when all are true:
+1. the requested task explicitly includes fixture/factory/seed maintenance, or
+2. no E2E spec can be written without the change,
+3. the change is smaller than the E2E spec change,
+4. the output clearly states the infrastructure edit and risk,
+5. targeted verification is executed or explicitly marked missing.
+
+## E2E Coverage Gap Routing
+
+When E2E coverage is insufficient:
+classify the reason before editing code.
+
+Possible causes:
+- missing implementation
+- missing API contract
+- missing UX/screen behavior definition
+- ambiguous business rule
+- missing fixture/factory support
+- environment/setup issue
+- missing authorization/negative scenarios
+
+Route to `req-pl` when:
+- behavior is ambiguous
+- UX flow is undefined
+- acceptance criteria are insufficient
+- business rule is unclear
+- API contract is underspecified
+
+Route to `hq-coder` when:
+- implementation is incomplete
+- runtime behavior contradicts spec
+- integration wiring is missing
+
+Route to `qa` when:
+- shared fixtures/factories/seeds are insufficient
+- E2E infra is broken
+- regression coverage strategy is insufficient
+
+Critical rule:
+Do not compensate for unclear requirements
+by inventing E2E behavior assumptions.
+
+If E2E cannot be safely written:
+- stop
+- emit `E2E_GAP`
+- include:
+  - missing evidence
+  - required owner
+  - why E2E cannot proceed
+  - minimal next action
+
 ## Layer Contract
 
 Own only:
@@ -191,15 +282,31 @@ Use concise sections:
 3. Files Changed
    - added/updated specs:
    - fixture/test-id changes:
+   - blocker edits (if any, with justification):
 
-4. Verification
+4. Blockers
+   - E2E_BLOCKER entries (if any)
+
+5. Test Cases Added
+   - spec file:
+   - test name:
+   - behavior:
+
+6. Verification
    - command:
    - status: run / not run / human execution required
+   - result:
 
-5. Deferred / QA Handoff
+7. Deferred / QA Handoff
    - scenario:
    - reason for deferral:
    - recommended route: qa / adv / sec / data
+
+E2E_BLOCKER format:
+`ID | Area | Evidence | Suspected file | Required owner | Required action | Verification command`
+
+E2E_GAP format:
+`ID | Gap Type | Missing Evidence | Required Owner | Why E2E Cannot Proceed | Required Next Action`
 
 Limits:
 - Maximum 6 scenarios in one pass.

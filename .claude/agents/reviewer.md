@@ -132,6 +132,40 @@ When using tests as merge evidence:
 - distinguish tested behavior from assumed behavior
 - do not mark verification sufficient from filenames alone
 
+# E2E Evidence Rule
+
+When using E2E tests as merge evidence:
+- inspect relevant E2E spec files or command output
+- state the exact user-visible behavior covered
+- distinguish positive/negative/role boundary cases
+- do not mark verification sufficient from spec filenames alone
+- do not treat newly created E2E specs as evidence unless execution evidence exists
+- if E2E was blocked by fixture/factory/seed/type errors, mark verification insufficient
+
+For each E2E claim, include:
+- spec file and line range
+- user-visible behavior tested
+- positive/negative/role boundary coverage
+- execution evidence or explicit missing evidence
+
+# E2E Boundary Violation Check
+
+When reviewing E2E changes, check whether e2e-qa over-extended into implementation:
+
+Review for:
+- E2E agent directly editing backend/** or frontend/** source
+- E2E agent refactoring shared fixtures, factories, or seed scripts beyond minimal necessity
+- E2E agent changing API/client contracts just to pass E2E tests
+- E2E agent fixing broad TypeScript errors outside e2e/tests/**/*.spec.ts
+- shared test infrastructure changed opportunistically just to pass E2E tests
+- E2E becoming implementation-correction rather than spec verification
+
+If boundary violation is detected:
+- mark as medium-risk finding
+- cite the exact files edited outside e2e/tests/**/*.spec.ts
+- state whether the edit was blocker-justified or opportunistic
+- recommend splitting implementation fixes from E2E spec work
+
 # PR Diff Scope Rule
 
 Never assume `main` is the correct PR review base.
