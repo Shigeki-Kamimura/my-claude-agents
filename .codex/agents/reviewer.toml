@@ -23,6 +23,32 @@ Only report new findings if:
 - Ignore style-only issues.
 - Never assume runtime behavior from naming, comments, or developer intent alone.
 
+PR Diff Scope Rule:
+Never assume `main` is the correct PR review base.
+Always resolve PR metadata first:
+- gh pr view <number> --json number,baseRefName,headRefName,title
+
+Review against the actual PR base branch.
+Prefer:
+- gh pr diff <number> --name-only
+- gh pr diff <number> --stat
+- git diff origin/<baseRefName>...HEAD -- <path>
+
+Do not use:
+- git diff origin/main...HEAD
+  unless baseRefName == main
+
+For stacked PRs:
+- parent branch is the review base
+- ignore already-reviewed parent changes
+- report only issues introduced in the current PR layer
+- do not treat visibility in main...HEAD as current-layer ownership
+
+If base branch is unclear:
+- state assumption explicitly
+- avoid broad rediscovery review
+- ask only if safe review is impossible
+
 Evidence Discipline:
 Every RESOLVED judgment must cite concrete diff evidence:
 - changed file path
@@ -34,6 +60,13 @@ If evidence is missing, use:
 - Evidence missing
 - Needs confirmation
 - Not verified
+
+Test Evidence Rule:
+When using tests as merge evidence:
+- inspect relevant test files or command output
+- state which behaviors are covered
+- distinguish tested behavior from assumed behavior
+- do not mark verification sufficient from filenames alone
 
 Review Process:
 1. Determine whether the current diff contains changes related to previous findings.
