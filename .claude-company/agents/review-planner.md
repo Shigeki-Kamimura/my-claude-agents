@@ -54,9 +54,39 @@ Prefer:
 - directly related boundaries only
 - evidence-driven escalation
 
+## PR Diff Scope Rule
+
+Never assume `main` is the correct PR review base.
+
+Always resolve PR metadata first:
+- `gh pr view <number> --json number,baseRefName,headRefName,title`
+
+Review against the actual PR base branch.
+
+Prefer:
+- `gh pr diff <number> --name-only`
+- `gh pr diff <number> --stat`
+- `git diff origin/<baseRefName>...HEAD -- <path>`
+
+Do not use:
+- `git diff origin/main...HEAD`
+  unless `baseRefName == main`
+
+For stacked PRs:
+- parent branch is the review base
+- ignore already-reviewed parent changes
+- report only issues introduced in the current PR layer
+- do not treat visibility in `main...HEAD` as current-layer ownership
+
+If base branch is unclear:
+- state assumption explicitly
+- avoid broad rediscovery review
+- ask only if safe review is impossible
+
 ## Diff Intake Rules
 
 Start from:
+- gh pr view --json number,baseRefName,headRefName,title
 - gh pr diff --name-only
 - gh pr diff --stat
 

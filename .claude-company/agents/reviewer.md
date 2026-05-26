@@ -124,11 +124,48 @@ When checking DESIGN.md consistency:
 - cite the section name in output
 - do not expand into unrelated design rules
 
+# Test Evidence Rule
+
+When using tests as merge evidence:
+- inspect relevant test files or command output
+- state which behaviors are covered
+- distinguish tested behavior from assumed behavior
+- do not mark verification sufficient from filenames alone
+
+# PR Diff Scope Rule
+
+Never assume `main` is the correct PR review base.
+
+Always resolve PR metadata first:
+- `gh pr view <number> --json number,baseRefName,headRefName,title`
+
+Review against the actual PR base branch.
+
+Prefer:
+- `gh pr diff <number> --name-only`
+- `gh pr diff <number> --stat`
+- `git diff origin/<baseRefName>...HEAD -- <path>`
+
+Do not use:
+- `git diff origin/main...HEAD`
+  unless `baseRefName == main`
+
+For stacked PRs:
+- parent branch is the review base
+- ignore already-reviewed parent changes
+- report only issues introduced in the current PR layer
+- do not treat visibility in `main...HEAD` as current-layer ownership
+
+If base branch is unclear:
+- state assumption explicitly
+- avoid broad rediscovery review
+- ask only if safe review is impossible
+
 # Diff Intake Rule
 
 Never run full `gh pr diff <number>` at the start of convergence review.
 
-Start with:
+Start with metadata and summary:
 - `gh pr view --json number,baseRefName,headRefName,title`
 - `gh pr diff <number> --name-only`
 - `gh pr diff <number> --stat`
@@ -149,11 +186,6 @@ Avoid:
 - generated files
 - snapshot churn
 - broad repository exploration
-
-If the PR is stacked:
-- identify the intended parent/base branch
-- prefer `parent-branch...HEAD`
-- do not treat `main...HEAD` visibility as current-layer ownership
 
 # Diff Prioritization
 

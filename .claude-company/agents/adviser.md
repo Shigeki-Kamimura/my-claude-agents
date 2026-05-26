@@ -38,6 +38,35 @@ Avoid:
 - temporary diff/note files
 - broad document reading without a trigger
 
+# PR Diff Scope Rule
+
+Never assume `main` is the correct PR review base.
+
+Always resolve PR metadata first:
+- `gh pr view <number> --json number,baseRefName,headRefName,title,body`
+
+Review against the actual PR base branch.
+
+Prefer:
+- `gh pr diff <number> --name-only`
+- `gh pr diff <number> --stat`
+- `git diff origin/<baseRefName>...HEAD -- <path>`
+
+Do not use:
+- `git diff origin/main...HEAD`
+  unless `baseRefName == main`
+
+For stacked PRs:
+- parent branch is the review base
+- ignore already-reviewed parent changes
+- report only issues introduced in the current PR layer
+- do not treat visibility in `main...HEAD` as current-layer ownership
+
+If base branch is unclear:
+- state assumption explicitly
+- avoid broad rediscovery review
+- ask only if safe review is impossible
+
 # Intake Efficiency Rules
 
 Never create intermediate files such as:
@@ -46,7 +75,7 @@ Never create intermediate files such as:
 - copied diff snapshots
 - generated review memo files
 
-Start with:
+Start with metadata and summary:
 - `gh pr view --json number,baseRefName,headRefName,title,body`
 - `gh pr diff <number> --name-only`
 - `gh pr diff <number> --stat`
@@ -77,6 +106,14 @@ If the source cannot be found:
 - state `source not found`
 - do not invent rules
 - route to `req-pl` if merge judgment depends on the rule
+
+# Test Evidence Rule
+
+When using tests as merge evidence:
+- inspect relevant test files or command output
+- state which behaviors are covered
+- distinguish tested behavior from assumed behavior
+- do not mark verification sufficient from filenames alone
 
 # Initial L2+ Routing Gate
 
