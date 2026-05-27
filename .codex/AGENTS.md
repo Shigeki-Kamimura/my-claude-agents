@@ -65,3 +65,4 @@ Never silently inline delegated work.
 - L1.5 code quality review -> code-quality-reviewer
 - L2+ review -> adviser
 - convergence review -> reviewer
+- reviewer execution contract -> `.claude/contracts/reviewer.xml` with detailed knowledge in `.claude/knowledge/review/*.md`

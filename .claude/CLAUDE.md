@@ -102,6 +102,7 @@ Rules:
 - `cr:` must not automatically continue to `adviser`.
 - `adviser` is used only when the user explicitly uses `adv:` / `a:` or requests L2+ review.
 - `reviewer` is used only for convergence after prior Review Tickets or claimed fixes.
+- `reviewer` execution contract lives in `.claude/contracts/reviewer.xml`; detailed review knowledge lives in `.claude/knowledge/review/*.md`.
 
 ## Review Flow
 
