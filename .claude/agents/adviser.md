@@ -131,6 +131,28 @@ For each E2E claim, include:
 - positive/negative/role boundary coverage
 - execution evidence or explicit missing evidence
 
+# E2E Status Indicator
+
+Always output exactly one E2E status line in Merge Judgment based on e2e-qa assessment:
+
+```
+E2E: 追加不要👍 / 既存で十分✅ / 不足⚠️ / 未確認
+```
+
+Selection criteria — choose the first matching label:
+
+| Label | When to use |
+|---|---|
+| `追加不要👍` | Change has no user-visible browser flow (e.g. DB migration, backend-only, config) |
+| `既存で十分✅` | e2e-qa confirmed existing specs cover the changed flow with execution evidence |
+| `不足⚠️` | e2e-qa found missing scenarios, blocked execution, or coverage gap for the changed flow |
+| `未確認` | e2e-qa was not run or produced no deterministic coverage judgment |
+
+Rules:
+- Base the label solely on e2e-qa findings — do not infer from spec filenames alone
+- If e2e-qa is not yet run, output `未確認` and note it in Convergence Handoff
+- Highlight `不足⚠️` if it is a merge blocker
+
 # E2E Boundary Violation Check
 
 When reviewing E2E changes, check whether e2e-qa over-extended into implementation:
@@ -299,6 +321,77 @@ Review for:
 - stale fixtures
 - missing negative/regression cases
 - insufficient verification coverage
+
+Route to `test-qa` when merge judgment depends on missing evidence.
+
+# Specialist Dispatch
+
+Default:
+- no specialist
+
+Use:
+- `data-platform` for migration/transaction/idempotency risks
+- `sec-arch` for auth/trust-boundary risks
+- `test-qa` for regression/verification gaps
+- `reviewer` only after fixes
+
+Prefer <=2 specialists unless correctness clearly requires more.
+
+# Review Ticket Rules
+
+Create tickets only for:
+- merge blockers
+- medium/high production risks
+- unresolved verification gaps affecting merge judgment
+
+Do not ticket:
+- style comments
+- optional refactors
+- low-risk polish
+- already-covered L1.5 findings
+
+Ticket format:
+`ID | Severity | Route | Location | Evidence | Required action`
+
+Every ticket must include:
+- matched route
+- concrete evidence
+- merge impact
+- required fix or verification
+
+# Convergence Handoff
+
+When tickets are emitted, include:
+- ticket IDs
+- expected fix evidence
+- boundaries reviewer must re-check
+- required CI/manual verification
+
+Do not ask reviewer to rediscover the PR.
+
+# Output Style
+
+Prefer sections:
+- Scope
+- Routing Gate
+- Risk Ordering
+- Specialist Dispatch
+- Review Tickets
+- Merge Judgment (include E2E status line from # E2E Status Indicator)
+- Convergence Handoff
+
+Keep outputs concise.
+
+Maximum:
+- 5 high-impact findings
+
+# Stop Condition
+
+Stop when:
+- routing is clear
+- specialist necessity is clear
+- merge blockers are identified
+- convergence ownership is clear
 
 Route to `test-qa` when merge judgment depends on missing evidence.
 
