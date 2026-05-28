@@ -66,9 +66,11 @@ fi
 SRC_AGENTS="$SRC_CLAUDE_ROOT/agents"
 SRC_SKILLS="$SRC_CLAUDE_ROOT/skills"
 SRC_KNOWLEDGE="$SRC_CLAUDE_ROOT/knowledge"
+SRC_CONTRACTS="$SRC_CLAUDE_ROOT/contracts"
 SRC_SETTINGS="$SRC_CLAUDE_ROOT/settings.json"
 SRC_CLAUDE_MD="$SRC_CLAUDE_ROOT/CLAUDE.md"
 SRC_SKILL_MD="$SRC_CLAUDE_ROOT/SKILL.md"
+SRC_REVIEWER_HYBRID_MD="$SRC_CLAUDE_ROOT/README-reviewer-hybrid.md"
 SRC_CODEX_AGENTS="$SELF_DIR/.codex/agents"
 SRC_CODEX_INSTRUCTIONS="$SELF_DIR/.codex/AGENTS.md"
 SRC_CODEX_CONFIG="$SELF_DIR/.codex/config.toml"
@@ -160,6 +162,8 @@ setup_target() {
 
   local linked_knowledge=0
   local skipped_knowledge=0
+  local linked_knowledge_dirs=0
+  local skipped_knowledge_dirs=0
   if [ -d "$SRC_KNOWLEDGE" ]; then
     for src in "$SRC_KNOWLEDGE"/*.md; do
       [ -e "$src" ] || continue
@@ -173,6 +177,44 @@ setup_target() {
         ln -sf "$src" "$dest"
         echo "  [LINK] .claude/knowledge/$name -> $src"
         linked_knowledge=$((linked_knowledge + 1))
+      fi
+    done
+
+    for src in "$SRC_KNOWLEDGE"/*/; do
+      [ -d "$src" ] || continue
+      name="$(basename "$src")"
+      dest="$claude_dir/knowledge/$name"
+
+      if [ -d "$dest" ] && [ ! -L "$dest" ]; then
+        echo "  [SKIP upstream] .claude/knowledge/$name/"
+        skipped_knowledge_dirs=$((skipped_knowledge_dirs + 1))
+      else
+        ln -sfn "$src" "$dest"
+        echo "  [LINK] .claude/knowledge/$name/ -> $src"
+        linked_knowledge_dirs=$((linked_knowledge_dirs + 1))
+      fi
+    done
+  fi
+
+  # --- contracts: ディレクトリ単位でリンク（upstream 実ディレクトリは skip） ---
+  mkdir -p "$claude_dir/contracts"
+  add_exclude ".claude/contracts"
+
+  local linked_contracts=0
+  local skipped_contracts=0
+  if [ -d "$SRC_CONTRACTS" ]; then
+    for src in "$SRC_CONTRACTS"/*; do
+      [ -e "$src" ] || continue
+      name="$(basename "$src")"
+      dest="$claude_dir/contracts/$name"
+
+      if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+        echo "  [SKIP upstream] .claude/contracts/$name"
+        skipped_contracts=$((skipped_contracts + 1))
+      else
+        ln -sf "$src" "$dest"
+        echo "  [LINK] .claude/contracts/$name -> $src"
+        linked_contracts=$((linked_contracts + 1))
       fi
     done
   fi
@@ -196,6 +238,18 @@ setup_target() {
       ln -sf "$SRC_SKILL_MD" "$skill_md_dest"
       add_exclude ".claude/SKILL.md"
       echo "  [LINK] .claude/SKILL.md -> $SRC_SKILL_MD"
+    fi
+  fi
+
+  # --- README-reviewer-hybrid.md: upstream が持っていれば触らない ---
+  if [ -f "$SRC_REVIEWER_HYBRID_MD" ]; then
+    local reviewer_hybrid_md_dest="$claude_dir/README-reviewer-hybrid.md"
+    if [ -f "$reviewer_hybrid_md_dest" ] && [ ! -L "$reviewer_hybrid_md_dest" ]; then
+      echo "  [SKIP upstream] .claude/README-reviewer-hybrid.md（upstream 優先）"
+    else
+      ln -sf "$SRC_REVIEWER_HYBRID_MD" "$reviewer_hybrid_md_dest"
+      add_exclude ".claude/README-reviewer-hybrid.md"
+      echo "  [LINK] .claude/README-reviewer-hybrid.md -> $SRC_REVIEWER_HYBRID_MD"
     fi
   fi
 
@@ -290,7 +344,8 @@ setup_target() {
   echo "=== 完了 ==="
   echo "  claude agents   : ${linked_agents} linked, ${skipped_agents} skipped (upstream)"
   echo "  claude skills   : ${linked_skills} linked, ${skipped_skills} skipped (upstream)"
-  echo "  claude knowledge: ${linked_knowledge} linked, ${skipped_knowledge} skipped (upstream)"
+  echo "  claude knowledge: ${linked_knowledge} files + ${linked_knowledge_dirs} dirs linked, ${skipped_knowledge} files + ${skipped_knowledge_dirs} dirs skipped (upstream)"
+  echo "  claude contracts: ${linked_contracts} linked, ${skipped_contracts} skipped (upstream)"
   echo "  codex agents    : ${linked_codex_agents} linked, ${skipped_codex_agents} skipped (upstream)"
   echo "  copilot agents  : ${linked_copilot_agents} linked, ${skipped_copilot_agents} skipped (upstream)"
   echo ""

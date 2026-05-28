@@ -24,9 +24,11 @@ $SrcClaudeRoot = if ($Profile -eq "company") {
 $SrcAgents = Join-Path $SrcClaudeRoot "agents"
 $SrcSkills = Join-Path $SrcClaudeRoot "skills"
 $SrcKnowledge = Join-Path $SrcClaudeRoot "knowledge"
+$SrcContracts = Join-Path $SrcClaudeRoot "contracts"
 $SrcSettings = Join-Path $SrcClaudeRoot "settings.json"
 $SrcClaudeMd = Join-Path $SrcClaudeRoot "CLAUDE.md"
 $SrcSkillMd = Join-Path $SrcClaudeRoot "SKILL.md"
+$SrcReviewerHybridMd = Join-Path $SrcClaudeRoot "README-reviewer-hybrid.md"
 $SrcCodexAgents = Join-Path $SelfDir ".codex\agents"
 $SrcCodexInstructions = Join-Path $SelfDir ".codex\AGENTS.md"
 $SrcCodexConfig = Join-Path $SelfDir ".codex\config.toml"
@@ -125,6 +127,7 @@ New-Item -ItemType Directory -Path (Join-Path $ClaudeDir "knowledge") -Force | O
 Add-Exclude ".claude/knowledge"
 
 $linkedKnowledge = 0; $skippedKnowledge = 0
+$linkedKnowledgeDirs = 0; $skippedKnowledgeDirs = 0
 if (Test-Path $SrcKnowledge) {
     foreach ($src in (Get-ChildItem -Path $SrcKnowledge -Filter "*.md" -File)) {
         $dest = Join-Path $ClaudeDir "knowledge\$($src.Name)"
@@ -137,6 +140,41 @@ if (Test-Path $SrcKnowledge) {
             New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
             Write-Host "  [LINK] knowledge/$($src.Name) -> $($src.FullName)"
             $linkedKnowledge++
+        }
+    }
+
+    foreach ($src in (Get-ChildItem -Path $SrcKnowledge -Directory)) {
+        $dest = Join-Path $ClaudeDir "knowledge\$($src.Name)"
+
+        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+            Write-Host "  [SKIP upstream] knowledge/$($src.Name)/"
+            $skippedKnowledgeDirs++
+        } else {
+            if (Test-Path $dest) { Remove-Item $dest -Force }
+            New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
+            Write-Host "  [LINK] knowledge/$($src.Name)/ -> $($src.FullName)"
+            $linkedKnowledgeDirs++
+        }
+    }
+}
+
+# --- contracts: ファイル単位でリンク（upstream 実ファイルは skip） ---
+New-Item -ItemType Directory -Path (Join-Path $ClaudeDir "contracts") -Force | Out-Null
+Add-Exclude ".claude/contracts"
+
+$linkedContracts = 0; $skippedContracts = 0
+if (Test-Path $SrcContracts) {
+    foreach ($src in (Get-ChildItem -Path $SrcContracts -File)) {
+        $dest = Join-Path $ClaudeDir "contracts\$($src.Name)"
+
+        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+            Write-Host "  [SKIP upstream] contracts/$($src.Name)"
+            $skippedContracts++
+        } else {
+            if (Test-Path $dest) { Remove-Item $dest -Force }
+            New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
+            Write-Host "  [LINK] contracts/$($src.Name) -> $($src.FullName)"
+            $linkedContracts++
         }
     }
 }
@@ -162,6 +200,19 @@ if (Test-Path $SrcSkillMd) {
         New-Item -ItemType SymbolicLink -Path $skillMdDest -Target $SrcSkillMd | Out-Null
         Add-Exclude ".claude/SKILL.md"
         Write-Host "  [LINK] SKILL.md -> $SrcSkillMd"
+    }
+}
+
+# --- README-reviewer-hybrid.md: upstream が持っていれば触らない ---
+if (Test-Path $SrcReviewerHybridMd) {
+    $reviewerHybridMdDest = Join-Path $ClaudeDir "README-reviewer-hybrid.md"
+    if ((Test-Path $reviewerHybridMdDest) -and (Get-Item $reviewerHybridMdDest).LinkType -ne "SymbolicLink") {
+        Write-Host "  [SKIP upstream] README-reviewer-hybrid.md（upstream 優先）"
+    } else {
+        if (Test-Path $reviewerHybridMdDest) { Remove-Item $reviewerHybridMdDest -Force }
+        New-Item -ItemType SymbolicLink -Path $reviewerHybridMdDest -Target $SrcReviewerHybridMd | Out-Null
+        Add-Exclude ".claude/README-reviewer-hybrid.md"
+        Write-Host "  [LINK] README-reviewer-hybrid.md -> $SrcReviewerHybridMd"
     }
 }
 
@@ -257,7 +308,8 @@ Write-Host ""
 Write-Host "=== 完了 ===" -ForegroundColor Green
 Write-Host "  claude agents   : $linkedAgents linked, $skippedAgents skipped (upstream)"
 Write-Host "  claude skills   : $linkedSkills linked, $skippedSkills skipped (upstream)"
-Write-Host "  claude knowledge: $linkedKnowledge linked, $skippedKnowledge skipped (upstream)"
+Write-Host "  claude knowledge: $linkedKnowledge files + $linkedKnowledgeDirs dirs linked, $skippedKnowledge files + $skippedKnowledgeDirs dirs skipped (upstream)"
+Write-Host "  claude contracts: $linkedContracts linked, $skippedContracts skipped (upstream)"
 Write-Host "  codex agents    : $linkedCodexAgents linked, $skippedCodexAgents skipped (upstream)"
 Write-Host "  copilot agents  : $linkedCopilotAgents linked, $skippedCopilotAgents skipped (upstream)"
 Write-Host ""
