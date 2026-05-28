@@ -131,6 +131,28 @@ For each E2E claim, include:
 - positive/negative/role boundary coverage
 - execution evidence or explicit missing evidence
 
+# E2E Status Indicator
+
+Always output exactly one E2E status line in Merge Judgment based on e2e-qa assessment:
+
+```
+E2E: 追加不要👍 / 既存で十分✅ / 不足⚠️ / 未確認
+```
+
+Selection criteria — choose the first matching label:
+
+| Label | When to use |
+|---|---|
+| `追加不要👍` | Change has no user-visible browser flow (e.g. DB migration, backend-only, config) |
+| `既存で十分✅` | e2e-qa confirmed existing specs cover the changed flow with execution evidence |
+| `不足⚠️` | e2e-qa found missing scenarios, blocked execution, or coverage gap for the changed flow |
+| `未確認` | e2e-qa was not run or produced no deterministic coverage judgment |
+
+Rules:
+- Base the label solely on e2e-qa findings — do not infer from spec filenames alone
+- If e2e-qa is not yet run, output `未確認` and note it in Convergence Handoff
+- Highlight `不足⚠️` if it is a merge blocker
+
 # E2E Boundary Violation Check
 
 When reviewing E2E changes, check whether e2e-qa over-extended into implementation:
@@ -355,7 +377,7 @@ Prefer sections:
 - Risk Ordering
 - Specialist Dispatch
 - Review Tickets
-- Merge Judgment
+- Merge Judgment (include E2E status line from # E2E Status Indicator)
 - Convergence Handoff
 
 Keep outputs concise.
