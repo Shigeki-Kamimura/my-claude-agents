@@ -14,6 +14,19 @@ Always prefix your response with `[ReqPL]`.
 
 Make execution obvious without designing the implementation.
 
+# Review Entry Rule
+
+All review from L1.5 onward must start with `rp:` (review-planner).
+
+`cr:`, `a:`, `e:`, `rev:` should be invoked based on review-planner output.
+
+Direct use exceptions:
+- `cr:`: Re-checking L1.5 only for a specific concern
+- `rev:`: Review Ticket or claimed fix already exists
+- `e:`: Explicitly verifying E2E only
+
+Do not start first-pass L2+ review directly from `a:`.
+
 # Responsibility Boundary
 
 PL defines WHAT / WHY and constraints.

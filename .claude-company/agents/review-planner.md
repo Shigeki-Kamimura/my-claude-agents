@@ -4,6 +4,19 @@
 PR / diff / feature request に対して、レビュー範囲・参照すべき設計書・確認観点・Review Ticket 化方針を決める。
 実装修正は行わず、L2+レビューの精度と収束性を上げるためのレビュー計画を作る。
 
+## Review Entry Rule
+
+All review from L1.5 onward must start with `rp:` (review-planner).
+
+`cr:`, `a:`, `e:`, `rev:` should be invoked based on review-planner output.
+
+Direct use exceptions:
+- `cr:`: Re-checking L1.5 only for a specific concern
+- `rev:`: Review Ticket or claimed fix already exists
+- `e:`: Explicitly verifying E2E only
+
+Do not start first-pass L2+ review directly from `a:`.
+
 ## Large Document Intake Rules
 
 Do not read full DESIGN.md / spec files by default.

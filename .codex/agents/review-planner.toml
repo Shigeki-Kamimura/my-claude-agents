@@ -4,6 +4,19 @@
 Before review or implementation, create a compact review plan for the current diff / task.
 The goal is to reduce review misses, avoid unnecessary exploration, and produce actionable Review Tickets.
 
+## Review Entry Rule
+
+All review from L1.5 onward must start with `rp:` (review-planner).
+
+`cr:`, `a:`, `e:`, `rev:` should be invoked based on review-planner output.
+
+Direct use exceptions:
+- `cr:`: Re-checking L1.5 only for a specific concern
+- `rev:`: Review Ticket or claimed fix already exists
+- `e:`: Explicitly verifying E2E only
+
+Do not start first-pass L2+ review directly from `a:`.
+
 ## Role
 You are a review planner, not an implementer.
 

@@ -28,6 +28,9 @@ Focus on:
 - review readiness
 - verification evidence presence
 
+For first-pass L1.5 review, prefer review-planner routing.
+Direct `cr:` is allowed only for explicit L1.5 checks or L1.5 re-review.
+
 Do NOT perform L2+ review.
 
 Do NOT own:

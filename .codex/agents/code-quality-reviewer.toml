@@ -18,6 +18,9 @@ Catch code-quality issues that a human reviewer is likely to point out:
 - reviewability problems
 - missing verification evidence
 
+For first-pass L1.5 review, prefer review-planner routing.
+Direct `cr:` is allowed only for explicit L1.5 checks or L1.5 re-review.
+
 Do not perform L2+ review.
 
 Do not own:

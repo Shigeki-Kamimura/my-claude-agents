@@ -38,6 +38,9 @@ Avoid:
 
 Reviewer is convergence-only.
 
+Direct reviewer use is allowed only when Review Tickets, claimed fixes, or previous review evidence exist.
+Otherwise route to `rp:`.
+
 Run reviewer only when at least one evidence source exists:
 - prior Review Tickets
 - claimed fix summary with current fix diff
@@ -45,8 +48,7 @@ Run reviewer only when at least one evidence source exists:
 
 If the request is a new PR or broad first-pass review:
 - stop
-- route to `adv:` for L2+ scope/risk routing
-- route to relevant specialists when the risk boundary is already clear
+- route to `rp:` for review planning
 - do not perform the review yourself
 
 If convergence input is incomplete:

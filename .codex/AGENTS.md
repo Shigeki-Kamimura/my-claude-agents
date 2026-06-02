@@ -41,8 +41,9 @@ Rules:
 - Prefer E2E decomposition by `read` / `write` / `rules` / `auth`.
 - Split or add files before a single E2E spec exceeds 400 lines.
 - Requirement clarification must route to pl.
-- Review planning must route to review-planner.
-- L2+ review/convergence review must route to reviewer.
+- L2+ review planning must route to review-planner.
+- L2+ risk review must route to adviser.
+- Convergence review must route to reviewer.
 
 ## Routing Visibility
 
@@ -65,3 +66,16 @@ Never silently inline delegated work.
 - L1.5 code quality review -> code-quality-reviewer
 - L2+ review -> adviser
 - convergence review -> reviewer
+
+## Review Entry Rule
+
+All review from L1.5 onward must start with `rp:` (review-planner).
+
+`cr:`, `a:`, `e:`, `rev:` should be invoked based on review-planner output.
+
+Direct use exceptions:
+- `cr:`: Re-checking L1.5 only for a specific concern
+- `rev:`: Review Ticket or claimed fix already exists
+- `e:`: Explicitly verifying E2E only
+
+Do not start first-pass L2+ review directly from `a:`.

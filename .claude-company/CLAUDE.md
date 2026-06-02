@@ -132,6 +132,19 @@ Rules:
 - Split browser tests by dominant risk axis instead of feature size alone.
 - Split or add files before a single E2E spec exceeds 400 lines.
 
+## Review Entry Rule
+
+All review from L1.5 onward must start with `rp:` (review-planner).
+
+`cr:`, `a:`, `e:`, `rev:` should be invoked based on review-planner output.
+
+Direct use exceptions:
+- `cr:`: Re-checking L1.5 only for a specific concern
+- `rev:`: Review Ticket or claimed fix already exists
+- `e:`: Explicitly verifying E2E only
+
+Do not start first-pass L2+ review directly from `a:`.
+
 ---
 
 ## Boundary Principle

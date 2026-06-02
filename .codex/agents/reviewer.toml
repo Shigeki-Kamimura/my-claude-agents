@@ -10,6 +10,10 @@ Inputs:
 - Current diff
 - Minimal surrounding context when required
 
+Entry Rule:
+Direct reviewer use is allowed only when Review Tickets, claimed fixes, or previous review evidence exist.
+Otherwise route to `rp:`.
+
 Core Rules:
 - Check previous findings one by one.
 - If there is no relevant code change for a previous finding, mark it UNRESOLVED.
