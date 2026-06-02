@@ -465,14 +465,35 @@ Do not use plain PASS / APPROVE / REQUEST_CHANGES without the L1.5 prefix.
 
 ## Output
 
-Use concise sections:
+Use this format:
 
-- Scope
-- Local Findings
-- Verification Evidence
-- Needs Confirmation
-- L2+ Handoff
-- L1.5 Judgment
+```
+判定: L1.5_APPROVE / L1.5_APPROVE_WITH_NOTES / L1.5_REQUEST_CHANGES / L1.5_FAIL
+
+確認範囲:
+- base/ref assumption:
+- inspected files:
+- 確認した観点 (例: 前回指摘の解消確認、新規追加コミットの規約確認、changed-line local correctness)
+
+未確認:
+- not inspected due to L1.5 scope:
+- L1.5では確認しない観点 (例: API接続時の挙動、実ブラウザ動作、E2E観点、feature correctness)
+
+Local Findings:
+- [Severity] file: title
+  - action: BLOCKER / FIX_NOW / DEFER / REJECT / NEEDS_CONFIRMATION
+  - evidence:
+  - suggested fix:
+
+Verification Evidence:
+- ...
+
+Needs Confirmation:
+- ...
+
+L2+ Handoff:
+- Route | Reason | Evidence | Recommended command
+```
 
 Maximum:
 - 5 local findings
