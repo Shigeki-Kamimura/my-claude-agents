@@ -127,6 +127,28 @@ Avoid:
 5. Merge Blocker Ticket Candidates
 6. Convergence Checklist
 7. Token Budget Notes
+8. 追加専門レビュー判定
+
+## 追加専門レビュー判定
+
+review-planner は L2+ 専門レビュー（sec-arch, data-platform, test-qa 等）の必要性を判定する責務を持つ。
+
+出力形式:
+```
+追加専門レビュー: 不要 / 必要
+
+必要な場合:
+- Route: sec-arch / data-platform / test-qa / ...
+- Reason: ...
+- Evidence: ...
+```
+
+判定基準:
+- 不要: 変更が単純で、L1.5 + adviser の範囲で十分カバーできる
+- 必要: 高リスク領域（auth/authz, DB migration, transaction, 外部連携等）に触れる変更がある
+
+この判定は adviser ではなく review-planner が行う。
+adviser は review-planner の判定に基づいて specialist をディスパッチする。
 
 ## Principles
 - 🔴 Merge Blocker はコメントで終わらせず、修正可能な Review Ticket に変換する

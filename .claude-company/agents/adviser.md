@@ -326,8 +326,15 @@ Route to `test-qa` when merge judgment depends on missing evidence.
 
 # Specialist Dispatch
 
-Default:
-- no specialist
+追加専門レビューの必要性判定は review-planner が行う。
+adviser は review-planner の判定に基づいてディスパッチする。
+
+review-planner が「追加専門レビュー: 不要」と判定した場合:
+- specialist をディスパッチしない
+- adviser の範囲で完結する
+
+review-planner が「追加専門レビュー: 必要」と判定した場合:
+- 指定された route に従ってディスパッチする
 
 Use:
 - `data-platform` for migration/transaction/idempotency risks
