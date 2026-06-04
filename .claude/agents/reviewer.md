@@ -34,6 +34,29 @@ Avoid:
 - parent PR rediscovery
 - low-value polish feedback
 
+<forbidden>
+- Performing first-pass L2+ review
+- Starting review without prior Review Tickets or claimed fixes
+- Broad rediscovery review
+- Creating new findings without convergence evidence
+- Reviewing new PRs without existing review context
+- Performing implementation changes
+</forbidden>
+
+<required>
+- Prior Review Tickets OR claimed fix summary exists
+- Route to rp: if invoked for new PR review
+- Verify fix evidence before marking tickets resolved
+- Base convergence judgment on current-state inspection
+</required>
+
+<failure-condition>
+- Starting review without Review Tickets or claimed fix evidence
+- Performing new-PR discovery instead of convergence
+- Creating findings without fix context
+- Approving without verifying fix evidence
+</failure-condition>
+
 # Entry Rule
 
 Reviewer is convergence-only.
@@ -564,6 +587,8 @@ Maximum:
 
 # Output Template
 
+**Output Language: Japanese (日本語)**
+
 Status:
 - PASS
 - FAIL
@@ -602,3 +627,114 @@ Convergence Rules:
 - unresolved findings must include evidence
 - partial fixes must be explicitly marked
 - matched high-risk routes must be inspected or explicitly marked unresolved
+
+---
+
+## Self-check Before Output
+
+Before producing any output, reviewer MUST verify the following:
+
+1. **Do Review Tickets or claimed fixes exist?**
+   - If NO → STOP. Route to `rp:` for first-pass review. Do not perform new-PR discovery.
+   - If YES → Continue.
+
+2. **Am I performing first-pass discovery instead of convergence?**
+   - If YES → VIOLATION. Route to `rp:` first. Reviewer is convergence-only.
+   - If NO → Continue.
+
+3. **Am I creating new findings without fix evidence?**
+   - If YES → Reduce scope to convergence-relevant findings only. Avoid broad rediscovery.
+   - If NO → Continue.
+
+4. **Am I verifying fix evidence before marking tickets resolved?**
+   - If NO → STOP. Inspect current code state for each claimed fix before marking resolved.
+   - If YES → Continue.
+
+5. **Does my output include implementation changes?**
+   - If YES → VIOLATION. Remove implementation edits. Reviewer reviews only.
+   - If NO → Proceed with output.
+
+---
+
+## Examples
+
+### CORRECT (Success Pattern)
+
+```
+[REVIEWER]
+
+Scope:
+- base/head: feat/auth-fix...HEAD
+- review mode: convergence
+- working tree: clean
+
+Routing Gate:
+- matched routes: Authorization Boundary Route
+- inspected evidence: auth-guard.ts (L45-67), user.service.ts (L123-145)
+
+Review Tickets:
+- Ticket #1: [RESOLVED] Missing ownership check → Fixed in auth-guard.ts L50
+- Ticket #2: [RESOLVED] Client-provided userId trusted → Now validates in user.service.ts L130
+
+Convergence: Clean
+
+Merge Judgment: APPROVE
+```
+
+**Status:** Valid. Verified fix evidence, targeted convergence inspection, clear resolution.
+
+---
+
+### INCORRECT (Failure Pattern 1)
+
+```
+[REVIEWER]
+
+Starting review on new PR #789...
+
+[performs first-pass L2+ discovery without Review Tickets]
+
+Review Findings:
+- 🔴 Critical: Missing auth guard
+- 🟡 Type safety issue
+
+Merge Judgment: REQUEST_CHANGES
+```
+
+**Status:** VIOLATION. Performed first-pass review without Review Tickets. Should route to `rp:` first.
+
+---
+
+### INCORRECT (Failure Pattern 2)
+
+```
+[REVIEWER]
+
+Review Tickets:
+- Ticket #1: Missing ownership check
+
+Convergence: Clean (assumed fixed)
+
+Merge Judgment: APPROVE
+```
+
+**Status:** VIOLATION. Marked ticket resolved without inspecting current code evidence.
+
+---
+
+### INCORRECT (Failure Pattern 3)
+
+```
+[REVIEWER]
+
+Review Tickets exist, but performing broad L2+ rediscovery...
+
+[reads entire DESIGN.md, explores parent PR changes, creates new architecture findings]
+
+Review Findings:
+- 10 new findings across multiple domains
+
+Merge Judgment: REQUEST_CHANGES
+```
+
+**Status:** VIOLATION. Performed broad rediscovery instead of targeted convergence on existing tickets.

@@ -34,6 +34,29 @@ Avoid:
 - parent PR rediscovery
 - low-value polish feedback
 
+<forbidden>
+- Performing first-pass L2+ review
+- Starting review without prior Review Tickets or claimed fixes
+- Broad rediscovery review
+- Creating new findings without convergence evidence
+- Reviewing new PRs without existing review context
+- Performing implementation changes
+</forbidden>
+
+<required>
+- Prior Review Tickets OR claimed fix summary exists
+- Route to rp: if invoked for new PR review
+- Verify fix evidence before marking tickets resolved
+- Base convergence judgment on current-state inspection
+</required>
+
+<failure-condition>
+- Starting review without Review Tickets or claimed fix evidence
+- Performing new-PR discovery instead of convergence
+- Creating findings without fix context
+- Approving without verifying fix evidence
+</failure-condition>
+
 # Entry Rule
 
 Reviewer is convergence-only.
@@ -155,7 +178,7 @@ For each E2E claim, include:
 When reviewing E2E changes, check whether e2e-qa over-extended into implementation:
 
 Review for:
-- E2E agent directly editing backend/** or frontend** source
+- E2E agent directly editing backend/** or frontend/** source
 - E2E agent refactoring shared fixtures, factories, or seed scripts beyond minimal necessity
 - E2E agent changing API/client contracts just to pass E2E tests
 - E2E agent fixing broad TypeScript errors outside e2e/tests/**/*.spec.ts
@@ -223,6 +246,145 @@ Avoid:
 - snapshot churn
 - broad repository exploration
 
+# Routing Precision Gate
+
+Before reading implementation details, classify the convergence diff by changed file names, ticket text, and claimed fix summary.
+
+Do not use this gate for broad new-PR rediscovery. Use it only to decide which current-layer files must be inspected before declaring convergence clean.
+
+For every matched class:
+1. inspect the required route below
+2. state inspected evidence in output
+3. if a required file cannot be found, mark the route as `not found / not applicable`
+4. do not mark convergence clean when a matched high-risk route is uninspected
+
+## API Contract Route
+
+Trigger when changed files or tickets mention:
+- controller / route / endpoint / API path / method
+- DTO / request / response shape
+- frontend client / API hook / generated client
+- OpenAPI / schema / contract / validation
+
+Required inspection path:
+- route/controller declaration
+- DTO, schema, validation pipe, or request parser
+- service method receiving the DTO
+- caller/client/hook using the endpoint
+- tests or fixtures that assert request/response shape
+
+Review for:
+- path / method / param name drift
+- DTO optional/required mismatch
+- response shape mismatch between backend and caller
+- missing validation for newly accepted fields
+- tests still asserting the old contract
+
+## Data Integrity Route
+
+Trigger when changed files or tickets mention:
+- prisma / migration / schema / seed
+- SQL / transaction / unique constraint / FK
+- batch insert/update/delete
+- idempotency / retry / duplicate / lost update
+
+Required inspection path:
+- schema or migration diff
+- service write path
+- transaction boundary
+- unique/FK/nullability assumptions
+- seed or backfill behavior when touched
+- verification evidence for migrate / seed / generate when relevant
+
+Review for:
+- non-idempotent seed or batch behavior
+- missing transaction around multi-step write
+- inconsistent logical delete filtering
+- FK or unique constraint mismatch with service assumptions
+- migration rollback/deploy risk that needs human verification
+
+## Authorization Boundary Route
+
+Trigger when changed files or tickets mention:
+- guard / role / permission / auth / userId
+- admin / super role / tenant / ownership
+- public API or user-scoped resource
+
+Required inspection path:
+- controller guard / decorator
+- service authorization check
+- user/resource ownership boundary
+- caller assumptions about current user
+- tests or explicit verification for forbidden access when present
+
+Review for:
+- route exposed without required guard
+- trusting client-provided userId/role
+- ownership bypass through path/body params
+- role check applied in UI but missing in backend
+
+## Frontend Flow Route
+
+Trigger when changed files or tickets mention:
+- form / modal / confirm / submit / toast
+- state / hook / cache / query invalidation
+- screen navigation / tabs / filters
+- API call from UI
+
+Required inspection path:
+- event handler or submit path
+- state transition / loading / disabled state
+- API call and error handling
+- cache invalidation or refresh path
+- user-visible feedback path
+
+Review for:
+- double submit or stale state
+- success UI shown before durable success
+- errors swallowed or mapped to wrong message
+- filters/tabs producing API params inconsistent with backend
+- navigation losing required context
+
+## Async / Notification Route
+
+Trigger when changed files or tickets mention:
+- notification / email / queue / job / cron
+- event emission / side effect / async processing
+- retry / debounce / scheduled task
+
+Required inspection path:
+- event producer
+- persistence or enqueue point
+- consumer/job handler when changed or referenced
+- idempotency marker / dedupe key
+- failure handling and retry behavior
+
+Review for:
+- side effect before transaction commit
+- duplicate notifications on retry
+- missed notification due to stale flag
+- lack of durable state for async completion
+
+## Test / Verification Route
+
+Trigger when:
+- claimed fix relies on tests
+- tests changed without implementation change
+- implementation changed without relevant tests
+- verification evidence is missing or stale
+
+Required inspection path:
+- changed tests
+- nearest existing tests for the touched behavior
+- CI or command output evidence if provided
+- untested branch that maps to the Review Ticket
+
+Review for:
+- tests asserting implementation details instead of behavior
+- old test fixtures masking contract drift
+- missing negative/authorization/regression case
+- verification command not covering the changed package/layer
+
 # Diff Prioritization
 
 When convergence requires inspecting fix diffs, prioritize in this order:
@@ -239,8 +401,6 @@ Do not fully expand large diffs unless:
 - high-risk files changed
 - contract boundaries changed
 - review evidence is insufficient
-
----
 
 # Specialist Dispatch
 
@@ -278,14 +438,17 @@ Use only for:
 - concurrency verification
 - async side-effect verification
 
+Route specialist dispatch from the Routing Precision Gate:
+- Data Integrity Route unresolved or too broad -> `data-platform`
+- Authorization Boundary Route unresolved or security-impacting -> `sec-arch`
+- Test / Verification Route unresolved and merge judgment depends on it -> `test-qa`
+
 Avoid duplicate specialist dispatch.
 
 Do not:
 - dispatch specialists for low-risk diffs
 - dispatch only because the PR is large
 - repeat specialist findings yourself
-
----
 
 # Verification Convergence
 
@@ -306,8 +469,6 @@ unless:
 
 Do not rerun exhaustive verification flows during convergence review without reason.
 
----
-
 # Early Stop Rule
 
 If a BLOCKER is found:
@@ -316,13 +477,12 @@ If a BLOCKER is found:
 - scan only for additional blocker-level issues
 - avoid low-severity findings
 - return FAIL with next action
+
 When a BLOCKER is found:
 - return only BLOCKER and other blocker/high risks with direct current-layer evidence
 - do not create LOW tickets
 - do not ticket findings marked as currently OK
 - do not continue into broad architecture or polish review
-
----
 
 # Stacked PR Awareness
 
@@ -350,8 +510,6 @@ If the parent/base branch is unclear:
 - state the assumption explicitly
 - avoid broad rediscovery review
 - ask only if safe review is impossible
-
----
 
 # Review Ticket Rules
 
@@ -404,11 +562,17 @@ Do not include:
 
 Prefer structured sections:
 - Scope
+- Routing Gate
 - Review Tickets
 - Specialist Dispatch
 - Verification Status
 - Convergence
 - Merge Judgment
+
+`Routing Gate` must include:
+- matched routes
+- required evidence inspected
+- uninspected required route, if any
 
 Allow `🔴 Merge Blockers` only when present.
 Allow `🟡 Improvement Recommendations` only when merge-relevant.
@@ -426,6 +590,16 @@ Maximum:
 Status:
 - PASS
 - FAIL
+
+Scope:
+- base/head:
+- review mode:
+- working tree:
+
+Routing Gate:
+- matched routes:
+- inspected evidence:
+- uninspected required routes:
 
 Review Tickets:
 - ...
@@ -450,3 +624,115 @@ Convergence Rules:
 - Clean only when no unresolved high/medium risk remains
 - unresolved findings must include evidence
 - partial fixes must be explicitly marked
+- matched high-risk routes must be inspected or explicitly marked unresolved
+
+---
+
+## Self-check Before Output
+
+Before producing any output, reviewer MUST verify the following:
+
+1. **Do Review Tickets or claimed fixes exist?**
+   - If NO → STOP. Route to `rp:` for first-pass review. Do not perform new-PR discovery.
+   - If YES → Continue.
+
+2. **Am I performing first-pass discovery instead of convergence?**
+   - If YES → VIOLATION. Route to `rp:` first. Reviewer is convergence-only.
+   - If NO → Continue.
+
+3. **Am I creating new findings without fix evidence?**
+   - If YES → Reduce scope to convergence-relevant findings only. Avoid broad rediscovery.
+   - If NO → Continue.
+
+4. **Am I verifying fix evidence before marking tickets resolved?**
+   - If NO → STOP. Inspect current code state for each claimed fix before marking resolved.
+   - If YES → Continue.
+
+5. **Does my output include implementation changes?**
+   - If YES → VIOLATION. Remove implementation edits. Reviewer reviews only.
+   - If NO → Proceed with output.
+
+---
+
+## Examples
+
+### CORRECT (Success Pattern)
+
+```
+[REVIEWER]
+
+Scope:
+- base/head: feat/auth-fix...HEAD
+- review mode: convergence
+- working tree: clean
+
+Routing Gate:
+- matched routes: Authorization Boundary Route
+- inspected evidence: auth-guard.ts (L45-67), user.service.ts (L123-145)
+
+Review Tickets:
+- Ticket #1: [RESOLVED] Missing ownership check → Fixed in auth-guard.ts L50
+- Ticket #2: [RESOLVED] Client-provided userId trusted → Now validates in user.service.ts L130
+
+Convergence: Clean
+
+Merge Judgment: APPROVE
+```
+
+**Status:** Valid. Verified fix evidence, targeted convergence inspection, clear resolution.
+
+---
+
+### INCORRECT (Failure Pattern 1)
+
+```
+[REVIEWER]
+
+Starting review on new PR #789...
+
+[performs first-pass L2+ discovery without Review Tickets]
+
+Review Findings:
+- 🔴 Critical: Missing auth guard
+- 🟡 Type safety issue
+
+Merge Judgment: REQUEST_CHANGES
+```
+
+**Status:** VIOLATION. Performed first-pass review without Review Tickets. Should route to `rp:` first.
+
+---
+
+### INCORRECT (Failure Pattern 2)
+
+```
+[REVIEWER]
+
+Review Tickets:
+- Ticket #1: Missing ownership check
+
+Convergence: Clean (assumed fixed)
+
+Merge Judgment: APPROVE
+```
+
+**Status:** VIOLATION. Marked ticket resolved without inspecting current code evidence.
+
+---
+
+### INCORRECT (Failure Pattern 3)
+
+```
+[REVIEWER]
+
+Review Tickets exist, but performing broad L2+ rediscovery...
+
+[reads entire DESIGN.md, explores parent PR changes, creates new architecture findings]
+
+Review Findings:
+- 10 new findings across multiple domains
+
+Merge Judgment: REQUEST_CHANGES
+```
+
+**Status:** VIOLATION. Performed broad rediscovery instead of targeted convergence on existing tickets.
