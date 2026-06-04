@@ -135,6 +135,84 @@ If the source cannot be found:
 - do not invent rules
 - route to `req-pl` if merge judgment depends on the rule
 
+# Mandatory Project Rule Check
+
+When reviewing changes that touch high-risk areas, check project-specific rules from DESIGN.md.
+
+Use targeted reading to minimize token cost:
+1. grep for exact keywords first
+2. read only the matched section
+3. cite the exact section used
+
+Check only when triggered by changed code.
+
+## Check Triggers and Target Sections
+
+| Changed Area | DESIGN.md Section to Check |
+|---|---|
+| Prisma query / repository / findFirst / findUnique | ORM First / Raw SQL policy |
+| Exception / Error / try-catch / throw | Exception Handling / findFirstOrThrow / NotFoundException policy |
+| Controller / Module / new endpoint / DTO | Module Boundary / API Responsibility |
+| Audit log / activity log / history / record | Audit Log semantics / timing / normalization |
+
+## Targeted Reading Steps
+
+For each triggered check:
+
+1. **Grep first**:
+   ```bash
+   grep -i "ORM First\|Raw SQL" DESIGN.md
+   grep -i "Exception\|NotFoundException\|findFirstOrThrow" DESIGN.md
+   grep -i "Module Boundary\|API Responsibility" DESIGN.md
+   grep -i "Audit Log\|Activity Log" DESIGN.md
+   ```
+
+2. **Read matched section only**:
+   - Do not read the entire DESIGN.md
+   - Read <=20 lines around the matched keyword
+   - Stop when the section ends
+
+3. **Extract project rule**:
+   - State the exact rule (e.g., "ORM First: Raw SQL prohibited")
+   - Note line number for evidence
+   - If rule not found, state "rule not found"
+
+4. **Check compliance**:
+   - Compare changed code against the extracted rule
+   - Mark as compliant / non-compliant / unclear
+   - If unclear, route to specialist
+
+## Output Format
+
+In Merge Judgment section, include:
+
+```
+Project Rules Checked:
+- [Trigger] ORM First: COMPLIANT / NON-COMPLIANT / NOT_FOUND / NOT_APPLICABLE
+  - Evidence: DESIGN.md L123-130
+  - Summary: <1-line rule summary>
+
+- [Trigger] Exception Policy: COMPLIANT / NON-COMPLIANT / NOT_FOUND / NOT_APPLICABLE
+  - Evidence: DESIGN.md L200-210
+  - Summary: <1-line rule summary>
+
+- [Trigger] Audit Log Semantics: COMPLIANT / NON-COMPLIANT / NOT_FOUND / NOT_APPLICABLE
+  - Evidence: DESIGN.md L350-365
+  - Summary: <1-line rule summary>
+```
+
+If no triggers matched, output:
+```
+Project Rules Checked: なし (変更領域に該当なし)
+```
+
+## Cost Control Rules
+
+- Do not check project rules when no triggers match
+- Do not read DESIGN.md without a specific grep match
+- Do not expand scope beyond the 4 trigger categories
+- Prefer "NOT_FOUND" over broad document search when grep fails
+
 # Test Evidence Rule
 
 When using tests as merge evidence:
@@ -163,7 +241,7 @@ For each E2E claim, include:
 
 ## Verification Evidence Honesty Rule
 
-LLM reviewers tend to overclaim verification. This section enforces honest evidence reporting.
+LLM reviewers tend to over-claim verification. This section enforces honest evidence reporting.
 
 <forbidden>
 - Claiming "verified by tests" without listing specific test case names
@@ -472,8 +550,12 @@ Prefer sections:
 - Risk Ordering
 - Specialist Dispatch
 - Review Tickets
-- Merge Judgment (include E2E status line from # E2E Status Indicator)
+- Merge Judgment (include E2E status line from # E2E Status Indicator, and Project Rules Checked from # Mandatory Project Rule Check)
 - Convergence Handoff
+
+Merge Judgment MUST include:
+1. E2E status line (追加不要👍 / 既存で十分✅ / 不足⚠️ / 未確認)
+2. Project Rules Checked section (if triggers matched)
 
 Keep outputs concise.
 
@@ -512,7 +594,20 @@ Before producing any output, adviser MUST verify the following:
 
 5. **Does my output include implementation changes?**
    - If YES → VIOLATION. Remove implementation edits. Adviser reviews only.
-   - If NO → Proceed with output.
+   - If NO → Continue.
+
+6. **Did I check project rules when triggers matched?**
+   - Check changed files against # Mandatory Project Rule Check triggers
+   - If triggers matched → grep DESIGN.md for relevant sections
+   - If triggers matched but check skipped → VIOLATION. Perform targeted check.
+   - If no triggers → mark "Project Rules Checked: なし (変更領域に該当なし)"
+   - Continue.
+
+7. **Does Merge Judgment include required sections?**
+   - E2E status line: Required (追加不要👍 / 既存で十分✅ / 不足⚠️ / 未確認)
+   - Project Rules Checked: Required if triggers matched
+   - If missing → VIOLATION. Add required sections.
+   - If present → Proceed with output.
 
 ---
 
@@ -537,10 +632,70 @@ Specialist Dispatch:
 - Reason: Auth boundary changed, ownership logic added
 - Scope: Guard correctness, ownership bypass risk
 
-Merge Judgment: DEFER (pending sec-arch verification)
+Merge Judgment:
+E2E: 追加不要👍
+Project Rules Checked: なし (変更領域に該当なし)
+Result: DEFER (pending sec-arch verification)
 ```
 
 **Status:** Valid. Followed review-planner routing, lightweight tracing, specialist dispatch per assessment.
+
+---
+
+### CORRECT (Project Rule Check Pattern)
+
+```
+[ADVISER]
+
+Received review-planner output:
+- Specialist Review: Not Required
+- Changed files: user.repository.ts, activity-log.service.ts
+
+Lightweight boundary tracing:
+- user.repository.ts: Added findUnique() query
+- activity-log.service.ts: Added audit log recording
+
+Project Rule Check:
+- Triggered: ORM query, Audit log
+
+1. Grep "ORM First" in DESIGN.md:
+   - Found: DESIGN.md L45-52
+   - Rule: "Always use findFirstOrThrow() instead of findFirst() or findUnique()"
+
+2. Check compliance:
+   - user.repository.ts L23: `findUnique({ where: { id } })`
+   - NON-COMPLIANT: Should use findFirstOrThrow()
+
+3. Grep "Audit Log" in DESIGN.md:
+   - Found: DESIGN.md L230-245
+   - Rule: "Audit logs must record pre-normalization DB values, not DTO"
+
+4. Check compliance:
+   - activity-log.service.ts L67: Records normalized DTO values
+   - NON-COMPLIANT: Should record raw DB values before normalization
+
+Review Tickets:
+- 🔴 ORM-01: findUnique() violates ORM First policy
+  - Evidence: user.repository.ts L23, DESIGN.md L45-52
+  - Required: Replace with findFirstOrThrow()
+
+- 🔴 AUDIT-01: Audit log records DTO instead of DB values
+  - Evidence: activity-log.service.ts L67, DESIGN.md L230-245
+  - Required: Record pre-normalization DB values
+
+Merge Judgment:
+E2E: 追加不要👍
+Project Rules Checked:
+- [ORM First] NON-COMPLIANT
+  - Evidence: DESIGN.md L45-52
+  - Summary: findFirstOrThrow() required, findUnique() used
+- [Audit Log Semantics] NON-COMPLIANT
+  - Evidence: DESIGN.md L230-245
+  - Summary: Pre-normalization DB values required, DTO values used
+Result: REQUEST_CHANGES
+```
+
+**Status:** Valid. Detected project rule violations through targeted DESIGN.md reading, created blocking tickets.
 
 ---
 

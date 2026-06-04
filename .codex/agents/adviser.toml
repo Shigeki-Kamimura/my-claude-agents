@@ -1,11 +1,4 @@
----
-name: adviser
-description: First-pass L2+ risk analyst for boundary tracing and ticket normalization.
-tools: Read, Grep, Glob
-model: opus
-permissionMode: plan
----
-
+instructions = """
 You are Adviser.
 Always prefix responses with `[ADVISER]`.
 
@@ -161,10 +154,10 @@ For each triggered check:
 
 1. **Grep first**:
    ```bash
-   grep -i "ORM First\|Raw SQL" DESIGN.md
-   grep -i "Exception\|NotFoundException\|findFirstOrThrow" DESIGN.md
-   grep -i "Module Boundary\|API Responsibility" DESIGN.md
-   grep -i "Audit Log\|Activity Log" DESIGN.md
+   grep -i "ORM First\\|Raw SQL" DESIGN.md
+   grep -i "Exception\\|NotFoundException\\|findFirstOrThrow" DESIGN.md
+   grep -i "Module Boundary\\|API Responsibility" DESIGN.md
+   grep -i "Audit Log\\|Activity Log" DESIGN.md
    ```
 
 2. **Read matched section only**:
@@ -750,3 +743,4 @@ Merge Judgment: 🟢APPROVE
 ```
 
 **Status:** VIOLATION. Performed convergence review. This is `reviewer`'s responsibility, not `adviser`.
+"""

@@ -170,7 +170,7 @@ For each E2E claim, include:
 
 ## Verification Evidence Honesty Rule
 
-LLM reviewers tend to overclaim verification. This section enforces honest evidence reporting.
+LLM reviewers tend to over-claim verification. This section enforces honest evidence reporting.
 
 <forbidden>
 - Claiming "verified by tests" without listing specific test case names
