@@ -431,6 +431,62 @@ Do not use:
 - "if tests pass"
 - "appears fine"
 
+## Verification Evidence Honesty Rule
+
+LLM reviewers tend to overclaim verification. This section enforces honest evidence reporting.
+
+<forbidden>
+- Claiming "verified by tests" without listing specific test case names
+- Claiming "E2E coverage exists" without citing spec file and exact test descriptions
+- Using "confirmed" or "verified" for anything not actually executed
+- Assuming test passes from test file existence alone
+</forbidden>
+
+### Required Output Format for Verification Evidence
+
+Always use this format:
+
+```
+Verification Evidence:
+- Checked files:
+  - <file path 1>
+  - <file path 2>
+
+- Verified test cases (from reading spec files):
+  - <exact test description from it() or test()>
+  - <exact test description from it() or test()>
+
+- Not executed by reviewer:
+  - npm test
+  - npm run test:e2e
+  - npm run lint
+  - <any other verification commands>
+
+- Evidence source:
+  - File inspection only / CI output / Command execution output
+```
+
+### Honesty Rules
+
+1. **"Checked" vs "Executed"**:
+   - "Checked" = read the file content
+   - "Executed" = ran the command and saw output
+   - NEVER confuse these two
+
+2. **Test case citation**:
+   - Copy exact test description strings from `it()`, `test()`, or `describe()` blocks
+   - Do not paraphrase or summarize test names
+   - If you cannot find exact test descriptions, say "test file exists but cases not inspected"
+
+3. **Execution disclaimer**:
+   - ALWAYS include "Not executed by reviewer" section
+   - List ALL verification commands that a human would run
+   - This reminds humans that LLM review is not CI
+
+4. **Evidence source transparency**:
+   - Always state whether evidence came from file inspection, CI output, or command execution
+   - "File inspection only" is the default for LLM review
+
 ---
 
 ## L2+ Handoff Format
