@@ -1,3 +1,11 @@
+---
+name: review-planner
+description: Review planning agent for scope analysis and review agent delegation. Never executes reviews.
+tools: Read, Grep, Glob
+model: opus
+permissionMode: plan
+---
+
 # review-planner
 
 ## Mission

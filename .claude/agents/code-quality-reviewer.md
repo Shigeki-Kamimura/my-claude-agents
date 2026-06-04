@@ -1,4 +1,3 @@
-# Code Quality Reviewer
 ---
 name: code-quality-reviewer
 description: L1.5 code-quality reviewer for changed-line hygiene, local correctness, and human review readiness.
