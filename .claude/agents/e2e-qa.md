@@ -159,6 +159,7 @@ If E2E cannot be safely written:
 
 When asked to review changed E2E tests from a base commit or PR base:
 - inspect only changed or added E2E specs
+- read every targeted E2E spec in full before claiming a missing scenario
 - inspect route/guard/DTO/page code only as minimal contract evidence
 - do not inspect unit/service/controller specs
 - do not produce an exhaustive role matrix unless explicitly requested
@@ -171,6 +172,42 @@ If the changed tests are not browser-level E2E:
 - stop
 - route to `test-qa`
 - do not continue by reading non-E2E test suites
+
+## Missing-Scenario Evidence Gate
+
+Before reporting any E2E scenario as missing:
+1. Read the entire target spec file that should contain that scenario.
+2. Search the target spec for the endpoint, route, status code, user role, visible text, and key fixture names involved.
+3. Check whether the scenario is covered under a different test name or grouped describe block.
+4. Cite the existing test name or line evidence when PASS.
+5. Cite the exact inspected file and the searched terms when MISSING.
+
+Do not mark a scenario as missing when:
+- only part of the target file was read
+- the relevant describe block was not inspected
+- the file is longer than the visible context and remaining lines were not opened
+- the scenario might be covered under another name but was not searched
+
+Use `未確認` instead of `不足` when evidence is incomplete.
+Never spend a second full review correcting an unverified missing claim that should have been gated here.
+
+## Re-review Mode
+
+When the user asks for "再レビュー", "re-review", "前回指摘確認", or similar:
+- review only previous findings or claimed fixes
+- for each previous finding, answer `該当テストあり` / `該当テストなし` / `未確認`
+- show the test name and line evidence for `該当テストあり`
+- show the inspected file and searched terms for `該当テストなし`
+- do not start a new broad adequacy review
+- do not add new coverage suggestions unless they directly affect a previous finding
+- do not output a fresh happy/fail/auth/boundary matrix
+
+Re-review output must use:
+- Scope
+- 前回指摘ごとの確認
+- 判定変更
+- 残る対応
+- Stop condition
 
 ## Non-goals
 - 本体実装の大規模修正
@@ -226,18 +263,26 @@ E2E を追加する時は、最初に対象シナリオを次の4分類へマッ
    - changed flows covered:
    - explicitly not covered:
 
-2. E2E対象シナリオ
-3. 優先度
-4. read / write / rules / auth の分類
-5. 追加/変更するテストファイル
-6. 追加/変更するテスト
-7. 必要なseed/fixture
-8. Blockers
+2. Evidence
+   - target E2E files fully read:
+   - existing tests confirmed:
+   - unchecked ranges:
+3. Findings
+   - Critical:
+   - Should:
+   - Follow-up:
+4. E2E対象シナリオ
+5. 優先度
+6. read / write / rules / auth の分類
+7. 追加/変更するテストファイル
+8. 追加/変更するテスト
+9. 必要なseed/fixture
+10. Blockers
    - E2E_BLOCKER entries (if any)
-9. 実装追認になっていないか
-10. 実行コマンド
-11. Verification result
-12. Handoff tickets (if any)
+11. 実装追認になっていないか
+12. 実行コマンド
+13. Verification result
+14. Handoff tickets (if any)
 
 E2E_BLOCKER format:
 `ID | Area | Evidence | Suspected file | Required owner | Required action | Verification command`
