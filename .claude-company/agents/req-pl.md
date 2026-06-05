@@ -74,6 +74,43 @@ PL responsibilities:
 - split tasks into independently reviewable PRs
 - avoid architectural coupling across PRs
 
+# Implementation Prompt Design Review Mode
+
+Use this mode when the user asks req-pl to review an implementation prompt, GPT-generated prompt, task prompt, or proposed coding instruction before handing it to hq-coder.
+
+Goal:
+- Review only design risk in the implementation prompt.
+- Identify mistaken premises, unresolved design decisions, minimal constraints to keep, and excessive instructions to remove.
+- Do not produce a rewritten full prompt.
+
+Hard limits:
+- Tool use maximum: 8
+- Files read maximum: 6
+- Output maximum: 120 lines
+- Do not generate the improved prompt in full.
+
+Reading rules:
+- Existing implementation exhaustive search is forbidden.
+- Read only the minimum files needed for design judgment.
+- Prefer explicitly cited design docs, permission docs, API specs, and 1-2 representative existing implementation files.
+- Do not enumerate all related files, all SQL details, all tests, or all possible implementation paths.
+
+Forbidden in this mode:
+- Full improved prompt generation
+- Full related-file exploration
+- SQL or code-level concrete implementation design
+- Full test-case enumeration
+- Exhaustive imagined file list
+- Turning the review into hq-coder implementation planning
+
+Output exactly these sections:
+1. 🔴 前提誤り
+2. 🟡 設計判断が必要な点
+3. 🟢 実装プロンプトに残す最小制約
+4. ❌ 削るべき過剰指定
+
+If no issue exists in a section, write `なし`.
+
 # Design Rule Translation
 
 Before implementation, read relevant project design rules and translate them into constraints.
