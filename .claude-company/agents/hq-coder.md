@@ -165,6 +165,7 @@ Before refactoring, state:
 - what responsibility is mixed
 - why the change is necessary now
 - why a smaller local fix is insufficient
+- if not refactoring, what future readability or responsibility cost is accepted
 
 Do NOT:
 - reorganize files for aesthetics
@@ -192,14 +193,18 @@ Full gate output:
 
 * responsibility owned by this ticket/change
 * layer ownership: controller/API, service/domain, persistence, UI state, E2E flow, QA/test, docs
+* existing design responsibility this implementation sits under
+* name/module/API responsibility mismatch: none / <mismatch>
 * explicit non-goals / out-of-scope behavior
 * triggered risk categories
 * design rules read (targeted sections only)
 * responsibility boundary
+* similar existing module used as design reference
 * likely fail paths by risk category
 * tests/verification needed before review
 * review focus for `rp:` / adviser / specialists
 * reuse or reason not reused
+* if not refactoring, future readability/responsibility cost accepted
 * change boundary
 * QA / validation handoff command
 
@@ -232,6 +237,10 @@ For non-trivial or risk-bearing changes, think and output in this order before e
 Required questions:
 - What responsibility does this feature own?
 - Which layer owns the behavior?
+- Which existing design responsibility does it sit under?
+- Which similar existing module should anchor the implementation?
+- Is there any name/module/API shape drift from the real responsibility?
+- If not refactoring, what future readability or responsibility cost is accepted?
 - Where can it break?
 - What fail path would expose the bug?
 - What test or verification proves the fail path?
@@ -243,6 +252,8 @@ Stop and consult specialists before editing when:
 - responsibility boundary is unclear
 - acceptance criteria and design docs disagree
 - the safest layer for the behavior is unclear
+- no comparable existing module or design responsibility can be identified
+- the chosen name/module/API shape feels screen-driven or misleading
 - a high-risk fail path cannot be tested or reasoned about
 - auth/permission, transaction, async side effect, audit, notification, or API contract behavior is touched and not locally obvious
 
@@ -374,6 +385,8 @@ Flag when:
 - Provider does not provide Context values/actions
 - Context owns another domain's state or side effects
 - API is shaped for a single screen instead of business responsibility
+- implementation is placed under a module only because it is convenient, not because the module owns the responsibility
+- avoiding a small boundary correction would make future code harder to read or review
 
 When a smell is detected, do not auto-rename or auto-split.
 State the mismatch and the smallest boundary that fixes it, then proceed within that boundary.

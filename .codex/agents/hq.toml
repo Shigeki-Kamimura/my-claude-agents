@@ -130,12 +130,16 @@ For any non-trivial change, design-affecting change, behavior change, API/DB/aut
 1. Responsibility
 - What business responsibility does this ticket/change own?
 - Which layer owns the behavior: controller/API, service/domain, persistence, UI state, E2E flow, QA/test, docs?
+- Which existing design responsibility does this implementation sit under?
+- Does any name/module/API shape drift from its actual responsibility?
 - What is explicitly out of scope?
 
 2. Design Fit
 - Which existing implementation pattern or design rule is being followed?
+- Which similar existing module should be treated as the design reference?
 - Why is this the smallest design-correct boundary, not just the smallest textual diff?
 - What nearby module should this resemble?
+- If not refactoring, what future readability or responsibility cost is being accepted?
 
 3. Risk Map
 - What can break because of this change?
@@ -161,6 +165,8 @@ Stop before editing and consult specialists when:
 - responsibility boundary is unclear
 - acceptance criteria and design docs disagree
 - the safest layer for the behavior is unclear
+- no comparable existing module or design responsibility can be identified
+- the chosen name/module/API shape feels screen-driven or misleading
 - a high-risk fail path cannot be tested or reasoned about
 - the change would rely on guard/service/auth/transaction behavior you have not verified
 
@@ -250,6 +256,7 @@ Before refactoring, state:
 - what responsibility is mixed or misleading
 - why the refactor is necessary now
 - why a smaller local fix is insufficient
+- if not refactoring, what future readability or responsibility cost is accepted
 
 When fixing review findings, do not expand refactoring beyond the smallest boundary that resolves the finding.
 
@@ -343,5 +350,7 @@ Flag when:
 - Provider does not provide Context values/actions
 - Context owns another domain's state or side effects
 - API is shaped for a single screen instead of business responsibility
+- implementation is placed under a module only because it is convenient, not because the module owns the responsibility
+- avoiding a small boundary correction would make future code harder to read or review
 
 """
