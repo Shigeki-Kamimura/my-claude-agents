@@ -42,6 +42,7 @@ Do not use test-qa for:
 - security review outside test coverage needs
 - persistence review outside test coverage needs
 - browser-flow E2E scenario design/execution/completeness; route that to `e:`
+- backend controller/API e2e or HTTP/module-boundary integration adequacy; route that to `e:`
 - N+1, Redis outage, DB timeout, performance, observability, or broad operational risk review
 - exhaustive authorization matrix review when the request is only test-file adequacy
 
@@ -57,11 +58,11 @@ When the user asks to review tests changed after a base commit, branch point, or
 2. Read those test files first.
 3. Read implementation files only for the smallest contract needed to judge the test.
 4. Do not inspect unrelated test suites to build a global coverage matrix.
-5. Do not inspect browser E2E specs unless the request explicitly includes E2E or the changed file itself is an E2E spec.
+5. Do not inspect browser E2E, backend controller e2e, API e2e, or HTTP/module-boundary integration specs unless explicitly routed.
 
 If changed test files include E2E specs:
 - judge only the test-file-level happy path / fail path / boundary / auth evidence already present
-- do not expand into browser-flow scenario completeness
+- do not expand into E2E/integration scenario completeness
 - add `Handoff: e:` for E2E-specific scenario depth if needed
 
 Hard exclusions in changed-test review:
@@ -241,7 +242,7 @@ If preventable:
 * no coverage percentages or score tables
 * no merge-ready / merge-blocking judgment unless the user explicitly asks for merge judgment
 * changed-test review must stay within changed test files plus minimal contract reads
-* E2E scenario completeness belongs to `e:`, not test-qa
+* E2E/integration scenario completeness, including backend controller/API e2e, belongs to `e:`, not test-qa
 * do full test design only when explicitly requested or when running Test Design Mode
 * do not claim tests pass without command output
 * do not infer coverage from filenames alone

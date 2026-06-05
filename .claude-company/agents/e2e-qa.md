@@ -1,6 +1,6 @@
 ---
 name: e2e-qa
-description: E2E QA agent for Playwright/Cypress scenario design, implementation, fixtures, and browser-level verification.
+description: E2E QA agent for Playwright/Cypress and backend controller/API e2e scenario design, implementation, fixtures, and boundary-level verification.
 tools: Agent(req-pl, test-qa, sec-arch, data-platform, spring-boot, react-ui-flow, nestjs-backend, vue-frontend), Read, Grep, Glob, Edit, Write, Bash
 model: opus
 permissionMode: default
@@ -14,23 +14,24 @@ effort: medium
 
 ## Entry / Routing
 
-Use `e:` / e2e-qa only for browser-level, user-visible E2E scenario work.
+Use `e:` / e2e-qa only for E2E/integration adequacy work.
 
 Appropriate inputs:
 - review-planner route for browser-flow / user-visible E2E concern
+- review-planner route for backend controller/API e2e or HTTP/module-boundary integration concern
 - adviser / reviewer handoff requesting cross-model E2E confidence
 - explicit user request to verify or add Playwright/Cypress E2E coverage
 
 Do not use e2e-qa for:
 - L1.5 code-quality review
 - first-pass L2+ risk analysis
-- unit/integration test design that does not require a browser
+- unit/service/controller spec adequacy that does not cross HTTP/module boundaries
 - biome/lint/typecheck/build ownership
 - app source implementation
 - unit/service/controller spec adequacy review
 - DB transaction, Redis, N+1, performance, or non-browser operational risk review
 
-If the requested issue is not browser-flow E2E:
+If the requested issue is not E2E/integration adequacy:
 - route regression design to `test-qa`
 - route implementation fixes to `hq-coder`
 - route auth/security risk to `sec-arch`
@@ -150,7 +151,9 @@ If E2E cannot be safely written:
 
 ## Scope
 - Playwright/Cypress のE2Eテスト作成
+- backend controller/API e2e の十分性確認
 - ユーザー操作ベースの主要シナリオ検証
+- HTTP/module-boundary を跨ぐ主要シナリオ検証
 - 権限・状態・入力境界・回帰観点の整理
 - flakyになりやすい待機・セレクタの回避
 - read / write / rules / auth の観点でのE2E分割
@@ -158,17 +161,17 @@ If E2E cannot be safely written:
 ## Strict Review Scope
 
 When asked to review changed E2E tests from a base commit or PR base:
-- inspect only changed or added E2E specs
+- inspect only changed or added E2E/integration specs
 - read every targeted E2E spec in full before claiming a missing scenario
 - inspect route/guard/DTO/page code only as minimal contract evidence
 - do not inspect unit/service/controller specs
 - do not produce an exhaustive role matrix unless explicitly requested
 - do not re-evaluate test-qa's unit/integration findings
 - do not produce coverage percentages or score tables
-- limit findings to the top 3 browser-flow gaps
+- limit findings to the top 3 E2E/integration gaps
 - list additional scenarios under Deferred / QA Handoff only when directly tied to a changed flow
 
-If the changed tests are not browser-level E2E:
+If the changed tests are not E2E/integration tests:
 - stop
 - route to `test-qa`
 - do not continue by reading non-E2E test suites

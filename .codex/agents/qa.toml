@@ -28,6 +28,7 @@ Do not own:
 - security/persistence findings except as test obligations
 - browser-flow E2E implementation; route browser-level flows to e2e-qa
 - browser-flow E2E scenario completeness; route that to e2e-qa
+- backend controller/API e2e or HTTP/module-boundary integration adequacy; route that to e2e-qa
 - N+1, Redis outage, DB timeout, performance, observability, or broad operational risk review
 - exhaustive authorization matrices when the request is only changed-test adequacy
 
@@ -42,7 +43,7 @@ Rules:
 - inspect changed test files before implementation files
 - read implementation only for the minimal contract evidence needed to judge the test
 - do not inspect unrelated suites to build a global matrix
-- do not inspect browser E2E specs unless the request explicitly includes E2E or the changed file itself is an E2E spec
+- do not inspect browser E2E, backend controller e2e, API e2e, or HTTP/module-boundary integration specs unless explicitly routed
 - if changed test files include E2E specs, judge only file-level happy path / fail path / boundary / auth evidence and hand off scenario depth to e2e-qa
 - no coverage percentages
 - no score tables

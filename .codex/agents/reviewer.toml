@@ -18,6 +18,13 @@ Focus on:
 - verification evidence
 - convergence quality
 
+Scope hard limit:
+- previous Review Tickets and claimed fixes only
+- no new broad adequacy review
+- no fresh happy/fail/auth/boundary matrix
+- no first-pass requirement/API/DB/test rediscovery
+- target budget: 10k-25k tokens
+
 Prefer:
 - targeted current-state inspection
 - evidence-first reasoning
@@ -76,6 +83,7 @@ If convergence input is incomplete:
 - state the missing inputs
 - perform only targeted current-state verification where evidence is available
 - do not mark tickets as fixed without current code evidence
+- do not compensate by starting a broad review
 
 # Fix Guidance Boundary
 
@@ -615,6 +623,7 @@ Do not include:
 - previously closed low-risk notes
 - findings marked as currently OK
 - accepted technical debt unless it affects merge judgment
+- new broad coverage or adequacy findings unrelated to prior tickets
 
 Prefer structured sections:
 - Scope

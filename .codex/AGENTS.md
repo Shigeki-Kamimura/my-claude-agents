@@ -68,13 +68,61 @@ Never silently inline delegated work.
 - requirement clarification -> req-pl
 - implementation -> hq-coder
 - L0/L1 verification, changed-test-file adequacy, fail-path test design, and targeted test implementation -> test-qa
-  do not expand into browser-flow E2E completeness, non-functional risk hunts, or coverage percentages
-- changed browser-level E2E design/verification -> e2e-qa
+  do not expand into E2E/integration completeness, non-functional risk hunts, or coverage percentages
+- changed E2E/integration design/verification -> e2e-qa
   do not inspect unit/service/controller spec adequacy or re-evaluate test-qa findings
   organize by `read` / `write` / `rules` / `auth`
 - L1.5 code quality review -> code-quality-reviewer
 - L2+ review -> adviser
 - convergence review -> reviewer
+
+## Review Operating Model
+
+`rp` is the review hub.
+
+`rp` must decide:
+- requirement summary
+- non-goals
+- changed responsibility boundary
+- important risks
+- which reviewer sees which files
+- duplicate-review exclusions
+- adviser handoff points
+
+Standard flows:
+- These are recommended manual sequences, not automatic chains.
+- Agents must stop after their own layer and wait for the user's next command unless explicitly instructed otherwise.
+- Tiny PR: direct `cr:` is allowed for formatting, small refactors, one-test additions, or obvious bug fixes
+- Normal PR: `rp -> cr -> q -> adv`
+- E2E changes present: `rp -> cr -> q -> e -> adv`
+- Large design change: `rp -> adv first -> cr/q/e -> adv convergence`
+- Re-review: previous findings only; no new broad adequacy review
+
+Layer split:
+- `cr`: lightweight implementation smell and review-readiness check
+- `q`: unit/service/controller spec adequacy only; do not review E2E/integration tests unless explicitly routed
+- `e`: E2E/integration adequacy only, including browser E2E and backend controller/API e2e
+- `adv`: L2+ boundary review against rp risk handoff
+- `rev`: prior Review Tickets / claimed fixes only
+- `adv convergence`: re-check only L2+ boundary risks previously raised by adv; do not perform broad PR review
+- `rev`: verify prior Review Tickets or claimed fixes across layers after concrete fixes
+
+Target review budget:
+- `rp:` 10k-20k tokens
+- `cr:` 20k-35k tokens
+- `q:` 25k-40k tokens
+- `e:` 20k-35k tokens
+- `adv:` 30k-60k tokens
+- `rev:` 10k-25k tokens
+
+Duplicate-review rule:
+- Once a layer has covered a topic, later layers may cite the result but must not re-evaluate it unless merge judgment depends on unresolved evidence.
+- Later layers may re-open a topic only when previous evidence is missing or contradicted, merge judgment depends on unresolved evidence, or the topic is part of that layer's explicit risk handoff.
+
+rp size rule:
+- `rp` creates the review plan only.
+- `rp` must not perform code review, test adequacy review, E2E review, L2+ judgment, or full-file deep inspection.
+- `rp` should stay lightweight; if planning starts to require deep reading, route the uncertainty to the target reviewer instead.
 
 ## Review Entry Rule
 

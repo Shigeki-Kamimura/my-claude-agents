@@ -36,6 +36,16 @@ Avoid:
 - repeated file reads
 - duplicate reviews
 
+Target review budget:
+- `rp:` 10k-20k tokens
+- `cr:` 20k-35k tokens
+- `q:` 25k-40k tokens
+- `e:` 20k-35k tokens
+- `adv:` 30k-60k tokens
+- `rev:` 10k-25k tokens
+
+If a scoped review is likely to exceed its target, reduce scope before reading more files and state what was left for another layer.
+
 ---
 
 ## Core Priorities
@@ -96,15 +106,6 @@ Rules:
 
 ## Review Flow
 
-Rules:
-- Prefix routing has priority over default review order.
-- `cr:` runs only `code-quality-reviewer`.
-- `cr:` must not automatically continue to `adviser`.
-- `adviser` is used only when the user explicitly uses `adv:` / `a:` or requests L2+ review.
-- `reviewer` is used only for convergence after prior Review Tickets or claimed fixes.
-
-## Review Flow
-
 Review agents are independent.
 
 Prefix routing always has priority.
@@ -122,14 +123,57 @@ Rules:
 - Do not escalate from `cr:` to `adv:` automatically.
 - Do not send first-pass PR review to `reviewer`.
 - Each review command owns only its scoped review layer.
+- `cr:` runs only `code-quality-reviewer`.
+- `adviser` is used only when the user explicitly uses `adv:` / `a:` or review-planner routes L2+ review.
+- `reviewer` is used only for convergence after prior Review Tickets or claimed fixes.
+
+## Review Operating Model
+
+`rp` is the review hub.
+
+`rp` must decide:
+- requirement summary
+- non-goals
+- changed responsibility boundary
+- important risks
+- which reviewer sees which files
+- duplicate-review exclusions
+- adviser handoff points
+
+Standard flows:
+- These are recommended manual sequences, not automatic chains.
+- Agents must stop after their own layer and wait for the user's next command unless explicitly instructed otherwise.
+- Tiny PR: direct `cr:` is allowed for formatting, small refactors, one-test additions, or obvious bug fixes
+- Normal PR: `rp -> cr -> q -> adv`
+- E2E changes present: `rp -> cr -> q -> e -> adv`
+- Large design change: `rp -> adv first -> cr/q/e -> adv convergence`
+- Re-review: previous findings only; no new broad adequacy review
+
+Layer split:
+- `cr`: lightweight implementation smell and review-readiness check
+- `q`: unit/service/controller spec adequacy only; do not review E2E/integration tests unless explicitly routed
+- `e`: E2E/integration adequacy only, including browser E2E and backend controller/API e2e
+- `adv`: L2+ boundary review against rp risk handoff
+- `rev`: prior Review Tickets / claimed fixes only
+- `adv convergence`: re-check only L2+ boundary risks previously raised by adv; do not perform broad PR review
+- `rev`: verify prior Review Tickets or claimed fixes across layers after concrete fixes
+
+Duplicate-review rule:
+- Once a layer has covered a topic, later layers may cite the result but must not re-evaluate it unless merge judgment depends on unresolved evidence.
+- Later layers may re-open a topic only when previous evidence is missing or contradicted, merge judgment depends on unresolved evidence, or the topic is part of that layer's explicit risk handoff.
+
+rp size rule:
+- `rp` creates the review plan only.
+- `rp` must not perform code review, test adequacy review, E2E review, L2+ judgment, or full-file deep inspection.
+- `rp` should stay lightweight; if planning starts to require deep reading, route the uncertainty to the target reviewer instead.
 
 ## QA Boundary
 
 - `test-qa` owns changed-test-file adequacy, unit/integration regression planning, and high-signal verification gaps.
-- `test-qa` must not expand into browser-flow E2E scenario completeness, non-functional risk hunts, or coverage percentage scoring.
-- `e2e-qa` owns changed browser-flow Playwright/Cypress scenario design and implementation for user-flow coverage.
+- `test-qa` must not expand into E2E/integration scenario completeness, non-functional risk hunts, or coverage percentage scoring.
+- `e2e-qa` owns changed E2E/integration adequacy: browser E2E user flows, backend controller/API e2e, auth/role behavior, and major fail paths crossing module or HTTP boundaries.
 - `e2e-qa` must not inspect unit/service/controller spec adequacy or re-evaluate test-qa findings.
-- Use `e2e-qa` only when behavior must be proven through browser-level user actions.
+- Use `e2e-qa` when behavior must be proven through browser-level user actions or HTTP/module-boundary E2E/integration tests.
 - Prefer structuring E2E by `read` / `write` / `rules` / `auth`.
 - Split browser tests by dominant risk axis instead of feature size alone.
 - Split or add files before a single E2E spec exceeds 400 lines.
