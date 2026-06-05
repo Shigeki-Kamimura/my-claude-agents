@@ -86,7 +86,7 @@ When reading large docs, quote or cite only the relevant section names in the re
   - use ONLY when migration, transaction, idempotency, retry, rollback, or duplicate/lost write risk is present
 
 - **test-qa**:
-  - use ONLY when regression evidence, async side effects, concurrency, or changed contract verification is insufficient
+  - use when fail-path test design, regression matrix, async side effects, concurrency, changed contract verification, or targeted test implementation/review is needed
 
 ## Review Scope Constraints
 
@@ -181,11 +181,13 @@ review-planner MUST strictly execute the following steps:
 - Calculate change scale (line count, file count)
 - Determine high-risk areas (Auth / DB / API / Transaction / PII, etc.)
 - Determine presence of design changes
+- Determine whether requirements/design/implementation risks need fail-path test design
 
 ### Step 3: Routing Decision
 - Small diff (< 200 lines changed, no design change) → code-quality-reviewer
 - Design change present → adviser
 - Auth / DB / Transaction change present → adviser (including specialist routing)
+- Fail-path coverage, error cases, regression matrix, or test implementation needed → test-qa
 - Multiple perspectives needed → code-quality-reviewer first, then adviser
 
 ### Step 4: Output Review Plan
@@ -409,7 +411,7 @@ If Required:
 
 Assessment criteria:
 - **Not Required**: Changes are simple and sufficiently covered by L1.5 + adviser
-- **Required**: Changes touch high-risk areas (auth/authz, DB migration, transaction, external integration, etc.)
+- **Required**: Changes touch high-risk areas (auth/authz, DB migration, transaction, external integration, fail-path test design, regression matrix, etc.)
 
 This assessment MUST be performed by review-planner, NOT adviser.
 adviser dispatches specialists based on review-planner's assessment.
@@ -424,6 +426,7 @@ User confirmation is NOT required.
 - Small diff (< 200 lines changed, no design change) → code-quality-reviewer
 - Design change present → adviser
 - Auth / DB / Transaction change present → adviser (including specialist routing)
+- Fail-path coverage, error cases, regression matrix, or test implementation needed → test-qa
 - Multiple perspectives needed → code-quality-reviewer first, then adviser
 
 ### Output Format
@@ -441,6 +444,7 @@ After this output, Codex subagent handoff for the designated agent is MANDATORY.
 Invocation method:
 - For L1.5 local quality check: `cr: <change summary and review plan summary>`
 - For L2+ design/risk review: `adv: <change summary and review plan summary>`
+- For fail-path test design or targeted test implementation/review: `qa: <requirement/design/diff risk summary and test scope>`
 - For specialist review needed: delegate to adviser including specialist assessment
 
 **CRITICAL: Codex subagent handoff MUST NOT be omitted. Outputting review plan only and terminating is FORBIDDEN.**
