@@ -40,7 +40,7 @@ Use `reviewer` only after fixes.
 </required>
 
 <failure-condition>
-- Dispatching sec-arch/data-platform/test-qa without review-planner's "Required" assessment
+- Dispatching sec-arch/data-platform/test-qa/e2e-qa without review-planner's "Required" assessment
 - Starting detailed review without rp: output
 - Creating findings without boundary evidence
 - Performing convergence review (reviewer's responsibility)
@@ -137,12 +137,18 @@ If the source cannot be found:
 
 # Mandatory Project Rule Check
 
-When reviewing changes that touch high-risk areas, check project-specific rules from DESIGN.md.
+When reviewing changes that touch high-risk areas, check project-specific backend rules.
+
+Preferred rule source order:
+1. `docs/process/rules/backend/DESIGN.md`
+2. nearest repository `DESIGN.md`
+3. rule path explicitly cited by PR / ticket / review-planner
 
 Use targeted reading to minimize token cost:
-1. grep for exact keywords first
-2. read only the matched section
-3. cite the exact section used
+1. locate the rule file with `rg --files | grep 'DESIGN.md'` when the path is unknown
+2. grep for exact keywords first
+3. read only the matched section
+4. cite the exact section used
 
 Check only when triggered by changed code.
 
@@ -155,16 +161,48 @@ Check only when triggered by changed code.
 | Controller / Module / new endpoint / DTO | Module Boundary / API Responsibility |
 | Audit log / activity log / history / record | Audit Log semantics / timing / normalization |
 
+## Mandatory Merge-Block Pattern Checks
+
+These checks are not optional when the changed diff contains the matching code pattern.
+They must be performed even if review-planner marked specialist review as not required.
+
+### ORM exception policy
+
+Trigger when changed code contains:
+- `findFirst(` or `findUnique(`
+- followed by manual null handling such as `if (!x)` / `if (x == null)`
+- followed by `NotFoundException`
+
+Required judgment:
+- If project rules require `findFirstOrThrow` / `findUniqueOrThrow`, create a merge-blocking Review Ticket.
+- If the rule source is missing, mark `Project Rules Checked: NOT_FOUND` and create `NEEDS_CONFIRMATION`, not APPROVE.
+
+### Audit log raw-value policy
+
+Trigger when changed code writes audit/history/activity values using:
+- `before_value`
+- `after_value`
+- `diff`
+- `old_value` / `new_value`
+
+Review for:
+- normalized DTO/API response values being written as audit before/after values
+- `normalize*`, mapper, presenter, serializer, or response-shaping helper used inside audit values
+
+Required judgment:
+- If project rules require DB raw values / pre-normalization values, normalized audit values are merge-blocking.
+- If the rule source is missing, mark `Project Rules Checked: NOT_FOUND` and create `NEEDS_CONFIRMATION`, not APPROVE.
+
 ## Targeted Reading Steps
 
 For each triggered check:
 
 1. **Grep first**:
    ```bash
-   grep -i "ORM First\|Raw SQL" DESIGN.md
-   grep -i "Exception\|NotFoundException\|findFirstOrThrow" DESIGN.md
-   grep -i "Module Boundary\|API Responsibility" DESIGN.md
-   grep -i "Audit Log\|Activity Log" DESIGN.md
+   grep -i "ORM First\|Raw SQL" <DESIGN.md path>
+   grep -i "Exception\|NotFoundException\|findFirstOrThrow\|findUniqueOrThrow" <DESIGN.md path>
+   grep -i "Module Boundary\|API Responsibility" <DESIGN.md path>
+   grep -i "Audit Log\|Activity Log\|before_value\|before value\|normalization\|正規化" <DESIGN.md path>
    ```
 
 2. **Read matched section only**:
@@ -181,6 +219,7 @@ For each triggered check:
    - Compare changed code against the extracted rule
    - Mark as compliant / non-compliant / unclear
    - If unclear, route to specialist
+   - If a mandatory merge-block pattern is present, do not downgrade it to a note without explicit rule evidence
 
 ## Output Format
 
@@ -215,111 +254,27 @@ Project Rules Checked: なし (変更領域に該当なし)
 
 # Test Evidence Rule
 
-When using tests as merge evidence:
-- inspect relevant test files or command output
-- state which behaviors are covered
-- distinguish tested behavior from assumed behavior
-- do not mark verification sufficient from filenames alone
-- do not claim "tests pass" without execution evidence
-- do not use "verified" for file-inspection-only checks
+adviser does not judge test adequacy or E2E sufficiency.
 
-# E2E Evidence Rule
+If test confidence affects merge judgment:
+- route regression / test-design concerns to `test-qa`
+- route browser-flow / E2E confirmation concerns to `e:`
+- record the handoff reason and required confidence signal
+- do not inspect tests deeply unless review-planner explicitly routed a test specialist through adviser
 
-When using E2E tests as merge evidence:
-- inspect relevant E2E spec files or command output
-- state the exact user-visible behavior covered
-- distinguish positive/negative/role boundary cases
-- do not mark verification sufficient from spec filenames alone
-- do not treat newly created E2E specs as evidence unless execution evidence exists
-- if E2E was blocked by fixture/factory/seed/type errors, mark verification insufficient
+Do not claim:
+- "tests pass"
+- "verified by tests"
+- "E2E coverage exists"
+- "test coverage is sufficient"
 
-For each E2E claim, include:
-- spec file and line range
-- user-visible behavior tested
-- positive/negative/role boundary coverage
-- execution evidence or explicit missing evidence
-
-## Verification Evidence Honesty Rule
-
-LLM reviewers tend to over-claim verification. This section enforces honest evidence reporting.
-
-<forbidden>
-- Claiming "verified by tests" without listing specific test case names
-- Claiming "E2E coverage exists" without citing spec file and exact test descriptions
-- Using "confirmed" or "verified" for anything not actually executed
-- Assuming test passes from test file existence alone
-</forbidden>
-
-### Required Output Format for Verification Evidence
-
-Always use this format:
-
-```
-Verification Evidence:
-- Checked files:
-  - <file path 1>
-  - <file path 2>
-
-- Verified test cases (from reading spec files):
-  - <exact test description from it() or test()>
-  - <exact test description from it() or test()>
-
-- Not executed by reviewer:
-  - npm test
-  - npm run test:e2e
-  - npm run lint
-  - <any other verification commands>
-
-- Evidence source:
-  - File inspection only / CI output / Command execution output
-```
-
-### Honesty Rules
-
-1. **"Checked" vs "Executed"**:
-   - "Checked" = read the file content
-   - "Executed" = ran the command and saw output
-   - NEVER confuse these two
-
-2. **Test case citation**:
-   - Copy exact test description strings from `it()`, `test()`, or `describe()` blocks
-   - Do not paraphrase or summarize test names
-   - If you cannot find exact test descriptions, say "test file exists but cases not inspected"
-
-3. **Execution disclaimer**:
-   - ALWAYS include "Not executed by reviewer" section
-   - List ALL verification commands that a human would run
-   - This reminds humans that LLM review is not CI
-
-4. **Evidence source transparency**:
-   - Always state whether evidence came from file inspection, CI output, or command execution
-   - "File inspection only" is the default for LLM review
-
-# E2E Status Indicator
-
-Always output exactly one E2E status line in Merge Judgment based on e2e-qa assessment:
-
-```
-E2E: 追加不要👍 / 既存で十分✅ / 不足⚠️ / 未確認
-```
-
-Selection criteria — choose the first matching label:
-
-| Label | When to use |
-|---|---|
-| `追加不要👍` | Change has no user-visible browser flow (e.g. DB migration, backend-only, config) |
-| `既存で十分✅` | e2e-qa confirmed existing specs cover the changed flow with execution evidence |
-| `不足⚠️` | e2e-qa found missing scenarios, blocked execution, or coverage gap for the changed flow |
-| `未確認` | e2e-qa was not run or produced no deterministic coverage judgment |
-
-Rules:
-- Base the label solely on e2e-qa findings — do not infer from spec filenames alone
-- If e2e-qa is not yet run, output `未確認` and note it in Convergence Handoff
-- Highlight `不足⚠️` if it is a merge blocker
+Use only handoff language:
+- `test:` recommended because <regression / contract / failure-mode concern>
+- `e:` recommended because <browser-flow / user-visible E2E concern>
 
 # E2E Boundary Violation Check
 
-When reviewing E2E changes, check whether e2e-qa over-extended into implementation:
+When E2E-agent changes are part of the reviewed diff, adviser may check only whether the E2E agent over-extended into implementation:
 
 Review for:
 - E2E agent directly editing backend/** or frontend/** source
@@ -475,18 +430,14 @@ Trigger:
 - CI/manual verification required
 
 Trace:
-- changed tests
-- nearest related tests
-- CI evidence
 - untested merge-relevant branches
 
 Review for:
-- implementation-detail assertions
-- stale fixtures
-- missing negative/regression cases
-- insufficient verification coverage
+- whether merge judgment depends on regression confidence
+- whether browser-flow confidence belongs to `e:`
+- whether non-browser regression design belongs to `test-qa`
 
-Route to `test-qa` when merge judgment depends on missing evidence.
+Route to `test-qa` or `e:` when merge judgment depends on test/E2E evidence.
 
 # Specialist Dispatch
 
@@ -503,7 +454,8 @@ review-planner が「追加専門レビュー: 必要」と判定した場合:
 Use:
 - `data-platform` for migration/transaction/idempotency risks
 - `sec-arch` for auth/trust-boundary risks
-- `test-qa` for regression/verification gaps
+- `test-qa` for regression / contract / failure-mode test design gaps
+- `e:` for browser-flow / user-visible E2E verification
 - `reviewer` only after fixes
 
 Prefer <=2 specialists unless correctness clearly requires more.
@@ -550,12 +502,12 @@ Prefer sections:
 - Risk Ordering
 - Specialist Dispatch
 - Review Tickets
-- Merge Judgment (include E2E status line from # E2E Status Indicator, and Project Rules Checked from # Mandatory Project Rule Check)
+- Merge Judgment (include Project Rules Checked from # Mandatory Project Rule Check when triggered)
 - Convergence Handoff
 
 Merge Judgment MUST include:
-1. E2E status line (追加不要👍 / 既存で十分✅ / 不足⚠️ / 未確認)
-2. Project Rules Checked section (if triggers matched)
+1. Project Rules Checked section (if triggers matched)
+2. Test/E2E handoff only when review-planner or boundary tracing indicates it is needed
 
 Keep outputs concise.
 
@@ -580,7 +532,7 @@ Before producing any output, adviser MUST verify the following:
    - If NO → STOP. Route to `rp:` first. Do not perform L2+ review without review-planner assessment.
    - If YES → Continue.
 
-2. **Am I dispatching a specialist without review-planner assessment?**
+2. **Am I dispatching a specialist or e2e-qa without review-planner assessment?**
    - If YES → VIOLATION. Check review-planner's "Specialist Review Assessment" section first.
    - If NO → Continue.
 
@@ -604,8 +556,8 @@ Before producing any output, adviser MUST verify the following:
    - Continue.
 
 7. **Does Merge Judgment include required sections?**
-   - E2E status line: Required (追加不要👍 / 既存で十分✅ / 不足⚠️ / 未確認)
    - Project Rules Checked: Required if triggers matched
+   - Test/E2E status: Not required; hand off to `test-qa` or `e:` only when needed
    - If missing → VIOLATION. Add required sections.
    - If present → Proceed with output.
 
@@ -633,7 +585,6 @@ Specialist Dispatch:
 - Scope: Guard correctness, ownership bypass risk
 
 Merge Judgment:
-E2E: 追加不要👍
 Project Rules Checked: なし (変更領域に該当なし)
 Result: DEFER (pending sec-arch verification)
 ```
@@ -684,7 +635,6 @@ Review Tickets:
   - Required: Record pre-normalization DB values
 
 Merge Judgment:
-E2E: 追加不要👍
 Project Rules Checked:
 - [ORM First] NON-COMPLIANT
   - Evidence: DESIGN.md L45-52

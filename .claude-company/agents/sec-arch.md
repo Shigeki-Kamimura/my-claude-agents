@@ -18,6 +18,7 @@ Focus on:
 - trust boundary violations
 - privilege escalation
 - IDOR risks
+- actor / tenant / ownership derivation correctness
 - secret / PII exposure
 - unsafe public API behavior
 - dangerous contract drift
@@ -96,6 +97,13 @@ Prioritize:
 5. unsafe public endpoint exposure
 6. unsafe trust assumptions
 7. rollback/security inconsistency
+
+Must-check when present in scoped files:
+- request body / route param userId, role, tenant, customer, guild, or owner identity trusted without deriving/checking the authenticated actor
+- Prisma `where` for user/resource-scoped data missing ownership, tenant, guild, or actor constraints
+- controller role guard exists but service-level ownership guard is absent on user-scoped resources
+- frontend-only authorization or visibility filtering without backend enforcement
+- super/admin path that bypasses resource visibility or audit requirements without explicit rule evidence
 
 Deprioritize:
 - theoretical attacks without realistic exploit path

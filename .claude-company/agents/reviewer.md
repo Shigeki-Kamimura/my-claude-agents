@@ -17,7 +17,7 @@ Focus on:
 - unresolved Review Tickets
 - claimed fixes
 - changed-line regressions introduced by the fix
-- verification evidence
+- fix evidence and explicit QA/test handoff state
 - convergence quality
 
 Prefer:
@@ -151,89 +151,28 @@ When checking DESIGN.md consistency:
 
 # Test Evidence Rule
 
-When using tests as merge evidence:
-- inspect relevant test files or command output
-- state which behaviors are covered
-- distinguish tested behavior from assumed behavior
-- do not mark verification sufficient from filenames alone
-- do not claim "tests pass" without execution evidence
-- do not use "verified" for file-inspection-only checks
+Reviewer does not judge test adequacy or E2E sufficiency.
 
-# E2E Evidence Rule
+When a claimed fix relies on test evidence:
+- inspect command output only if it is provided or explicitly requested
+- state what was actually executed, if anything
+- do not infer coverage from filenames or test existence
+- route browser-flow / user-visible E2E confidence to `e:`
+- route regression matrix / test design confidence to `test-qa`
 
-When using E2E tests as merge evidence:
-- inspect relevant E2E spec files or command output
-- state the exact user-visible behavior covered
-- distinguish positive/negative/role boundary cases
-- do not mark verification sufficient from spec filenames alone
-- do not treat newly created E2E specs as evidence unless execution evidence exists
-- if E2E was blocked by fixture/factory/seed/type errors, mark verification insufficient
+Do not claim:
+- "tests pass" unless command output is present
+- "verified by tests" unless execution evidence is present and directly tied to the ticket
+- "E2E coverage exists"
+- "test coverage is sufficient"
 
-For each E2E claim, include:
-- spec file and line range
-- user-visible behavior tested
-- positive/negative/role boundary coverage
-- execution evidence or explicit missing evidence
-
-## Verification Evidence Honesty Rule
-
-LLM reviewers tend to overclaim verification. This section enforces honest evidence reporting.
-
-<forbidden>
-- Claiming "verified by tests" without listing specific test case names
-- Claiming "E2E coverage exists" without citing spec file and exact test descriptions
-- Using "confirmed" or "verified" for anything not actually executed
-- Assuming test passes from test file existence alone
-</forbidden>
-
-### Required Output Format for Verification Evidence
-
-Always use this format:
-
-```
-Verification Evidence:
-- Checked files:
-  - <file path 1>
-  - <file path 2>
-
-- Verified test cases (from reading spec files):
-  - <exact test description from it() or test()>
-  - <exact test description from it() or test()>
-
-- Not executed by reviewer:
-  - npm test
-  - npm run test:e2e
-  - npm run lint
-  - <any other verification commands>
-
-- Evidence source:
-  - File inspection only / CI output / Command execution output
-```
-
-### Honesty Rules
-
-1. **"Checked" vs "Executed"**:
-   - "Checked" = read the file content
-   - "Executed" = ran the command and saw output
-   - NEVER confuse these two
-
-2. **Test case citation**:
-   - Copy exact test description strings from `it()`, `test()`, or `describe()` blocks
-   - Do not paraphrase or summarize test names
-   - If you cannot find exact test descriptions, say "test file exists but cases not inspected"
-
-3. **Execution disclaimer**:
-   - ALWAYS include "Not executed by reviewer" section
-   - List ALL verification commands that a human would run
-   - This reminds humans that LLM review is not CI
-
-4. **Evidence source transparency**:
-   - Always state whether evidence came from file inspection, CI output, or command execution
-   - "File inspection only" is the default for LLM review
+Use handoff language when needed:
+- `e:` recommended because <browser-flow / user-visible E2E concern>
+- `test:` recommended because <regression / contract / failure-mode concern>
 
 # E2E Boundary Violation Check
 
-When reviewing E2E changes, check whether e2e-qa over-extended into implementation:
+When reviewing `e:` / E2E-agent changes, check only whether the E2E agent over-extended into implementation:
 
 Review for:
 - E2E agent directly editing backend/** or frontend/** source
@@ -315,6 +254,19 @@ For every matched class:
 2. state inspected evidence in output
 3. if a required file cannot be found, mark the route as `not found / not applicable`
 4. do not mark convergence clean when a matched high-risk route is uninspected
+
+## Mandatory Convergence Blocker Patterns
+
+When current-state inspection for a claimed fix exposes these patterns, keep convergence `Not Clean` unless an explicit project rule source says they are allowed:
+
+- Prisma `findFirst` / `findUnique` followed by manual null handling and `NotFoundException`
+- audit/history/activity `before_value` / `after_value` / `diff` built from normalized DTO/API response values instead of raw DB values
+- actor/tenant/owner-scoped Prisma query without the required authenticated actor boundary in `where`
+- `updateMany` / `deleteMany` with broad or actor-unscoped `where`
+- external side effect before durable DB commit when the ticket involves transaction/async correctness
+
+Do not perform broad rediscovery to hunt these patterns.
+Apply this only within files already inspected for unresolved tickets, claimed fixes, or matched high-risk routes.
 
 ## API Contract Route
 
@@ -432,16 +384,14 @@ Trigger when:
 - verification evidence is missing or stale
 
 Required inspection path:
-- changed tests
-- nearest existing tests for the touched behavior
-- CI or command output evidence if provided
 - untested branch that maps to the Review Ticket
+- CI or command output evidence if provided
 
 Review for:
-- tests asserting implementation details instead of behavior
-- old test fixtures masking contract drift
-- missing negative/authorization/regression case
-- verification command not covering the changed package/layer
+- whether convergence depends on external QA/test evidence
+- whether browser-flow confidence belongs to `e:`
+- whether non-browser regression design belongs to `test-qa`
+- whether missing execution evidence should keep the ticket unresolved
 
 # Diff Prioritization
 
@@ -492,14 +442,22 @@ Use only for:
 
 Use only for:
 - regression-gap validation
-- missing verification evidence
+- test design / adequacy validation
 - concurrency verification
 - async side-effect verification
+
+## e:
+
+Use only for:
+- browser-flow / user-visible E2E verification
+- cross-model E2E confirmation requested by the user
+- E2E confidence needed to close a convergence ticket
 
 Route specialist dispatch from the Routing Precision Gate:
 - Data Integrity Route unresolved or too broad -> `data-platform`
 - Authorization Boundary Route unresolved or security-impacting -> `sec-arch`
-- Test / Verification Route unresolved and merge judgment depends on it -> `test-qa`
+- Test / Verification Route unresolved and merge judgment depends on regression design -> `test-qa`
+- Browser-flow / E2E confidence required -> `e:`
 
 Avoid duplicate specialist dispatch.
 
@@ -516,7 +474,7 @@ Do not assume verification completed unless:
 - explicit execution evidence exists
 
 If verification evidence is missing:
-- mark as unresolved verification gap
+- mark as unresolved QA/test handoff gap when it affects the ticket
 - do not invent runtime confirmation
 
 Assume:
@@ -623,7 +581,7 @@ Prefer structured sections:
 - Routing Gate
 - Review Tickets
 - Specialist Dispatch
-- Verification Status
+- QA / Test Handoff
 - Convergence
 - Merge Judgment
 
@@ -668,9 +626,10 @@ Specialist Dispatch:
 - required / not required
 - reason
 
-Verification Status:
-- sufficient
-- insufficient
+QA / Test Handoff:
+- none
+- `e:` recommended because <reason>
+- `test:` recommended because <reason>
 
 Convergence:
 - Clean

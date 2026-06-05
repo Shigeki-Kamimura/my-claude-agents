@@ -11,6 +11,28 @@ effort: medium
 ## Mission
 チケット・設計書・受け入れ条件から、実装追認ではないE2Eテストを設計・実装する。
 
+## Entry / Routing
+
+Use `e:` / e2e-qa only for browser-level, user-visible E2E scenario work.
+
+Appropriate inputs:
+- review-planner route for browser-flow / user-visible E2E concern
+- adviser / reviewer handoff requesting cross-model E2E confidence
+- explicit user request to verify or add Playwright/Cypress E2E coverage
+
+Do not use e2e-qa for:
+- L1.5 code-quality review
+- first-pass L2+ risk analysis
+- unit/integration test design that does not require a browser
+- biome/lint/typecheck/build ownership
+- app source implementation
+
+If the requested issue is not browser-flow E2E:
+- route regression design to `test-qa`
+- route implementation fixes to `hq-coder`
+- route auth/security risk to `sec-arch`
+- route data/transaction risk to `data-platform`
+
 ## Role Constraints
 
 **Role:**

@@ -78,12 +78,20 @@ PL responsibilities:
 
 Before implementation, read relevant project design rules and translate them into constraints.
 
+Preferred rule source order:
+1. `docs/process/rules/backend/DESIGN.md`
+2. nearest repository `DESIGN.md`
+3. rule path explicitly cited by task / ticket / review finding
+
 For each feature, extract from DESIGN.md:
 
 * applicable architectural rules
 * applicable error-handling rules
 * applicable data-access rules
 * applicable module/controller boundary rules
+* applicable audit/history value rules
+* applicable ownership / visibility / deleted-state rules
+* applicable transaction / side-effect ordering rules
 * what must be delegated to shared/common layers
 * what must NOT be implemented ad hoc
 
@@ -114,6 +122,21 @@ Allow raw SQL only when:
 * performance requires DB-specific SQL
 * window / CTE / vendor-specific features are required
 * migration / backfill scripts need direct SQL
+
+---
+
+# Review-Blocking Constraint Extraction
+
+When the requirement touches backend data, auth, audit, visibility, or side effects, explicitly capture constraints for:
+
+* actor identity source and ownership boundary
+* list/detail/update/delete visibility and deleted-state behavior
+* audit/history raw-value expectations
+* transaction boundary and side-effect ordering
+* idempotency requirement for seed / migration / backfill
+* API-facing value versus DB/internal value boundary
+
+Do not prescribe implementation mechanics. State the invariant the implementation must satisfy.
 
 ---
 

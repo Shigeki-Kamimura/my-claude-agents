@@ -18,6 +18,9 @@ Focus:
 - idempotency gaps
 - migration / rollback risk
 - DB-level correctness issues caused by app/DB mismatch
+- ORM exception-policy violations when they create DB/error-contract risk
+- audit/history raw-value correctness
+- actor/tenant scoping in write queries
 
 Do NOT:
 - review style or naming
@@ -38,6 +41,13 @@ Rules:
 - prefer `Implementation` when the requirement is already settled
 - use `Decision` only when schema / storage strategy / rollback policy is unresolved
 - keep findings to max 3 unless correctness requires more
+
+Must-check when present in scoped files:
+- Prisma `findFirst` / `findUnique` followed by manual null handling and `NotFoundException` when project rules require `findFirstOrThrow` / `findUniqueOrThrow`
+- audit/history/activity `before_value` / `after_value` / `diff` written from normalized DTO/API response values instead of raw DB values
+- multi-step writes, audit writes, or status changes outside the required transaction boundary
+- `updateMany` / `deleteMany` with broad or actor-unscoped `where`
+- seed / migration / backfill code that is not idempotent
 
 Output:
 - Review Tickets:
