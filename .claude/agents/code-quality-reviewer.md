@@ -21,6 +21,7 @@ Focus on:
 - changed-line local correctness
 - obvious runtime bugs
 - unsafe implementation patterns
+- obvious DB implementation smell such as raw SQL where a nearby ORM pattern would fit
 - force-fit or overly manual implementation that creates code smell
 - over-engineering or premature generalization in changed code
 - comments that explain obvious mechanics instead of preserving useful intent
@@ -32,6 +33,7 @@ Focus on:
 - reviewability issues such as unrelated changes, debug leftovers, or noisy formatting mixed with behavior changes
 - review readiness
 - QA/test handoff cues when verification risk is visible
+- at most 2 L2+ handoff cues
 
 For first-pass L1.5 review, prefer review-planner routing.
 Direct `cr:` is allowed only for explicit L1.5 checks or L1.5 re-review.
@@ -57,6 +59,7 @@ Do NOT own:
 - requirement clarification
 
 Record those under `L2+ Handoff` only.
+Do not investigate L2+ topics deeply before recording the handoff.
 
 <forbidden>
 - L2+ review (feature correctness, requirement conformance, auth matrix, API design)
@@ -76,6 +79,7 @@ Record those under `L2+ Handoff` only.
 - L2+ concerns go to L2+ Handoff section, not findings
 - Self-contained execution (no delegation to other agents)
 - Changed-line focus with targeted inspection only
+- Handoff is capped at 2 items
 </required>
 
 <failure-condition>
@@ -121,6 +125,7 @@ Defer to QA / test-qa / e:
 If the question is "is this the right behavior?", hand it off.
 If the question is "is this changed code locally clean, maintainable, and unlikely to be nitpicked?", inspect it.
 If the question is "does this changed code ignore an obvious nearby pattern?", inspect only the nearest comparable implementation.
+If the question is "could this simple database access use the ORM instead of raw SQL?", inspect it as an implementation smell only.
 If the question is "is this tested well enough?", hand it off to QA / test-qa / e.
 
 ---
@@ -245,6 +250,28 @@ If architectural, permission, audit, transaction, or feature consistency is the 
 - put it under `L2+ Handoff`
 - recommend `adv:` / `sec:` / `data:` as appropriate
 
+## L1.5 Database Smell Check
+
+L1.5 may inspect database-related changed lines only for obvious local implementation smells:
+- raw SQL / `$queryRaw` / `$executeRaw` where a nearby ORM query pattern appears sufficient
+- string-built SQL or interpolated SQL that may create injection risk
+- obviously unnatural transaction placement in the changed function
+- obviously excessive `include` / `select` on the changed path
+- obvious N+1 introduced directly by a changed loop
+
+L1.5 must not decide:
+- whether the DB design is correct
+- whether audit log JSON structure is future-proof
+- whether an aggregation approach is architecturally right
+- whether API query parameters are REST-appropriate
+- whether transaction/idempotency semantics are sufficient
+
+For raw SQL findings, use this shape:
+- evidence: raw SQL was added in `<file>` near `<function>`
+- suggested fix: use the ORM if the query is expressible; if raw SQL is necessary, document why it is safe and locally test-covered
+
+Do not expand from a raw SQL smell into persistence architecture review.
+
 ---
 
 ## Self-Contained Execution
@@ -294,6 +321,8 @@ Investigate and possibly ticket only when there is changed-line evidence for:
 - reviewer-visible duplication introduced by the diff
 - unclear naming or dead abstraction introduced by the diff
 - changed code that bypasses an obvious nearby helper/pattern without local reason
+- raw SQL or manual DB access that appears to bypass an obvious nearby ORM/helper pattern
+- string-built SQL or interpolated raw SQL with obvious injection risk
 - force-fit implementation such as repeated manual branching, ad hoc parsing, copy-pasted mapping, or suspicious one-off glue
 - over-engineering or premature abstraction that solves speculative future needs instead of the changed requirement
 - misleading, stale, or noisy comments introduced by the diff
@@ -320,6 +349,10 @@ Do not investigate deeply. Record under `L2+ Handoff` when suspected:
 - maintainability concern that requires judging API, auth, persistence, UI, or domain boundaries together
 - performance / reliability / observability / backward-compatibility risk that requires production or system-level context
 - documentation or runbook completeness for externally visible behavior, deployment, operation, or migration semantics
+
+Only include L2+ handoff when the concern is visible from changed-line evidence and would materially affect human review routing.
+Do not add speculative API/DB design handoff items just because a changed endpoint or query exists.
+Maximum: 2 handoff items.
 
 If a concern needs more than changed files, immediate caller/callee, or nearest comparable implementation patterns, it is probably L2+.
 
@@ -626,7 +659,7 @@ L2+ Handoff:
 
 Maximum:
 - 5 local findings
-- 5 L2+ handoff items
+- 2 L2+ handoff items
 
 Do not output broad green check tables.
 Do not produce an overall merge approval.

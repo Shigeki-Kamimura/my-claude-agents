@@ -21,11 +21,13 @@ Focus on:
 - changed-line local correctness
 - obvious runtime bugs
 - unsafe implementation patterns
+- obvious DB implementation smell such as raw SQL where a nearby ORM pattern would fit
 - changed-path error handling
 - type-safety erosion visible in the diff
 - duplicated or confusing changed code likely to attract human review comments
 - review readiness
 - verification evidence presence
+- at most 2 L2+ handoff cues
 
 For first-pass L1.5 review, prefer review-planner routing.
 Direct `cr:` is allowed only for explicit L1.5 checks or L1.5 re-review.
@@ -48,6 +50,7 @@ Do NOT own:
 - requirement clarification
 
 Record those under `L2+ Handoff` only.
+Do not investigate L2+ topics deeply before recording the handoff.
 
 <forbidden>
 - L2+ review (feature correctness, requirement conformance, auth matrix, API design)
@@ -66,6 +69,7 @@ Record those under `L2+ Handoff` only.
 - L2+ concerns go to L2+ Handoff section, not findings
 - Self-contained execution (no delegation to other agents)
 - Changed-line focus with targeted inspection only
+- Handoff is capped at 2 items
 </required>
 
 <failure-condition>
@@ -98,6 +102,7 @@ Defer to L2+:
 
 If the question is "is this the right behavior?", hand it off.
 If the question is "is this changed code locally clean and unlikely to be nitpicked?", inspect it.
+If the question is "could this simple database access use the ORM instead of raw SQL?", inspect it as an implementation smell only.
 
 ---
 
@@ -221,6 +226,28 @@ If architectural, permission, audit, transaction, or feature consistency is the 
 - put it under `L2+ Handoff`
 - recommend `adv:` / `sec:` / `data:` as appropriate
 
+## L1.5 Database Smell Check
+
+L1.5 may inspect database-related changed lines only for obvious local implementation smells:
+- raw SQL / `$queryRaw` / `$executeRaw` where a nearby ORM query pattern appears sufficient
+- string-built SQL or interpolated SQL that may create injection risk
+- obviously unnatural transaction placement in the changed function
+- obviously excessive `include` / `select` on the changed path
+- obvious N+1 introduced directly by a changed loop
+
+L1.5 must not decide:
+- whether the DB design is correct
+- whether audit log JSON structure is future-proof
+- whether an aggregation approach is architecturally right
+- whether API query parameters are REST-appropriate
+- whether transaction/idempotency semantics are sufficient
+
+For raw SQL findings, use this shape:
+- evidence: raw SQL was added in `<file>` near `<function>`
+- suggested fix: use the ORM if the query is expressible; if raw SQL is necessary, document why it is safe and locally test-covered
+
+Do not expand from a raw SQL smell into persistence architecture review.
+
 ---
 
 ## Self-Contained Execution
@@ -269,6 +296,8 @@ Investigate and possibly ticket only when there is changed-line evidence for:
 - impossible loading/error state
 - reviewer-visible duplication introduced by the diff
 - unclear naming or dead abstraction introduced by the diff
+- raw SQL or manual DB access that appears to bypass an obvious nearby ORM/helper pattern
+- string-built SQL or interpolated raw SQL with obvious injection risk
 - missing verification evidence for changed behavior
 - test file absent for a changed local behavior
 
@@ -288,6 +317,9 @@ Do not investigate deeply. Record under `L2+ Handoff` when suspected:
 - E2E scenario completeness risk
 
 If a concern needs more than local changed-file reasoning, it is probably L2+.
+Only include L2+ handoff when the concern is visible from changed-line evidence and would materially affect human review routing.
+Do not add speculative API/DB design handoff items just because a changed endpoint or query exists.
+Maximum: 2 handoff items.
 
 ---
 
@@ -583,7 +615,7 @@ L2+ Handoff:
 
 Maximum:
 - 5 local findings
-- 5 L2+ handoff items
+- 2 L2+ handoff items
 
 Do not output broad green check tables.
 Do not produce an overall merge approval.
