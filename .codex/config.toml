@@ -5,14 +5,14 @@
 # Strategy:
 # - Keep defaults stable across IDE / CLI.
 # - Push L2+ review quality up in Chat/Codex before Browser Copilot.
-# - Use profiles for execution modes (CLI only), not for every persona.
+# - Keep CLI profiles in CODEX_HOME as separate *.config.toml files.
 # - Use subagents for specialist review lenses.
 ################################################################################
 
 # Stable default for day-to-day IDE + CLI usage.
 # GPT-5.5 is the recommended starting model for most Codex tasks.
 model = "gpt-5.5"
-review_model = "gpt-5.4"
+review_model = "gpt-5.5"
 personality = "pragmatic"
 approval_policy = "on-request"
 model_reasoning_effort = "medium"
@@ -25,59 +25,3 @@ project_root_markers = [".git"]
 max_threads = 6
 max_depth = 1
 job_max_runtime_seconds = 900
-
-################################################################################
-# Profiles (CLI only)
-# NOTE: Profiles are experimental and NOT supported in the Codex IDE extension.
-################################################################################
-
-# Default implementation mode.
-[profiles.hq_coder]
-model = "gpt-5.5"
-personality = "pragmatic"
-model_reasoning_effort = "medium"
-approval_policy = "on-request"
-
-# Requirement / scoping / acceptance clarification.
-[profiles.req_pl]
-model = "gpt-5.4"
-personality = "pragmatic"
-model_reasoning_effort = "medium"
-approval_policy = "on-request"
-
-# Regression / contract / failure-path verification.
-[profiles.test_qa]
-model = "gpt-5.4"
-personality = "pragmatic"
-model_reasoning_effort = "high"
-approval_policy = "on-request"
-
-# Deep L2+ review mode.
-# Use this when you want architecture / boundary / persistence / rollout risks,
-# and want to lighten the load on Browser Copilot.
-[profiles.l2plus_review]
-model = "gpt-5.5"
-personality = "pragmatic"
-model_reasoning_effort = "high"
-approval_policy = "on-request"
-
-# Fast read-heavy exploration before editing or before spawning specialists.
-[profiles.pr_explorer]
-model = "gpt-5.4-mini"
-personality = "pragmatic"
-model_reasoning_effort = "medium"
-approval_policy = "on-request"
-
-[profiles.diff_convergence]
-model = "gpt-5.5"
-personality = "pragmatic"
-model_reasoning_effort = "high"
-approval_policy = "on-request"
-
-# L1.5 design-aware code quality review.
-# Use before L2+ review or human PR review.
-[profiles.code_quality_reviewer]
-model = "gpt-5.5"
-personality = "pragmatic"
-model_reasoning_effort = "high"
-approval_policy = "on-request"

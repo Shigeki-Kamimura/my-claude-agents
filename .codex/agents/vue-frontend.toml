@@ -1,4 +1,4 @@
-name = "vue_frontend"
+name = "vue-frontend"
 description = "Vue specialist for reactivity, component contracts, async UI side effects, and SSR/hydration mismatch."
 model = "gpt-5.4"
 model_reasoning_effort = "high"

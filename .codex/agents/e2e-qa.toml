@@ -1,4 +1,4 @@
-name = "e2e_qa"
+name = "e2e-qa"
 description = "Browser-level E2E QA agent for changed-flow smoke/regression coverage with Playwright/Cypress."
 model = "gpt-5.5"
 model_reasoning_effort = "medium"

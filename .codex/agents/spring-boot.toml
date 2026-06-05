@@ -1,4 +1,4 @@
-name = "spring_boot"
+name = "spring-boot"
 description = "Spring Boot specialist for service/repository boundaries, transactions, validation, security config, and async+persistence interaction."
 model = "gpt-5.5"
 model_reasoning_effort = "high"

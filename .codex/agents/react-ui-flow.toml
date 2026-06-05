@@ -1,4 +1,4 @@
-name = "react_ui_flow"
+name = "react-ui-flow"
 description = "React specialist for state ownership, effects, async UI side effects, form flows, and server-client data handoff."
 model = "gpt-5.5"
 model_reasoning_effort = "high"

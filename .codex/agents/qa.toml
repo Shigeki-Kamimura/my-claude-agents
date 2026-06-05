@@ -1,4 +1,4 @@
-name = "qa"
+name = "test-qa"
 description = "L0/L1 verification agent for lint, typecheck, tests, CI risk, contracts, and regressions."
 model = "gpt-5.5"
 model_reasoning_effort = "medium"

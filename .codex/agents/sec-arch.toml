@@ -1,4 +1,4 @@
-name = "sec_arch"
+name = "sec-arch"
 description = "L2+ reviewer for security, trust boundaries, contract drift, and dangerous design changes."
 model = "gpt-5.4"
 model_reasoning_effort = "high"

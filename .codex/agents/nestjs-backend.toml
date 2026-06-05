@@ -1,4 +1,4 @@
-name = "nestjs_backend"
+name = "nestjs-backend"
 description = "NestJS specialist for guards, pipes, interceptors, filters, DTO validation/transformation, and controller/service boundaries."
 model = "gpt-5.4"
 model_reasoning_effort = "high"

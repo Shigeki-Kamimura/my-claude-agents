@@ -8,12 +8,19 @@
 - e2e-qa
 - code-quality-reviewer
 - hq-coder
+- sec-arch
+- data-platform
+- react-ui-flow
+- vue-frontend
+- nestjs-backend
+- spring-boot
 
 ## Routing
 
 - p: / pl: -> req-pl
 - rp: / plan: -> review-planner
-- r: / rev: -> code-quality-reviewer
+- cr: -> code-quality-reviewer
+- r: / rev: -> reviewer
 - a: / adv: -> adviser
 - q: / qa: -> test-qa
 - e: / e2e: -> e2e-qa
@@ -27,16 +34,16 @@ For every task, choose one designated role/agent before doing work.
 
 Required output before work:
 
-ROUTE: <agent/profile>
+ROUTE: <agent>
 REASON: <routing reason>
 SCOPE: <delegated scope>
 
 Rules:
-- Do not silently perform work that belongs to hq, qa, pl, reviewer, or review-planner.
+- Do not silently perform work that belongs to hq-coder, test-qa, req-pl, reviewer, or review-planner.
 - Do not silently perform work that belongs to e2e-qa.
 - If routing is ambiguous, choose the safest specialized route and state the assumption.
-- Implementation must route to hq.
-- L0/L1 verification must route to qa.
+- Implementation must route to hq-coder.
+- L0/L1 verification and fail-path test design must route to test-qa.
 - Browser-level E2E design/verification must route to e2e-qa.
 - Prefer E2E decomposition by `read` / `write` / `rules` / `auth`.
 - Split or add files before a single E2E spec exceeds 400 lines.
@@ -47,7 +54,7 @@ Rules:
 
 ## Routing Visibility
 
-When delegated to a sub-agent:
+When delegated to a subagent:
 
 - explicitly state:
   - which agent was used
@@ -60,7 +67,7 @@ Never silently inline delegated work.
 
 - requirement clarification -> req-pl
 - implementation -> hq-coder
-- L0/L1 verification -> test-qa
+- L0/L1 verification, fail-path test design, and targeted test implementation -> test-qa
 - browser-level E2E design/verification -> e2e-qa
   organize by `read` / `write` / `rules` / `auth`
 - L1.5 code quality review -> code-quality-reviewer
