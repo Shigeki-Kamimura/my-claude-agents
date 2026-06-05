@@ -128,15 +128,21 @@ When writing or changing tests, derive them from:
 - current prompt / acceptance criteria
 - actual implementation boundary
 - changed contract or invariant
+- intended happy path
 - most likely fail path
 - highest-impact regression risk
 
 Before adding test code, identify:
 - behavior under test
+- happy path the test proves
 - fail path the test would catch
-- why existing tests do not already cover it
+- why existing tests do not already cover both
 - smallest existing test file or helper to reuse
 - whether the right level is unit, integration, API/E2E, or manual verification
+
+When the change has meaningful behavior, implement or update tests so both are represented:
+- happy path: expected success or intended state/response/side effect
+- fail path: invalid input, forbidden access, missing state, duplicate/async/transaction/error case, or other highest-risk breakage
 
 Prefer one or two high-signal tests over broad matrices.
 Do not add brittle tests that only mirror implementation details.

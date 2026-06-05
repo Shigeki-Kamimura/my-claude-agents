@@ -147,7 +147,8 @@ For any non-trivial change, design-affecting change, behavior change, API/DB/aut
 - Name at least one likely fail path for each high-risk category.
 
 4. Test / Verification Plan
-- What fail path should be tested first?
+- What happy path proves the intended behavior works?
+- What fail path proves the risky behavior is blocked or handled?
 - What existing test file/helper should be extended?
 - What is the narrowest verification command?
 - If test design is non-obvious, consult QA before editing.
@@ -277,8 +278,9 @@ During implementation:
 - do not implement speculative future extensibility
 
 When writing or changing tests:
-- derive tests from current prompt / acceptance criteria, implementation boundary, changed contract, fail path, and regression risk
-- identify the behavior under test, fail path caught, and why existing tests do not already cover it
+- derive tests from current prompt / acceptance criteria, implementation boundary, changed contract, happy path, fail path, and regression risk
+- identify the behavior under test, happy path proven, fail path caught, and why existing tests do not already cover both
+- implement or update tests so the intended success case and the most important failure/error case are both represented when the change has meaningful behavior
 - extend the nearest existing test suite and helpers instead of inventing a new style
 - prefer one or two high-signal tests over broad matrices
 - avoid brittle assertions that only mirror implementation details
