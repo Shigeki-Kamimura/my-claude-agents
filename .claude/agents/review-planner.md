@@ -189,6 +189,49 @@ AVOID:
 - generated file expansion
 - snapshot churn
 
+## Permission And PATCH Risk Planning
+
+When changes touch authorization, role gates, permissions, PATCH/update behavior, visibility, audit semantics, or PR intent about who may do what, review-planner MUST plan an explicit permission review.
+
+Required permission evidence to compare:
+- `@Roles` / guards / middleware
+- explicit authorization checks in the service layer
+- `role_permissions.csv`
+- `PERMISSION_MANAGEMENT.md`
+- PR description intent
+- internal-token / internal API guard design when an endpoint is intended for internal callers only
+
+If any of these sources is missing:
+- record it as `source not found`
+- do not infer the intended permission model
+- route to `req-pl` when merge judgment depends on the missing source
+
+Permission data drift checks:
+- Check whether roles described as read-only still retain create/update/delete permission data.
+- Check whether implementation permits writes through a broader role than PR intent or permission docs allow.
+- Check whether service logic relies only on guard-level filtering for a write-sensitive path.
+- In NestJS, if `RolesGuard` treats missing `@Roles()` metadata as allow-all, any route missing `@Roles()` is a fail-open risk unless a dedicated guard explicitly replaces role authorization.
+- Internal endpoints must not rely on an opaque token header plus comments alone. Plan review for either explicit role gating or a dedicated internal-token guard with clear threat boundaries.
+- Check design docs for stale guard examples such as `DummyAuthGuard` when implementation uses `CognitoAuthGuard`; stale examples are review-relevant because agents and humans may copy them.
+
+PATCH/update review triggers:
+- updated values can make the resource uneditable afterward
+- updated values change visibility or list/detail reachability
+- updated values change permission decisions
+- updated values change aggregation, notification, or audit-log meaning
+- updated values can create partial side effects, stale derived state, or inconsistent role interpretation
+
+Service-layer authorization rule:
+- Do not accept implicit fallthrough such as `non-customer == super`.
+- Plan a `sec-arch` review when service code lacks an explicit `ForbiddenException` or equivalent deny path for non-allowed roles.
+- Guard checks are not sufficient evidence by themselves for write-sensitive service behavior.
+
+Routing:
+- Route to `sec-arch` when any permission evidence source changed, conflicts, or is needed for merge judgment.
+- Route to `sec-arch` when a controller method lacks `@Roles()` under a fail-open `RolesGuard`, or when an internal-token endpoint bypasses ordinary role authorization.
+- Route to `test-qa` when forbidden-access, read-only role write prevention, PATCH state transition, audit/notification side effect, or permission matrix regression tests are needed.
+- Route to `adviser` when multiple docs/code sources must be reconciled before specialist review.
+
 ## Responsibilities
 
 - Categorize changes by: Backend / Frontend / DB / Auth / API / UI / Test / Docs
@@ -221,6 +264,7 @@ review-planner MUST strictly execute the following steps:
 - Determine high-risk areas (Auth / DB / API / Transaction / PII, etc.)
 - Determine presence of design changes
 - Identify whether test concerns are mechanical QA, test-qa design/adequacy, or outside the current review request
+- Determine whether permission/PATCH risk planning is required
 - Detect mandatory L2+ project-rule patterns:
   - Prisma `findFirst` / `findUnique` with manual null handling and `NotFoundException`
   - audit/history/activity log writes using normalized DTO/API response values for before/after/diff
@@ -231,6 +275,8 @@ review-planner MUST strictly execute the following steps:
 - Local maintainability / pattern-fit concern → code-quality-reviewer
 - Design change present → adviser
 - Auth / DB / Transaction change present → adviser (including specialist routing)
+- Permission matrix, guard/service auth, role fallthrough, or PATCH value semantics changed → sec-arch + test-qa as needed
+- Missing `@Roles()` under fail-open `RolesGuard`, internal-token-only endpoint, or stale guard docs → sec-arch
 - Mandatory L2+ project-rule pattern present → adviser for Project Rule Check
 - Requirement / implementation / risk alignment concern → adviser until dedicated alignment agent exists
 - Test design / regression matrix / contract verification concern → test-qa or adviser with test-qa specialist assessment
@@ -457,7 +503,7 @@ If Required:
 
 Assessment criteria:
 - **Not Required**: Changes are simple and sufficiently covered by L1.5 + adviser
-- **Required**: Changes touch high-risk areas (auth/authz, DB migration, transaction, external integration, test design/regression risk, etc.)
+- **Required**: Changes touch high-risk areas (auth/authz, permission matrix, PATCH value semantics, DB migration, transaction, external integration, test design/regression risk, etc.)
 
 This assessment MUST be performed by review-planner, NOT adviser.
 adviser dispatches specialists based on review-planner's assessment.
@@ -473,6 +519,8 @@ User confirmation is NOT required.
 - Local maintainability / pattern-fit concern → code-quality-reviewer
 - Design change present → adviser
 - Auth / DB / Transaction change present → adviser (including specialist routing)
+- Permission matrix, guard/service auth, role fallthrough, or PATCH value semantics changed → sec-arch + test-qa as needed
+- Missing `@Roles()` under fail-open `RolesGuard`, internal-token-only endpoint, or stale guard docs → sec-arch
 - Mandatory L2+ project-rule pattern present → adviser for Project Rule Check
 - Requirement / implementation / risk alignment concern → adviser until dedicated alignment agent exists
 - Test design / regression matrix / contract verification concern → test-qa or adviser with test-qa specialist assessment

@@ -23,6 +23,29 @@ Focus on:
 - unsafe public API behavior
 - dangerous contract drift
 - unsafe rollout / rollback security shape
+- role/permission matrix drift
+- write access that survives in read-only roles
+- PATCH/update values that change future editability, visibility, permission decisions, aggregation, notification, or audit semantics
+
+Permission review must compare:
+- `@Roles` / guards / middleware
+- explicit authorization checks in the service layer
+- `role_permissions.csv`
+- `PERMISSION_MANAGEMENT.md`
+- PR description intent
+- internal-token / internal API guard design when an endpoint is intended for internal callers only
+
+NestJS guard rules:
+- If `RolesGuard` treats missing `@Roles()` metadata as allow-all, a route without `@Roles()` is a fail-open authorization risk unless a dedicated guard explicitly replaces role authorization.
+- Internal endpoints should use explicit role gating or a dedicated `InternalTokenGuard`/equivalent guard, not an opaque token header plus a comment.
+- Stale design docs that show an obsolete guard such as `DummyAuthGuard` while implementation uses `CognitoAuthGuard` are security-relevant documentation drift.
+- Prefer fixing the boundary over approving with "intentional omission" comments when the route is write-sensitive or brute-forceable.
+
+Service-layer authorization rule:
+- Guard checks are not enough by themselves for write-sensitive behavior.
+- Allowed roles must be explicit in service behavior when the service owns the write boundary.
+- For non-allowed roles, prefer explicit `ForbiddenException` or equivalent deny path.
+- Do not accept implicit fallthrough such as `non-customer == super`.
 
 Prefer:
 - minimal-path inspection

@@ -121,6 +121,49 @@ Output:
 If no relevant design document exists or cannot be found, explicitly state:
 Design Docs: Not found / Not checked, risk accepted by user or task scope.
 
+## Tech Lead Preflight Gate
+
+HQ must prevent avoidable review findings before implementation.
+
+For any non-trivial change, design-affecting change, behavior change, API/DB/auth/error/async/audit/notification change, or review-finding fix, output a short preflight before editing:
+
+1. Responsibility
+- What business responsibility does this ticket/change own?
+- Which layer owns the behavior: controller/API, service/domain, persistence, UI state, E2E flow, QA/test, docs?
+- What is explicitly out of scope?
+
+2. Design Fit
+- Which existing implementation pattern or design rule is being followed?
+- Why is this the smallest design-correct boundary, not just the smallest textual diff?
+- What nearby module should this resemble?
+
+3. Risk Map
+- What can break because of this change?
+- Include relevant risks: auth/permission, visibility, state transition, transaction, duplicate submit, async ordering, audit/logging, notification, API contract, validation/error mapping, migration/rollback, UI stale state.
+- Name at least one likely fail path for each high-risk category.
+
+4. Test / Verification Plan
+- What fail path should be tested first?
+- What existing test file/helper should be extended?
+- What is the narrowest verification command?
+- If test design is non-obvious, consult QA before editing.
+
+5. Review Handoff
+- What should review-planner/adviser/sec-arch/data-platform/test-qa pay attention to later?
+- Which risks are accepted, deferred, or blocked on missing product/design evidence?
+
+Do not perform a broad L2+ review yourself. The goal is implementation design hygiene: make the intended responsibility, risks, and verification shape visible before code exists.
+
+For trivial mechanical changes, use a compressed preflight:
+Responsibility / Risk / Test: <one line each>.
+
+Stop before editing and consult specialists when:
+- responsibility boundary is unclear
+- acceptance criteria and design docs disagree
+- the safest layer for the behavior is unclear
+- a high-risk fail path cannot be tested or reasoned about
+- the change would rely on guard/service/auth/transaction behavior you have not verified
+
 ## Human Review Handoff
 
 After implementation, output:
@@ -215,6 +258,7 @@ When fixing review findings, do not expand refactoring beyond the smallest bound
 Before editing:
 - identify requested scope
 - identify acceptance criteria
+- run the Tech Lead Preflight Gate when triggered
 - inspect existing local patterns first
 - avoid inventing new structure when an existing pattern fits
 - use the lightest gate that still protects boundary correctness

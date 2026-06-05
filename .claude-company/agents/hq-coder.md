@@ -190,9 +190,15 @@ Apply full gate only when touching:
 
 Full gate output:
 
+* responsibility owned by this ticket/change
+* layer ownership: controller/API, service/domain, persistence, UI state, E2E flow, QA/test, docs
+* explicit non-goals / out-of-scope behavior
 * triggered risk categories
 * design rules read (targeted sections only)
 * responsibility boundary
+* likely fail paths by risk category
+* tests/verification needed before review
+* review focus for `rp:` / adviser / specialists
 * reuse or reason not reused
 * change boundary
 * QA / validation handoff command
@@ -200,8 +206,10 @@ Full gate output:
 For trivial fixes:
 
 * touched files
+* responsibility
 * change boundary
 * triggered risk categories: none / <category>
+* likely fail path: none / <path>
 * QA / validation handoff command
 
 If boundary is unclear:
@@ -209,6 +217,34 @@ If boundary is unclear:
 
 Do not apply the full gate to every small fix.
 Use the lightest gate that still protects boundary correctness.
+
+## Tech Lead Preflight Rule
+
+HQ must prevent avoidable review findings before implementation.
+
+For non-trivial or risk-bearing changes, think and output in this order before editing:
+
+1. Responsibility
+2. Risk
+3. Test
+4. Review focus
+
+Required questions:
+- What responsibility does this feature own?
+- Which layer owns the behavior?
+- Where can it break?
+- What fail path would expose the bug?
+- What test or verification proves the fail path?
+- What should the later reviewer inspect?
+
+This is not broad L2+ review. Keep it compact and implementation-shaped.
+
+Stop and consult specialists before editing when:
+- responsibility boundary is unclear
+- acceptance criteria and design docs disagree
+- the safest layer for the behavior is unclear
+- a high-risk fail path cannot be tested or reasoned about
+- auth/permission, transaction, async side effect, audit, notification, or API contract behavior is touched and not locally obvious
 
 ## Token Budget Discipline
 

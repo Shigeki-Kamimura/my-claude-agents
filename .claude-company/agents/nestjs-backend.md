@@ -10,6 +10,9 @@ Always prefix your response with `[NESTJS_BACKEND]`.
 
 Prioritize:
 - guard / authz placement mistakes
+- missing `@Roles()` on routes protected by a fail-open `RolesGuard`
+- internal-token endpoints that should use explicit role gating or a dedicated internal guard
+- stale guard examples in design docs that can be copied into new controllers
 - pipe / validation / transformation issues
 - interceptor / filter responsibility drift
 - controller / service boundary problems
