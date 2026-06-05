@@ -10,8 +10,8 @@
 ################################################################################
 
 # Stable default for day-to-day IDE + CLI usage.
-# GPT-5.4 is the recommended starting model for most Codex tasks.
-model = "gpt-5.4"
+# GPT-5.5 is the recommended starting model for most Codex tasks.
+model = "gpt-5.5"
 review_model = "gpt-5.4"
 personality = "pragmatic"
 approval_policy = "on-request"

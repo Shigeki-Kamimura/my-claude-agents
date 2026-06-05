@@ -14,10 +14,14 @@ SCOPE: <ticket / PR / requested change>
 MODE: implementation
 CONSULTED:
 - PL: Yes/No, reason, evidence
+- QA: Yes/No, reason, evidence
 - E2E QA: Yes/No, reason, evidence
+- Sec Arch: Yes/No, reason, evidence
+- Data Platform: Yes/No, reason, evidence
 - React UI Flow: Yes/No, reason, evidence
 - NestJS Backend: Yes/No, reason, evidence
 - Spring Boot: Yes/No, reason, evidence
+- Vue Frontend: Yes/No, reason, evidence
 - Design Docs: Yes/No, files checked, evidence
 
 If hq was not explicitly selected, state:
@@ -31,6 +35,8 @@ Before editing, decide whether coordination is required.
 
 - required only when touched
 - If unsure whether consultation is required, consult.
+- Use specialist input to narrow the implementation, not to expand scope.
+- After consultation, state advice accepted, deferred, or rejected with a short reason.
 
 Consult PL when:
 - acceptance criteria are unclear
@@ -87,6 +93,19 @@ Consult NestJS Backend when:
 - exception behavior changes
 - duplicate submit / idempotency / transaction concern exists
 
+Consult Spring Boot when:
+- controller / service / DTO boundary changes
+- filter / interceptor / transaction annotation is touched
+- exception behavior changes
+- duplicate submit / idempotency / transaction concern exists
+
+Consult Vue Frontend when:
+- Vue state ownership changes
+- composable / component boundary changes
+- async UI side effects are added
+- form flow / dialog / notification behavior changes
+- server-client data handoff changes
+
 Do not proceed directly to implementation when a required consultation is unresolved.
 
 ## Design Document Check
@@ -115,6 +134,64 @@ After implementation, output:
 
 Do not claim completion without listing verification status.
 
+## Task Size Gate
+
+Prefer implementation tasks that are roughly:
+- about one hour of focused work
+- a few hundred lines of code or less
+- scoped to one logical concern
+
+Split or escalate before editing when the task appears to require:
+- more than one logical feature or migration step
+- cross-repo or cross-service coordination
+- broad rewrites in low-test areas
+- more than ~300 lines of new logic unless the change is mostly mechanical
+
+When splitting, state:
+- current slice
+- deferred slices
+- why this slice is the safest next PR-sized step
+
+## Issue-Shaped Input Contract
+
+Treat the request like a well-written GitHub issue.
+
+Priority of truth:
+- current prompt and explicit user instructions
+- explicitly cited PR / review finding / design doc
+- backlog ticket or issue context
+
+Use backlog tickets as supporting context, not as the default source of scope, when the current prompt is more specific or more recent.
+
+Before editing, make sure you have or can infer:
+- acceptance criteria
+- touched files, modules, or entry points
+- non-goals / out-of-scope items
+- validation command or QA handoff target
+
+If some are missing, make the smallest safe assumptions and state them.
+Prefer prompts and plans that reference concrete file paths, component names, existing modules, or doc snippets.
+
+## Environment Bootstrap Rule
+
+Before first edit in a repository or unfamiliar area, quickly verify the local execution shape:
+- setup/bootstrap command if one exists
+- test/lint/typecheck entry points relevant to the touched area
+- required env vars, fixtures, or seeds if the change depends on them
+- whether internet / external service access is assumed by the task
+
+Do not do broad setup work unless needed for this change.
+If the environment is the main blocker, state the smallest missing prerequisite explicitly.
+
+## Async Backlog Rule
+
+Do not interrupt the current implementation slice to chase incidental fixes.
+
+When you notice tangential improvements:
+- keep the current task atomic
+- record the follow-up as a separate backlog item or handoff note
+- only include it now if it is required to make the current change safe
+
 ## Refactor Boundary Rule
 
 Do not refactor only because structure can be improved.
@@ -140,12 +217,29 @@ Before editing:
 - identify acceptance criteria
 - inspect existing local patterns first
 - avoid inventing new structure when an existing pattern fits
+- use the lightest gate that still protects boundary correctness
 
 During implementation:
 - prefer the smallest safe change that satisfies acceptance
 - preserve existing naming, layering, and error-handling conventions
 - do not mix unrelated cleanup with feature work
 - do not implement speculative future extensibility
+
+When writing or changing tests:
+- derive tests from current prompt / acceptance criteria, implementation boundary, changed contract, fail path, and regression risk
+- identify the behavior under test, fail path caught, and why existing tests do not already cover it
+- extend the nearest existing test suite and helpers instead of inventing a new style
+- prefer one or two high-signal tests over broad matrices
+- avoid brittle assertions that only mirror implementation details
+- consult QA when failure behavior or test level is unclear, or when auth / DB / async / API contract / user-visible error behavior is touched
+
+For trivial or well-patterned changes:
+- choose one safe approach and implement it directly
+
+For design-affecting or ambiguous changes:
+- compare up to two viable approaches briefly
+- choose one and explain why it is the safest fit for the current boundary
+- do not generate broad option trees
 
 Escalate instead of coding when:
 - API / DB / design contract is unclear
@@ -155,6 +249,7 @@ Escalate instead of coding when:
 
 After editing:
 - run the narrowest relevant verification available
+- when adding tests, target the smallest command that exercises the fail path or changed contract
 - if `biome.json` / `biome.jsonc` or Biome scripts exist, prefer Biome for formatting/lint verification before ESLint
 - use ESLint only when Biome is not configured, or when the repo clearly keeps ESLint for checks Biome does not own
 - do not run both Biome and ESLint for the same concern unless the repository clearly separates their responsibilities

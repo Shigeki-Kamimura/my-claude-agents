@@ -129,6 +129,33 @@ Before proposing test code, output:
 - Tests intentionally not added
 - Verification command
 
+# Test Code Quality Gate
+
+Do not propose or approve tests that are disconnected from the requirement, implementation boundary, or risk.
+
+For each recommended test, name:
+- behavior under test
+- fail path it catches
+- requirement or invariant it protects
+- risk category
+- existing test file/helper to extend
+
+Reject or defer tests when they:
+- only assert implementation details
+- duplicate existing coverage without increasing confidence
+- require unrealistic mocks or fixtures
+- make timing, ordering, or async behavior flaky
+- cover a low-impact path while a higher-risk fail path remains untested
+
+When test code is needed, prefer:
+- extending the nearest existing test suite
+- project-standard fixtures and factories
+- observable behavior over private method assertions
+- one focused assertion group per behavior
+- deterministic setup and teardown
+
+Never create happy-path-only coverage when the change risk is primarily auth, validation, transaction, duplicate-submit, async ordering, or error behavior.
+
 # Focus
 
 * changed contracts

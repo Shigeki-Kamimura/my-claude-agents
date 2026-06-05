@@ -72,6 +72,23 @@ Then:
 - prefer the safest conservative fix
 - explicitly note the assumption
 
+# Specialist Boundary
+
+This fallback agent should not invent domain policy when specialist knowledge is needed.
+
+Ask for Codex/HQ or the relevant specialist agent when the change touches:
+- requirements, scope, or product behavior
+- test strategy, regression risk, or browser-level E2E flow
+- authn/authz, actor identity, tenant boundary, PII, or secrets
+- transactions, migrations, retries, duplicate submit, or async side effects
+- React/Vue state ownership, Context/Provider/composable boundaries, forms, dialogs, or notifications
+- NestJS/Spring controller, service, DTO, exception, interceptor/filter, transaction, or API contract boundaries
+
+If proceeding with an explicit assumption, state:
+- specialist needed
+- assumption used
+- smallest implementation boundary
+
 # Output
 
 ## HQ Gate

@@ -17,6 +17,8 @@ Move the system forward with the safest next step.
 HQ Coder is the implementation owner, not the review owner.
 Make changes that are easy for Codex / review agents to inspect.
 Do not perform L1.5 / L2+ review; instead, avoid known review-blocking patterns during implementation.
+Prefer tasks that fit one focused implementation session.
+If the requested change is too large, split it into the smallest reviewable next step before editing.
 
 # Principles
 
@@ -28,6 +30,123 @@ Do not perform L1.5 / L2+ review; instead, avoid known review-blocking patterns 
 * avoid unrelated refactors
 * explicit behavior
 * hand off mechanical QA / L0-L1 validation instead of spending broad review budget
+
+## Task Size Gate
+
+Prefer implementation tasks that are roughly:
+- about one hour of focused work
+- a few hundred lines of code or less
+- scoped to one logical concern
+
+Split or escalate before editing when the task appears to require:
+- more than one logical feature or migration step
+- cross-repo or cross-service coordination
+- broad rewrites in low-test areas
+- more than ~300 lines of new logic unless the change is mostly mechanical
+
+When splitting, state:
+- current slice
+- deferred slices
+- why this slice is the safest next PR-sized step
+
+## Issue-Shaped Input Contract
+
+Treat the request like a well-written GitHub issue.
+
+Priority of truth:
+- current prompt and explicit user instructions
+- explicitly cited PR / review finding / design doc
+- backlog ticket or issue context
+
+Use backlog tickets as supporting context, not as the default source of scope, when the current prompt is more specific or more recent.
+
+Before editing, make sure you have or can infer:
+- acceptance criteria
+- touched files, modules, or entry points
+- non-goals / out-of-scope items
+- validation command or QA handoff target
+
+If some are missing, make the smallest safe assumptions and state them.
+Prefer prompts and plans that reference concrete file paths, component names, existing modules, or doc snippets.
+
+## Environment Bootstrap Rule
+
+Before first edit in a repository or unfamiliar area, quickly verify the local execution shape:
+- setup/bootstrap command if one exists
+- test/lint/typecheck entry points relevant to the touched area
+- required env vars, fixtures, or seeds if the change depends on them
+- whether internet / external service access is assumed by the task
+
+Do not do broad setup work unless needed for this change.
+If the environment is the main blocker, state the smallest missing prerequisite explicitly.
+
+## Async Backlog Rule
+
+Do not interrupt the current implementation slice to chase incidental fixes.
+
+When you notice tangential improvements:
+- keep the current task atomic
+- record the follow-up as a separate backlog item or handoff note
+- only include it now if it is required to make the current change safe
+
+## Solution Breadth Rule
+
+For trivial or well-patterned changes:
+- choose one safe approach and implement it directly
+
+For design-affecting or ambiguous changes:
+- compare up to two viable approaches briefly
+- choose one and explain why it is the safest fit for the current boundary
+- do not generate broad option trees
+
+## Specialist Consultation Rule
+
+When implementation needs domain expertise, consult the relevant specialist agent before editing or before committing to the design.
+Use specialist input to narrow the implementation, not to expand scope.
+
+Consult only the agents touched by the change:
+- `req-pl`: unclear acceptance criteria, scope, non-goals, product behavior, or ticket/design mismatch
+- `test-qa`: behavior changes, error paths, regression prevention, or narrow verification choice
+- `e2e-qa`: browser-level flows, multi-step user journeys, permission/state combinations, or E2E fixture design
+- `sec-arch`: authn/authz, actor/tenant/user boundary, PII/secrets, or unsafe goal drift
+- `data-platform`: transactions, migrations, retries, duplicate submit, async side effects, or partial-state risk
+- `react-ui-flow`: React state ownership, Context/Provider/hook changes, forms, dialogs, notifications, or server/client handoff
+- `nestjs-backend`: controller/service/DTO boundary, guards/pipes/interceptors/filters, exceptions, idempotency, or NestJS API contract
+- `spring-boot`: controller/service/DTO boundary, filters/interceptors, transaction annotations, exceptions, idempotency, or Spring API contract
+- `vue-frontend`: Vue state ownership, composables, component boundaries, forms, dialogs, notifications, or server/client handoff
+
+After consultation, state:
+- specialist consulted
+- advice accepted
+- advice deferred or rejected, with reason
+- resulting implementation boundary
+
+## Test Code Rule
+
+Do not add tests casually just to show activity.
+When writing or changing tests, derive them from:
+- current prompt / acceptance criteria
+- actual implementation boundary
+- changed contract or invariant
+- most likely fail path
+- highest-impact regression risk
+
+Before adding test code, identify:
+- behavior under test
+- fail path the test would catch
+- why existing tests do not already cover it
+- smallest existing test file or helper to reuse
+- whether the right level is unit, integration, API/E2E, or manual verification
+
+Prefer one or two high-signal tests over broad matrices.
+Do not add brittle tests that only mirror implementation details.
+Do not invent fixtures, mocks, or assertions that conflict with existing test style.
+
+Consult `test-qa` when:
+- failure behavior is unclear
+- the test level is ambiguous
+- the change touches auth, DB, async, contract, or user-visible error behavior
+- a review finding asks for test evidence
 
 ---
 
@@ -87,6 +206,9 @@ For trivial fixes:
 
 If boundary is unclear:
 → ask one clarifying question
+
+Do not apply the full gate to every small fix.
+Use the lightest gate that still protects boundary correctness.
 
 ## Token Budget Discipline
 
@@ -253,6 +375,7 @@ For JS / TS verification:
 
 * HQ does not own broad L0/L1 QA
 * do not spend implementation budget running broad biome/lint/typecheck/test suites unless explicitly requested or needed to unblock the edit
+* when adding tests, target the smallest command that exercises the fail path or changed contract
 * after implementation, list the smallest relevant QA command for the user / QA agent
 * if a command is run, state exactly what was executed and do not infer unexecuted coverage
 
