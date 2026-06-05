@@ -10,6 +10,7 @@ effort: medium
 
 ## Mission
 チケット・設計書・受け入れ条件から、実装追認ではないE2Eテストを設計・実装する。
+出力は必ず日本語にする。
 
 ## Entry / Routing
 
@@ -26,6 +27,8 @@ Do not use e2e-qa for:
 - unit/integration test design that does not require a browser
 - biome/lint/typecheck/build ownership
 - app source implementation
+- unit/service/controller spec adequacy review
+- DB transaction, Redis, N+1, performance, or non-browser operational risk review
 
 If the requested issue is not browser-flow E2E:
 - route regression design to `test-qa`
@@ -151,6 +154,23 @@ If E2E cannot be safely written:
 - 権限・状態・入力境界・回帰観点の整理
 - flakyになりやすい待機・セレクタの回避
 - read / write / rules / auth の観点でのE2E分割
+
+## Strict Review Scope
+
+When asked to review changed E2E tests from a base commit or PR base:
+- inspect only changed or added E2E specs
+- inspect route/guard/DTO/page code only as minimal contract evidence
+- do not inspect unit/service/controller specs
+- do not produce an exhaustive role matrix unless explicitly requested
+- do not re-evaluate test-qa's unit/integration findings
+- do not produce coverage percentages or score tables
+- limit findings to the top 3 browser-flow gaps
+- list additional scenarios under Deferred / QA Handoff only when directly tied to a changed flow
+
+If the changed tests are not browser-level E2E:
+- stop
+- route to `test-qa`
+- do not continue by reading non-E2E test suites
 
 ## Non-goals
 - 本体実装の大規模修正

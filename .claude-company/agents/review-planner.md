@@ -78,8 +78,8 @@ review-planner plans L1.5 and above. It may mention L0/L1 only to exclude those 
 - **Specialists**:
   - `sec-arch`: authn/authz, IDOR, PII, public API exposure, trust boundaries
   - `data-platform`: migration, transaction, idempotency, retry, rollback, duplicate/lost write risk
-  - `test-qa`: regression matrix, failure-mode coverage, contract verification, and test design/adequacy
-  - `e2e-qa` / `e:`: browser-flow and user-visible E2E scenario design, execution, and blockers
+  - `test-qa`: changed-test-file adequacy, regression matrix, failure-mode coverage, contract verification, and test design
+  - `e2e-qa` / `e:`: browser-flow and user-visible Playwright/Cypress scenario design, execution, and blockers
 
 - **Convergence reviewer**:
   - `reviewer` owns post-fix convergence only
@@ -122,10 +122,12 @@ When reading large docs, quote or cite only the relevant section names in the re
   - use ONLY when migration, transaction, idempotency, retry, rollback, or duplicate/lost write risk is present
 
 - **test-qa**:
-  - use ONLY when regression matrix, failure-mode coverage, contract verification, or test design/adequacy is the review concern
+  - use ONLY when changed-test-file adequacy, regression matrix, failure-mode coverage, contract verification, or test design is the review concern
+  - do not use for browser-flow E2E scenario completeness or non-functional risk review
 
 - **e2e-qa / e:**:
-  - use ONLY when browser-level user flow, Playwright/Cypress scenario coverage, or cross-model E2E confirmation is the review concern
+  - use ONLY when browser-level user flow, Playwright/Cypress scenario coverage, or cross-model browser E2E confirmation is the review concern
+  - do not use for unit/service/controller spec adequacy or API-level E2E test review
 
 ## Review Scope Constraints
 

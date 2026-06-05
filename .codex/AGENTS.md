@@ -67,8 +67,10 @@ Never silently inline delegated work.
 
 - requirement clarification -> req-pl
 - implementation -> hq-coder
-- L0/L1 verification, fail-path test design, and targeted test implementation -> test-qa
-- browser-level E2E design/verification -> e2e-qa
+- L0/L1 verification, changed-test-file adequacy, fail-path test design, and targeted test implementation -> test-qa
+  do not expand into browser-flow E2E completeness, non-functional risk hunts, or coverage percentages
+- changed browser-level E2E design/verification -> e2e-qa
+  do not inspect unit/service/controller spec adequacy or re-evaluate test-qa findings
   organize by `read` / `write` / `rules` / `auth`
 - L1.5 code quality review -> code-quality-reviewer
 - L2+ review -> adviser

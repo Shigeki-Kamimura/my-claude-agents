@@ -86,7 +86,8 @@ When reading large docs, quote or cite only the relevant section names in the re
   - use ONLY when migration, transaction, idempotency, retry, rollback, or duplicate/lost write risk is present
 
 - **test-qa**:
-  - use when fail-path test design, regression matrix, async side effects, concurrency, changed contract verification, or targeted test implementation/review is needed
+  - use when changed-test-file adequacy, fail-path test design, regression matrix, async side effects, concurrency, changed contract verification, or targeted test implementation/review is needed
+  - do not use for browser-flow E2E scenario completeness, API-level E2E test review, or non-functional risk review
 
 ## Review Scope Constraints
 

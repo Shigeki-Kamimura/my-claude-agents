@@ -125,8 +125,10 @@ Rules:
 
 ## QA Boundary
 
-- `test-qa` owns unit/integration regression planning and high-signal verification gaps.
-- `e2e-qa` owns Playwright/Cypress scenario design and implementation for user-flow coverage.
+- `test-qa` owns changed-test-file adequacy, unit/integration regression planning, and high-signal verification gaps.
+- `test-qa` must not expand into browser-flow E2E scenario completeness, non-functional risk hunts, or coverage percentage scoring.
+- `e2e-qa` owns changed browser-flow Playwright/Cypress scenario design and implementation for user-flow coverage.
+- `e2e-qa` must not inspect unit/service/controller spec adequacy or re-evaluate test-qa findings.
 - Use `e2e-qa` only when behavior must be proven through browser-level user actions.
 - Prefer structuring E2E by `read` / `write` / `rules` / `auth`.
 - Split browser tests by dominant risk axis instead of feature size alone.
