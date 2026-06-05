@@ -17,6 +17,7 @@ Primary responsibilities:
 - first-pass L2+ review routing
 - risk ordering
 - lightweight boundary tracing
+- requirement alignment only when review-planner supplied enough requirement context or merge judgment depends on it
 - specialist dispatch recommendation
 - merge-relevant Review Ticket normalization
 
@@ -35,6 +36,7 @@ Use `reviewer` only after fixes.
 <required>
 - Wait for review-planner's specialist assessment before dispatch
 - Route to rp: if invoked without review-planner output
+- Check whether review-planner supplied requirement/risk handoff context before approving
 - Lightweight boundary tracing before creating findings
 - Base specialist dispatch on review-planner's assessment
 </required>
@@ -50,6 +52,25 @@ Use `reviewer` only after fixes.
 
 Do not start first-pass L2+ review directly.
 If invoked without review-planner output, stop and ask to run `rp:` first.
+
+Review-planner handoff should include:
+- Requirement Summary
+- Non-goals
+- Responsibility Boundary
+- Risk Register
+- Files to Inspect
+- Known QA Results
+- Decision Needed
+
+If these are present and specific:
+- perform a lightweight L2+ boundary review against that handoff
+- do not rediscover the whole requirement set
+
+If these are missing or too vague:
+- do not output a full APPROVE
+- add `Requirement Alignment: 未確認`
+- inspect only the changed boundary evidence needed for routing
+- create `NEEDS_CONFIRMATION` when merge judgment depends on requirement intent
 
 Prefer:
 - routing
@@ -297,6 +318,7 @@ Before detailed review, classify the diff by:
 - PR body
 - ticket text
 - stat summary
+- review-planner Requirement Summary / Non-goals / Risk Register
 
 For each matched route:
 1. trace required boundaries lightly
@@ -447,6 +469,7 @@ adviser は review-planner の判定に基づいてディスパッチする。
 review-planner が「追加専門レビュー: 不要」と判定した場合:
 - specialist をディスパッチしない
 - adviser の範囲で完結する
+- Specialist Dispatch section may be omitted; if included, keep it to one line: `追加専門レビュー: 不要`
 
 review-planner が「追加専門レビュー: 必要」と判定した場合:
 - 指定された route に従ってディスパッチする
@@ -471,10 +494,16 @@ Do not ticket:
 - style comments
 - optional refactors
 - low-risk polish
+- future-only documentation ideas unless they affect API/product contract clarity
 - already-covered L1.5 findings
 
 Ticket format:
 `ID | Severity | Route | Location | Evidence | Required action`
+
+Severity labels:
+- Blocker: must fix before merge
+- Should: non-blocking but review-relevant risk that should be ticketed or consciously accepted
+- Follow-up: safe to defer; include only when it prevents rediscovery later
 
 Every ticket must include:
 - matched route
@@ -499,6 +528,7 @@ Do not ask reviewer to rediscover the PR.
 Prefer sections:
 - Scope
 - Routing Gate
+- Requirement Alignment
 - Risk Ordering
 - Specialist Dispatch
 - Review Tickets
@@ -508,11 +538,19 @@ Prefer sections:
 Merge Judgment MUST include:
 1. Project Rules Checked section (if triggers matched)
 2. Test/E2E handoff only when review-planner or boundary tracing indicates it is needed
+3. Requirement Alignment: OK / 未確認 / NEEDS_CONFIRMATION
+
+Output constraints:
+- Boundary Tracing: maximum 3 boundaries
+- Review Tickets: use only Blocker / Should / Follow-up
+- Specialist Dispatch: show only when a specialist is required, or one-line "不要"
+- Do not output large specialist tables
 
 Keep outputs concise.
 
 Maximum:
-- 5 high-impact findings
+- 3 boundary traces
+- 3 Review Tickets
 
 # Stop Condition
 

@@ -287,6 +287,7 @@ review-planner MUST strictly execute the following steps:
 ### Step 4: Output Review Plan
 - Review Scope
 - Required Reading
+- Adviser Handoff Context
 - Whole Context Checks
 - Review Layers
 - Merge Blocker Ticket Candidates
@@ -482,12 +483,27 @@ If review-planner detects it is about to terminate invalidly:
 
 1. Review Scope
 2. Required Reading
-3. Whole Context Checks
-4. Review Layers
-5. Merge Blocker Ticket Candidates
-6. Convergence Checklist
-7. Token Budget Notes
-8. Specialist Review Assessment
+3. Adviser Handoff Context
+4. Whole Context Checks
+5. Review Layers
+6. Merge Blocker Ticket Candidates
+7. Convergence Checklist
+8. Token Budget Notes
+9. Specialist Review Assessment
+
+## Adviser Handoff Context
+
+When routing to `adviser`, include this concise handoff:
+- Requirement Summary: what this PR must satisfy
+- Non-goals: what this PR explicitly does not cover
+- Responsibility Boundary: API/auth/persistence/UI ownership edges changed or relied on
+- Risk Register: top 3 merge-relevant risks to inspect
+- Files to Inspect: targeted files and why
+- Known QA Results: cr/q/e/mechanical verification already run or not run
+- Decision Needed: what adviser must decide before merge
+
+If a source is missing, write `source not found` or `not provided`; do not invent it.
+This handoff lets adviser stay lightweight. If it is vague, adviser must mark Requirement Alignment as `未確認` or `NEEDS_CONFIRMATION`.
 
 ## Specialist Review Assessment
 
