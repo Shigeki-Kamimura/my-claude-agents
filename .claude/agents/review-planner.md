@@ -75,7 +75,9 @@ Forbidden:
 - Producing blocker candidates with evidence
 - Producing test matrices
 
-If routing cannot be decided within these limits, route to `adviser` with `risk-tags: unknown-boundary` and make the stop condition explicit.
+If routing cannot be decided within these limits because paths, PR description, stat, or capped grep indicate API/auth/DB/cross-module risk, route to `adviser` with `risk-tags: unknown-boundary` and make the stop condition explicit.
+
+If risk is unknown only because implementation bodies are forbidden, do not escalate automatically. Prefer `code-quality-reviewer` unless paths, PR description, stat, or capped grep indicate API/auth/DB/cross-module risk.
 
 ## Layer Responsibility Model
 
@@ -131,6 +133,7 @@ Choose one first reviewer route.
 
 - Route to `code-quality-reviewer` when the change appears local, small, implementation-focused, and no L2+ risk tag is present.
 - Route to `adviser` when requirement intent, API/product contract, permission, persistence, cross-module behavior, or unknown boundary risk is present.
+- Frontend UI-only changes with existing API usage should start at `code-quality-reviewer`, unless changed paths or PR description indicate auth, route guard, API contract, or E2E-specific concern.
 - Route to `sec-arch` only when the user explicitly asks for security-first review; otherwise route to `adviser` with `auth-permission`.
 - Route to `data-platform` only when the user explicitly asks for data-first review; otherwise route to `adviser` with `db-migration` or `transaction-side-effect`.
 - Route to `test-qa` when the request is specifically about unit/service/controller test design or changed test files.
