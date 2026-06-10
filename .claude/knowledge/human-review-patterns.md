@@ -93,3 +93,23 @@ Ignoring established project rules causes architectural drift.
 ### Preferred Pattern
 - verify relevant DESIGN.md before implementation
 - explain intentional deviations
+
+---
+
+## Frontend Suspense Query Pattern
+
+### Finding
+Ordinary GET data fetching used `useQuery` with manual `isLoading` / `error` rendering where the project rule requires Suspense.
+
+### Why It Matters
+Mixing manual loading/error branches into Suspense-based screens creates inconsistent user flows and bypasses the app's shared ErrorBoundary policy.
+
+### Reject Condition
+- changed frontend hook uses `useQuery` for ordinary GET/list/detail data without a conditional-fetch reason
+- changed page/container manually renders `isLoading` and/or `error`
+- project DESIGN.md or nearby implementation says ordinary GET data should use `useSuspenseQuery`
+
+### Preferred Pattern
+- use `useSuspenseQuery` for ordinary GET hooks
+- delegate loading and error UI to the route's Suspense / ErrorBoundary
+- keep `useQuery` only for conditional, dependent, or intentionally non-blocking background data

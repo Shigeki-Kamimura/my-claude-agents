@@ -48,7 +48,7 @@ review-planner may use only these inputs:
 - Changed file names
 - Diff stat
 - Generated/snapshot file names only enough to exclude them
-- Grep output up to 20 total matching lines, only for routing keywords such as `@Roles`, migration names, route names, schema names, or test framework names
+- Grep output up to 20 total matching lines, only for routing keywords such as `@Roles`, migration names, route names, schema names, frontend query pattern names, or test framework names
 
 Preferred commands:
 - `gh pr view <number> --json number,baseRefName,headRefName,title,body`
@@ -57,6 +57,7 @@ Preferred commands:
 - `git diff --name-only <base>...HEAD`
 - `git diff --stat <base>...HEAD`
 - `rg -n \"<routing keyword>\" <changed paths>` with output capped at 20 total lines
+- `rg -n \"useQuery|useSuspenseQuery|isLoading|\\.error|ErrorMessage|LoadingSpinner\" <changed frontend paths>` with output capped at 20 total lines
 
 ## Forbidden Intake
 
@@ -110,6 +111,7 @@ Use tags only when implied by metadata, paths, diff stat, PR description, or cap
 Common tags:
 - `local-quality`
 - `frontend-ui`
+- `frontend-query-pattern`
 - `backend-api`
 - `auth-permission`
 - `patch-update-semantics`
@@ -133,6 +135,7 @@ Choose one first reviewer route.
 - Route to `code-quality-reviewer` when the change appears local, small, implementation-focused, and no L2+ risk tag is present.
 - Route to `adviser` when requirement intent, API/product contract, permission, persistence, cross-module behavior, or unknown boundary risk is present.
 - Frontend UI-only changes with existing API usage should start at `code-quality-reviewer`, unless changed paths or PR description indicate auth, route guard, API contract, or E2E-specific concern.
+- If changed paths include `frontend/src/hooks/**` or frontend page/container components and capped grep finds `useQuery`, `useSuspenseQuery`, `isLoading`, `.error`, `ErrorMessage`, or `LoadingSpinner`, add `frontend-query-pattern` and route to `code-quality-reviewer` unless broader API/auth/route architecture risk is also present.
 - Route to `sec-arch` only when the user explicitly asks for security-first review; otherwise route to `adviser` with `auth-permission`.
 - Route to `data-platform` only when the user explicitly asks for data-first review; otherwise route to `adviser` with `db-migration` or `transaction-side-effect`.
 - Route to `test-qa` when the request is specifically about unit/service/controller test design or changed test files.

@@ -26,6 +26,7 @@ Focus on:
 - over-engineering or premature generalization in changed code
 - comments that explain obvious mechanics instead of preserving useful intent
 - nearby existing-pattern mismatch introduced by changed code
+- fixed project-rule mismatch introduced by changed code when the rule is explicit, locally checkable, and requires no architecture decision
 - refactoring opportunities needed to keep the changed code review-ready
 - changed-path error handling
 - type-safety erosion visible in the diff
@@ -46,7 +47,7 @@ Do NOT own:
 - broad responsibility-boundary review
 - cross-layer consistency review
 - API design or product contract review
-- DESIGN.md architectural consistency review
+- broad DESIGN.md architectural consistency review
 - security architecture review
 - auth/authz matrix review
 - persistence architecture review
@@ -240,6 +241,8 @@ Read documentation only when all conditions are true:
 2. the exact section can be found by grep
 3. the answer affects a local code-quality finding, not feature correctness
 
+Also read the minimum exact section when a fixed project-rule trigger below matches changed code.
+
 When reading docs:
 - grep exact endpoint/table/component/rule names
 - read the minimum relevant section only
@@ -249,6 +252,37 @@ If architectural, permission, audit, transaction, or feature consistency is the 
 - do not investigate deeply
 - put it under `L2+ Handoff`
 - recommend `adv:` / `sec:` / `data:` as appropriate
+
+## Fixed Project Rule Check
+
+L1.5 must catch explicit project-rule violations when they are local and mechanically checkable.
+
+This is not broad DESIGN.md review. It is a narrow rule check for changed code.
+
+### Frontend Suspense Query Rule
+
+Trigger this check when changed paths include:
+- `frontend/src/hooks/**`
+- frontend page/container components that consume GET hooks
+
+Use capped grep / targeted reads only:
+- `rg -n "useQuery|useSuspenseQuery|isLoading|\\.error|ErrorMessage|LoadingSpinner" <changed frontend paths>`
+- `rg -n "Suspense|useSuspenseQuery|isLoading|error" <DESIGN.md path>` only if a DESIGN.md path is available
+
+Report a BLOCKER / L1.5_FAIL when all are true:
+- changed code uses `useQuery` for ordinary GET/list/detail data fetching without a local conditional-fetch reason such as `enabled`
+- changed page/component renders `isLoading` and/or `error` manually for that GET path
+- project rule or nearby comparable implementation states that ordinary GET requests use `useSuspenseQuery` / Suspense + ErrorBoundary
+- the fix is local: switch the hook to `useSuspenseQuery` and remove manual loading/error rendering from the consuming component
+
+Do not downgrade this to style/nit when the rule is explicit.
+
+Do not report this as a finding when:
+- the hook is conditional (`enabled`, optional id, dependent query) and no local Suspense pattern is available
+- the query is background/supplemental data that intentionally must not block first render
+- deciding the rule requires route architecture changes, new ErrorBoundary/Suspense wiring, or product-level UX judgment
+
+For non-local cases, record at most one `L2+ Handoff` to `adv` or `react-ui-flow`.
 
 ## L1.5 Database Smell Check
 
@@ -321,6 +355,7 @@ Investigate and possibly ticket only when there is changed-line evidence for:
 - reviewer-visible duplication introduced by the diff
 - unclear naming or dead abstraction introduced by the diff
 - changed code that bypasses an obvious nearby helper/pattern without local reason
+- changed frontend GET hook/page code that violates an explicit local Suspense query rule as defined in `Fixed Project Rule Check`
 - raw SQL or manual DB access that appears to bypass an obvious nearby ORM/helper pattern
 - string-built SQL or interpolated raw SQL with obvious injection risk
 - force-fit implementation such as repeated manual branching, ad hoc parsing, copy-pasted mapping, or suspicious one-off glue
