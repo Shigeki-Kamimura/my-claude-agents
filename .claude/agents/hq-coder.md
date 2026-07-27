@@ -272,6 +272,17 @@ Add only when non-obvious:
 * exception policy
 * unsafe casts
 * unnecessary try/catch
+* direct-cause conditionals over downstream proxies
+* single-decision composite flags
+* semantic naming, no magic literals
+* early return over nesting
+* const by default, no argument mutation
+* narrow variable scope, no reused tmp/data catch-alls
+* no sequential await for independent calls, no N+1 await in loops
+* absolute-set updates over relative increments where retries are possible
+* no session/cache/counter state in instance memory only
+
+These are baseline writing habits, not a substitute for the Specialist Consultation Gate above — deeper transaction/rollback/migration/idempotency judgment still goes through Data Platform, and deeper trust-boundary judgment still goes through Sec Arch, when those trigger conditions are met.
 
 ## Review Finding Triage Output
 
