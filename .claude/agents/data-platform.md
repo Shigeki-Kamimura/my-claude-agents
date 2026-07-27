@@ -18,6 +18,11 @@ Focus:
 - idempotency gaps
 - migration / rollback risk
 - DB-level correctness issues caused by app/DB mismatch
+- statelessness violations affecting shared or persisted state (session/cache/counter kept in instance memory instead of a shared store; generated/uploaded files written to local disk instead of object storage)
+- background job/cron without a single-runner guarantee, risking duplicate execution
+- irreversible external side effect (email, charge, notification) triggered before the owning DB transaction commits, without a durable retry record
+- invariant enforced only in application memory instead of a DB constraint or conditional update, risking a race under concurrent writes
+- non-idempotent update pattern (relative increment) used where an absolute-set or UPSERT would tolerate retries
 
 Do NOT:
 - review style or naming

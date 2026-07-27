@@ -303,6 +303,48 @@ Review for:
 
 Route to `data-platform` or `test-qa` if correctness depends on retries or async verification.
 
+## Error Handling Route
+
+Trigger:
+- catch / try / rethrow / error handler / common exception handler changed
+
+Trace:
+- whether the catch attributes a specific cause (error type/status) actually confirmed from the caught error, not assumed
+- whether unknown/unconfirmed failure is converted into a success response
+- whether internal detail (stack trace, SQL, framework message) is rethrown or returned toward an external caller
+- whether the changed error path crosses a service, queue, retry, or asynchronous boundary
+
+Do not report the mere existence of a catch block.
+
+Report only when the changed error boundary:
+- assigns a cause or business meaning not supported by the caught error
+- converts unexpected failures into success or an unrelated 4xx response
+- drops the original cause or stack while translating the error
+- prevents callers or operators from distinguishing recoverable and unexpected failures
+
+Missing correlation metadata is a finding only when the changed path crosses
+service, queue, retry, or asynchronous boundaries and the failure cannot be
+reliably joined using an existing request, operation, user, or domain identifier.
+
+Route to `sec-arch` if leaked detail is security-sensitive, `test-qa` if verification of the failure path is missing.
+
+## Scale-Out / Statelessness Route
+
+Trigger:
+- session / cache / scheduler / cron / in-memory store / local file / uploaded file storage changed
+
+Trace:
+- where session/cache/counter state is held (in-process memory vs external store)
+- local filesystem read/write path for uploaded or generated files
+- cron/job trigger and its concurrency guard
+
+Review for:
+- session/cache/counter kept only in instance memory
+- uploaded/generated file written to local disk instead of object storage
+- scheduled job without a single-runner guarantee (lock/leader election)
+
+Route to `data-platform` for deeper persistence/state verification.
+
 ## Test / Verification Route
 
 Trigger:

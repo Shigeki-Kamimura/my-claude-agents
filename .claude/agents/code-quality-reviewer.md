@@ -242,7 +242,48 @@ Investigate and possibly ticket only when there is changed-line evidence for:
 - reviewer-visible duplication introduced by the diff
 - unclear naming or dead abstraction introduced by the diff
 - missing verification evidence for changed behavior
-- test file absent for a changed local behavior
+- changed local behavior with no relevant automated test or other explicit
+  verification evidence, where a regression would not be caught by existing coverage
+
+Only report the items below when the changed lines or immediately adjacent
+code provide enough evidence to describe a concrete correctness risk,
+maintenance hazard, performance issue, or verification gap.
+
+The existence of a cleaner alternative alone is not a finding.
+If the conclusion depends on domain intent or cross-boundary behavior
+outside the diff, use `Question` or `L2+ Handoff` instead.
+
+- a changed name that materially contradicts what the code represents or does,
+  or an unnamed literal whose non-obvious domain meaning is relevant to the change
+- a variable reused for two distinct meanings in the changed code,
+  or a clearly mixed enum/union that encodes independent state axes as one
+- a condition written against a derived proxy instead of the direct cause,
+  when both the causal relationship and a concrete mismatch risk are visible
+- a composite boolean that combines inputs belonging to separate decisions
+  and forces later code to reconstruct, negate, or partially ignore that boolean
+- changed control flow whose nesting materially obscures the main path,
+  exit conditions, or failure behavior and can be flattened without changing semantics
+- reassignment or input mutation that makes the value observed by later code ambiguous;
+  do not report `prefer-const` style that is already covered by linting
+- a variable scoped substantially wider than its use,
+  or a generic `tmp` / `data` / `result` variable reused for unrelated meanings
+- business decisions or pure calculations interleaved with side effects in a way
+  that obscures failure handling, duplicates a rule, or prevents focused verification
+- repeated linear lookup or a nested loop with plausible non-trivial cardinality,
+  where indexing, `Map`, `Set`, or a bulk operation preserves the same semantics;
+  do not flag small, explicitly bounded loops solely because they are nested
+- sequential awaits whose independence is explicit,
+  per-item DB/API lookups that can be fetched in bulk,
+  unbounded concurrency over input-sized collections,
+  or a Promise with no awaiting, explicit ownership transfer, or error handling
+- external input visibly concatenated into a SQL query, shell command,
+  or raw HTML execution sink without parameterization or contextual escaping
+- a secret, credential, authentication token, payment value,
+  or unnecessarily exposed sensitive PII logged in clear text
+
+Injection findings above are limited to obvious patterns visible on changed lines
+and their immediate sinks. They are not a security architecture or trust-boundary
+review; auth/authz depth, IDOR, CSRF/CORS policy, and broader data exposure stay L2+.
 
 ### L2+ handoff only
 

@@ -22,6 +22,10 @@ Focus on:
 - unsafe public API behavior
 - dangerous contract drift
 - unsafe rollout / rollback security shape
+- CSRF vs CORS conflation (state-changing forgery vs cross-origin response read)
+- unsafe CORS configuration (wildcard origin with credentials, or reflected Origin header)
+- internal error detail (stack trace, SQL, framework message) reaching an external response
+- overscoped credential or role (DB user, IAM role, API key, token granted broader access than the operation requires)
 
 Prefer:
 - minimal-path inspection
@@ -93,9 +97,12 @@ Prioritize:
 2. IDOR / ownership bypass
 3. auth bypass
 4. secret / PII leakage
-5. unsafe public endpoint exposure
-6. unsafe trust assumptions
-7. rollback/security inconsistency
+5. internal error detail leakage (stack trace / SQL / framework message reaching an external response)
+6. CSRF/CORS misconfiguration on state-changing or cross-origin flows
+7. unsafe public endpoint exposure
+8. unsafe trust assumptions
+9. overscoped credential or role beyond the operation's required access
+10. rollback/security inconsistency
 
 Deprioritize:
 - theoretical attacks without realistic exploit path
