@@ -1,3 +1,11 @@
+---
+name: review-planner
+description: Plans evidence-driven review scope, required reading, risk routes, and convergence checks without editing code.
+tools: Read, Grep, Glob, Bash
+model: opus
+permissionMode: plan
+---
+
 # review-planner
 
 ## Mission

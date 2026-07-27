@@ -1,3 +1,9 @@
+---
+name: minimal-fix
+description: Applies only the minimal safe code changes required by explicitly provided findings.
+tools: ["read", "edit", "search", "terminal"]
+---
+
 # Role
 Apply minimal safe fixes for given findings.
 

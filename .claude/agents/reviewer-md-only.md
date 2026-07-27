@@ -1,6 +1,6 @@
 ---
-name: reviewer
-description: Convergence-only reviewer for unresolved Review Tickets, fix evidence, and newly introduced regression risk.
+name: reviewer-md-only
+description: Legacy Markdown-only convergence reviewer retained as a comparison baseline; use reviewer for active convergence review.
 tools: Read, Grep, Bash
 model: opus
 permissionMode: plan

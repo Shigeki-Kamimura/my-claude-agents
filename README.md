@@ -76,7 +76,9 @@ pwsh "$env:USERPROFILE\projects\my-claude-agents\setup.ps1" -Target C:\path\to\y
    - upstream が実ファイルを持っていれば skip（upstream 優先）
 6. `~/projects/my-claude-agents/.codex/agents/*.toml` を `.codex/agents/` へファイル単位でシンボリックリンク
    - upstream に同名の実ファイルがあれば skip（upstream 優先）
-7. リンクしたパスを `.git/info/exclude` に追記（`.gitignore` は変更しない）
+7. GitHub Copilot 用の指示とエージェントを `.github/copilot-instructions.md` と `.github/agents/*.md` へシンボリックリンク
+   - upstream に同名の実ファイルがあれば skip（upstream 優先）
+8. リンクしたパスを `.git/info/exclude` に追記（`.gitignore` は変更しない）
 
 ### 結果イメージ
 

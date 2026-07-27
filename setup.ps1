@@ -1,5 +1,5 @@
 ﻿# Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため（Windows ネイティブ環境向け）。
-# Scope: .claude と .codex と .copilot のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
+# Scope: .claude と .codex と .github のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
 # Usage: pwsh ~/.claude/setup.ps1 [-Target C:\path\to\your-project] [-p|-Profile personal|company]
 # 前提: 開発者モード ON（管理者権限不要でシンボリックリンクが使えるようになる）
 #   設定 > システム > 開発者向け > 開発者モード: オン
@@ -38,7 +38,7 @@ $SrcCopilotAgents = Join-Path $SelfDir ".copilot\agents"
 $Target = (Resolve-Path $Target).Path
 $ClaudeDir   = Join-Path $Target ".claude"
 $CodexDir    = Join-Path $Target ".codex"
-$CopilotDir  = Join-Path $Target ".copilot"
+$GitHubDir   = Join-Path $Target ".github"
 $ExcludeFile = Join-Path $Target ".git\info\exclude"
 
 # git リポジトリかチェック
@@ -271,33 +271,34 @@ if (Test-Path $SrcCodexAgents) {
 }
 
 # --- Copilot: copilot-instructions.md ---
-New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
-Add-Exclude ".copilot"
+New-Item -ItemType Directory -Path $GitHubDir -Force | Out-Null
 
-$copilotInstructionsDest = Join-Path $CopilotDir "copilot-instructions.md"
+$copilotInstructionsDest = Join-Path $GitHubDir "copilot-instructions.md"
 if ((Test-Path $copilotInstructionsDest) -and (Get-Item $copilotInstructionsDest).LinkType -ne "SymbolicLink") {
-    Write-Host "  [SKIP upstream] .copilot/copilot-instructions.md（upstream 優先）"
+    Write-Host "  [SKIP upstream] .github/copilot-instructions.md（upstream 優先）"
 } else {
     if (Test-Path $copilotInstructionsDest) { Remove-Item $copilotInstructionsDest -Force }
     New-Item -ItemType SymbolicLink -Path $copilotInstructionsDest -Target $SrcCopilotInstructions | Out-Null
-    Write-Host "  [LINK] .copilot/copilot-instructions.md -> $SrcCopilotInstructions"
+    Add-Exclude ".github/copilot-instructions.md"
+    Write-Host "  [LINK] .github/copilot-instructions.md -> $SrcCopilotInstructions"
 }
 
 # --- Copilot agents: ファイル単位でリンク ---
-New-Item -ItemType Directory -Path (Join-Path $CopilotDir "agents") -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $GitHubDir "agents") -Force | Out-Null
 
 $linkedCopilotAgents = 0; $skippedCopilotAgents = 0
 if (Test-Path $SrcCopilotAgents) {
     foreach ($src in (Get-ChildItem -Path $SrcCopilotAgents -Filter "*.md" -File)) {
-        $dest = Join-Path $CopilotDir "agents\$($src.Name)"
+        $dest = Join-Path $GitHubDir "agents\$($src.Name)"
 
         if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
-            Write-Host "  [SKIP upstream] .copilot/agents/$($src.Name)"
+            Write-Host "  [SKIP upstream] .github/agents/$($src.Name)"
             $skippedCopilotAgents++
         } else {
             if (Test-Path $dest) { Remove-Item $dest -Force }
             New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
-            Write-Host "  [LINK] .copilot/agents/$($src.Name) -> $($src.FullName)"
+            Add-Exclude ".github/agents/$($src.Name)"
+            Write-Host "  [LINK] .github/agents/$($src.Name) -> $($src.FullName)"
             $linkedCopilotAgents++
         }
     }

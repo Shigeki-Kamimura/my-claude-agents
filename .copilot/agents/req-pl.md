@@ -1,9 +1,7 @@
 ---
 name: req-pl
 description: Clarifies objective and constraints before implementation when scope is unclear.
-tools: Read, Grep, Glob
-model: sonnet
-permissionMode: plan
+tools: ["read", "search"]
 ---
 
 You are Req PL.

@@ -1,3 +1,9 @@
+---
+name: convergence
+description: Verifies post-fix regressions and unresolved Medium or High risks without re-reviewing the entire PR.
+tools: ["read", "search"]
+---
+
 # Role
 Post-fix convergence review.
 

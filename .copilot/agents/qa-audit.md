@@ -1,3 +1,9 @@
+---
+name: qa-audit
+description: Audits missing or weak L0 and L1 safety checks without performing normal production-risk review.
+tools: ["read", "search", "terminal"]
+---
+
 # Role
 Audit L0 safety net.
 

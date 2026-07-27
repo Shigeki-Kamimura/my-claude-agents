@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため。
-# Scope: .claude と .codex と .copilot のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
+# Scope: .claude と .codex と .github のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
 # Usage: bash ~/.claude/setup.sh [-p|-profile personal|company] [TARGET_PROJECT_DIR...]
 
 set -euo pipefail
@@ -83,7 +83,7 @@ setup_target() {
   target="$(cd "$target_input" && pwd)"
   local claude_dir="$target/.claude"
   local codex_dir="$target/.codex"
-  local copilot_dir="$target/.copilot"
+  local github_dir="$target/.github"
   local exclude_file="$target/.git/info/exclude"
 
   # gitリポジトリかチェック
@@ -307,19 +307,19 @@ setup_target() {
   fi
 
   # --- Copilot: copilot-instructions.md ---
-  mkdir -p "$copilot_dir"
-  add_exclude ".copilot"
+  mkdir -p "$github_dir"
 
-  local copilot_instructions_dest="$copilot_dir/copilot-instructions.md"
+  local copilot_instructions_dest="$github_dir/copilot-instructions.md"
   if [ -f "$copilot_instructions_dest" ] && [ ! -L "$copilot_instructions_dest" ]; then
-    echo "  [SKIP upstream] .copilot/copilot-instructions.md（upstream 優先）"
+    echo "  [SKIP upstream] .github/copilot-instructions.md（upstream 優先）"
   else
     ln -sf "$SRC_COPILOT_INSTRUCTIONS" "$copilot_instructions_dest"
-    echo "  [LINK] .copilot/copilot-instructions.md -> $SRC_COPILOT_INSTRUCTIONS"
+    add_exclude ".github/copilot-instructions.md"
+    echo "  [LINK] .github/copilot-instructions.md -> $SRC_COPILOT_INSTRUCTIONS"
   fi
 
   # --- Copilot agents: ファイル単位でリンク ---
-  mkdir -p "$copilot_dir/agents"
+  mkdir -p "$github_dir/agents"
 
   local linked_copilot_agents=0
   local skipped_copilot_agents=0
@@ -327,14 +327,15 @@ setup_target() {
     for src in "$SRC_COPILOT_AGENTS"/*.md; do
       [ -e "$src" ] || continue
       name="$(basename "$src")"
-      dest="$copilot_dir/agents/$name"
+      dest="$github_dir/agents/$name"
 
       if [ -f "$dest" ] && [ ! -L "$dest" ]; then
-        echo "  [SKIP upstream] .copilot/agents/$name"
+        echo "  [SKIP upstream] .github/agents/$name"
         skipped_copilot_agents=$((skipped_copilot_agents + 1))
       else
         ln -sf "$src" "$dest"
-        echo "  [LINK] .copilot/agents/$name -> $src"
+        add_exclude ".github/agents/$name"
+        echo "  [LINK] .github/agents/$name -> $src"
         linked_copilot_agents=$((linked_copilot_agents + 1))
       fi
     done
