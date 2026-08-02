@@ -1,6 +1,6 @@
 name = "nestjs_backend"
 description = "NestJS specialist for guards, pipes, interceptors, filters, DTO validation/transformation, and controller/service boundaries."
-model = "gpt-5.4"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 temperature = 0.3
 sandbox_mode = "read-only"

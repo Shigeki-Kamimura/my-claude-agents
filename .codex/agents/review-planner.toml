@@ -1,3 +1,8 @@
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+
+developer_instructions = """
 # review_planner
 
 ## Mission
@@ -108,3 +113,4 @@ For each candidate:
 - Inspect first:
 - Grep/search targets:
 - Avoid reading:
+"""

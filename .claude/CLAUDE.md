@@ -96,16 +96,6 @@ Rules:
 
 ## Review Flow
 
-Rules:
-- Prefix routing has priority over default review order.
-- `cr:` runs only `code-quality-reviewer`.
-- `cr:` must not automatically continue to `adviser`.
-- `adviser` is used only when the user explicitly uses `adv:` / `a:` or requests L2+ review.
-- `reviewer` is used only for convergence after prior Review Tickets or claimed fixes.
-- `reviewer` execution contract lives in `.claude/contracts/reviewer.xml`; detailed review knowledge lives in `.claude/knowledge/review/*.md`.
-
-## Review Flow
-
 Review agents are independent.
 
 Prefix routing always has priority.
@@ -119,10 +109,13 @@ Typical human-operated flow:
 5. `rev:` only after fixes for convergence review
 
 Rules:
+- `cr:` runs only `code-quality-reviewer`.
+- `adviser` is used only when the user explicitly uses `adv:` / `a:` or requests L2+ review.
 - Do not automatically chain review agents.
 - Do not escalate from `cr:` to `adv:` automatically.
 - Do not send first-pass PR review to `reviewer`.
 - Each review command owns only its scoped review layer.
+- `reviewer` execution contract lives in `.claude/contracts/reviewer.xml`; detailed review knowledge lives in `.claude/knowledge/review/*.md`.
 
 ## QA Boundary
 

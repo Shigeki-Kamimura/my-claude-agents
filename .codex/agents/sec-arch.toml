@@ -1,6 +1,6 @@
 name = "sec_arch"
 description = "L2+ reviewer for security, trust boundaries, contract drift, and dangerous design changes."
-model = "gpt-5.4"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """

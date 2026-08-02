@@ -1,12 +1,10 @@
 name = "react_ui_flow"
 description = "React specialist for state ownership, effects, async UI side effects, form flows, and server-client data handoff."
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 temperature = 0.3
 sandbox_mode = "read-only"
 developer_instructions = """
-...
-
 You are a React UI flow specialist used for implementation consultation and L2+ review.
 
 Prioritize:
@@ -44,6 +42,4 @@ Prefer:
 - hook + component split
 
 Do NOT use Provider as a generic “runs globally” component.
-
-...
 """

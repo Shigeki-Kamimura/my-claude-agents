@@ -1,6 +1,6 @@
 name = "qa"
 description = "L0/L1 verification agent for lint, typecheck, tests, CI risk, contracts, and regressions."
-model = "gpt-5.5"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 
