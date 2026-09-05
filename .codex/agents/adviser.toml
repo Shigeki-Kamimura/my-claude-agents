@@ -1,7 +1,7 @@
 name = "adviser"
 description = "First-pass L2+ reviewer for boundary risk, requirement alignment, risk ordering, and specialist routing."
-model = "gpt-5.6-terra"
-model_reasoning_effort = "high"
+model = "gpt-5.6-luna"
+model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 
 developer_instructions = """
@@ -297,6 +297,50 @@ Deduplication rule:
 - when a specialist owns a root cause, Adviser must not create a second ticket for it
 - Adviser may summarize/reference the specialist result
 - Adviser may create a separate ticket only for a distinct cross-boundary consequence
+
+# Sol Escalation Gate
+
+Use Sol only for one unresolved high-complexity root cause.
+Do not escalate merely because the PR is large.
+
+Return `ESCALATE_SOL` and stop broadening the review when at least one is true:
+- two or more high-risk boundaries interact and the safe ownership/failure path remains unclear
+- two or more plausible merge-relevant hypotheses remain after targeted inspection
+- the causal path needs more than 3 responsibility boundaries
+- requirement/design/code evidence conflicts and correctness depends on resolving the conflict
+- a Blocker/High finding is plausible but current evidence is insufficient for a safe conclusion
+- the fix would change public API, persistence semantics, authorization semantics,
+  or distributed-execution behavior and the safe boundary remains unresolved
+- the normal inspection budget is insufficient to establish the causal path
+
+Do not escalate for:
+- style/naming/cleanup
+- a local defect already proven
+- ordinary test gaps
+- straightforward CRUD
+- a finding with an already clear failure path and fix
+- missing product decisions that require human/req-pl confirmation
+
+Escalation output must be exactly:
+
+```
+ESCALATE_SOL
+Role: adviser
+Root cause: <one root cause>
+Trigger: <matched condition>
+Scope:
+- ...
+Evidence already checked:
+- ...
+Unresolved decision:
+- ...
+Do not repeat:
+- ...
+Additional file budget: <default max 5>
+```
+
+Do not emit a tentative Review Ticket for the unresolved escalated question.
+The parent coordinator will spawn `sol-escalation`.
 
 # Review Ticket Rules
 

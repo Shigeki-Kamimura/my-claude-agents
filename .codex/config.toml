@@ -3,13 +3,13 @@
 #
 # Project-scoped configuration for Codex.
 # Strategy:
-# - Keep the primary session on GPT-5.6 Terra for coordination.
-# - Reserve GPT-5.6 Sol for implementation and explicit high-risk review.
-# - Use GPT-5.6 Luna for bounded review routing.
+# - Keep the primary coordinator on GPT-5.6 Luna.
+# - Run bounded review workers on Luna with role-appropriate reasoning.
+# - Reserve GPT-5.6 Sol for implementation and explicit complexity escalation.
 # - Keep CLI profiles in CODEX_HOME as separate *.config.toml files.
 ################################################################################
 
-model = "gpt-5.6-terra"
+model = "gpt-5.6-luna"
 personality = "pragmatic"
 approval_policy = "on-request"
 model_reasoning_effort = "medium"
@@ -18,5 +18,5 @@ project_root_markers = [".git"]
 
 [agents]
 max_concurrent_threads_per_session = 6
-default_subagent_model = "gpt-5.6-terra"
-default_subagent_reasoning_effort = "high"
+default_subagent_model = "gpt-5.6-luna"
+default_subagent_reasoning_effort = "xhigh"

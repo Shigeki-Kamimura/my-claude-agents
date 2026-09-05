@@ -14,6 +14,7 @@
 - vue-frontend
 - nestjs-backend
 - spring-boot
+- sol-escalation
 
 ## Routing
 
@@ -25,25 +26,27 @@
 - q: / qa: -> test-qa
 - e: / e2e: -> e2e-qa
 - h: / hq: -> hq-coder
+- sol: -> sol-escalation (explicit manual override only)
 
 ## Model Allocation
 
 Default strategy:
-- main coordinator -> GPT-5.6 Terra / medium
+- main coordinator -> GPT-5.6 Luna / medium
 - hq-coder -> GPT-5.6 Sol / high
 - review-planner -> GPT-5.6 Luna / medium
-- code-quality-reviewer -> GPT-5.6 Terra / high
-- adviser -> GPT-5.6 Terra / high
-- reviewer -> GPT-5.6 Terra / high
-- test-qa -> GPT-5.6 Terra / high
-- e2e-qa -> GPT-5.6 Terra / medium
-- framework/security/data specialists -> GPT-5.6 Terra / high
+- code-quality-reviewer -> GPT-5.6 Luna / xhigh
+- adviser -> GPT-5.6 Luna / xhigh
+- reviewer -> GPT-5.6 Luna / high
+- test-qa -> GPT-5.6 Luna / xhigh
+- e2e-qa -> GPT-5.6 Luna / high
+- framework/security/data specialists -> GPT-5.6 Luna / xhigh
+- sol-escalation -> GPT-5.6 Sol / high
 
 Reasoning:
-- Spend the strongest fixed model on implementation quality before review debt is created.
-- Keep routing cheap and bounded.
-- Use multiple focused Terra review layers instead of placing Sol on every reviewer.
-- If a rare high-risk review needs Sol, run it as an explicit exceptional review rather than changing the normal reviewer fleet.
+- Spend Sol continuously on implementation quality in hq-coder.
+- Use narrow Luna agents for normal review work.
+- Escalate only the unresolved hard question, not the whole PR, to Sol.
+- Do not use Terra as an intermediate default layer.
 
 ## Mandatory Agent Routing
 
@@ -66,6 +69,7 @@ Rules:
 - L1.5 local code-quality review -> code-quality-reviewer
 - first-pass L2+ boundary review -> adviser
 - post-fix convergence -> reviewer
+- `sol-escalation` is not a normal first route
 - do not silently inline work owned by another agent
 - do not automatically chain review agents unless the user explicitly asks for a chained run
 
@@ -97,6 +101,9 @@ Owns L1.5 only:
 - review readiness
 - at most 2 L2+ handoff cues
 
+CR never escalates directly to Sol.
+A broader concern goes to adviser/security/data through the normal handoff.
+
 ### adviser
 Owns first-pass L2+:
 - lightweight boundary tracing
@@ -109,6 +116,8 @@ Adviser may start when:
 - review-planner routes to adviser, or
 - user explicitly invokes `adv:` / `a:`
 
+Adviser may request Sol escalation under the rules below.
+
 ### test-qa
 Owns:
 - unit/service/controller test obligations
@@ -117,6 +126,7 @@ Owns:
 - targeted test implementation/evidence
 
 Does not own browser/API E2E completeness.
+QA does not escalate directly to Sol; route unresolved boundary risk to adviser/sec/data.
 
 ### e2e-qa
 Owns:
@@ -125,6 +135,7 @@ Owns:
 - high-value changed-flow negative/auth checks
 
 Does not own unit/service/controller adequacy.
+E2E QA does not escalate directly to Sol.
 
 ### reviewer
 Owns convergence only:
@@ -133,7 +144,81 @@ Owns convergence only:
 - fix-induced high/medium regression
 - required verification evidence
 
-Reviewer does not perform first-pass rediscovery.
+Reviewer does not perform first-pass rediscovery and does not escalate to Sol.
+If specialist depth is still required, return the exact unresolved question to the original route.
+
+## Sol Escalation
+
+`sol-escalation` is a complexity escalation path, not another review layer.
+
+Eligible originating roles:
+- adviser
+- sec-arch
+- data-platform
+- react-ui-flow
+- vue-frontend
+- nestjs-backend
+- spring-boot
+
+Not eligible for automatic escalation:
+- review-planner
+- code-quality-reviewer
+- req-pl
+- test-qa
+- e2e-qa
+- reviewer
+- hq-coder (already runs on Sol)
+
+Escalate only when at least one is true:
+- two or more high-risk boundaries interact, such as auth + persistence,
+  transaction + external side effect, migration + API contract, or lifecycle + authorization
+- two or more plausible merge-relevant hypotheses remain after targeted inspection
+- resolving the issue requires tracing more than 3 responsibility boundaries
+- requirement/design/code evidence conflicts and the conflict affects correctness
+- a Blocker/High finding is plausible but evidence is not strong enough for a safe conclusion
+- the required fix would change a public API, persistence semantics, authorization semantics,
+  or distributed-execution behavior and the safer boundary is unresolved
+- the normal inspection budget is insufficient to establish the causal path
+
+Do NOT escalate for:
+- style, naming, formatting, or cleanup
+- a local bug already proven by changed-line evidence
+- an ordinary test gap
+- straightforward CRUD
+- a finding whose fix and failure path are already clear
+- simply because the diff is large
+- missing product decisions that require human/req-pl confirmation
+
+When escalation is needed, the Luna agent must stop broadening its own search and return:
+
+```
+ESCALATE_SOL
+Role: <originating agent role>
+Root cause: <one root cause only>
+Trigger: <matched escalation condition>
+Scope:
+- <files/boundaries already in scope>
+Evidence already checked:
+- <evidence>
+Unresolved decision:
+- <exact question Sol must resolve>
+Do not repeat:
+- <completed checks/findings>
+Additional file budget: <default max 5>
+```
+
+Parent coordinator behavior:
+1. Detect the exact `ESCALATE_SOL` marker.
+2. Do not ask the Luna agent to continue deeper.
+3. Spawn `sol-escalation`.
+4. Pass the handoff unchanged.
+5. Wait for the Sol result.
+6. Use Sol only for the unresolved escalated question.
+7. Do not repeat lower-layer review already completed by Luna.
+8. Allow at most one Sol escalation per root cause.
+
+A Sol escalation must preserve the originating role.
+It must not convert a narrow security/data/framework question into a broad PR review.
 
 ## Review Operating Model
 
@@ -148,12 +233,15 @@ Recommended manual sequences:
 
 These are manual sequences, not automatic chains.
 Each agent stops after its own layer unless the user explicitly asks otherwise.
+Sol escalation is the one exception: it is a continuation of the same unresolved root cause,
+not a new review layer.
 
 Direct-use exceptions:
 - `cr:` explicit L1.5 check/re-review
 - `adv:` explicit focused L2+ review
 - `e:` explicit E2E-only verification
 - `rev:` prior Review Tickets or claimed fixes already exist
+- `sol:` explicit manual high-complexity override
 
 ## Duplicate-review Rule
 
@@ -163,6 +251,8 @@ Assign one primary owner per root cause.
 - reopen only when evidence is missing/contradicted or the current layer owns a distinct consequence
 - adviser must not duplicate a specialist ticket for the same root cause
 - reviewer must not rediscover unrelated findings during convergence
+- sol-escalation must not re-run already completed Luna checks
+- only one Sol escalation is allowed per root cause
 
 ## Review Budgets
 
@@ -173,6 +263,7 @@ Targets, not hard token guarantees:
 - `e:` 15k-25k
 - `adv:` 20k-40k
 - `rev:` 8k-20k
+- `sol-escalation:` only the unresolved question, default <=5 additional files
 
 Prefer stopping with a high-confidence partial review over expanding into broad speculative review.
 
