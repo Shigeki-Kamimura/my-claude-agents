@@ -1,6 +1,6 @@
 name = "review-planner"
 description = "Lightweight review router that determines PR/diff scope, coarse risk tags, exclusions, and the first reviewer route. Never executes reviews."
-model = "gpt-5.5"
+model = "gpt-5.6-luna"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 developer_instructions = """

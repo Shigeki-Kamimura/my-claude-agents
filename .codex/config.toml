@@ -3,25 +3,20 @@
 #
 # Project-scoped configuration for Codex.
 # Strategy:
-# - Keep defaults stable across IDE / CLI.
-# - Push L2+ review quality up in Chat/Codex before Browser Copilot.
+# - Keep the primary session on GPT-5.6 Terra for coordination.
+# - Reserve GPT-5.6 Sol for implementation and explicit high-risk review.
+# - Use GPT-5.6 Luna for bounded review routing.
 # - Keep CLI profiles in CODEX_HOME as separate *.config.toml files.
-# - Use subagents for specialist review lenses.
 ################################################################################
 
-# Stable default for day-to-day IDE + CLI usage.
-# GPT-5.5 is the recommended starting model for most Codex tasks.
-model = "gpt-5.5"
-review_model = "gpt-5.5"
+model = "gpt-5.6-terra"
 personality = "pragmatic"
 approval_policy = "on-request"
 model_reasoning_effort = "medium"
 
-# Keep project root discovery predictable.
 project_root_markers = [".git"]
 
-# Default subagent orchestration limits.
 [agents]
-max_threads = 6
-max_depth = 1
-job_max_runtime_seconds = 900
+max_concurrent_threads_per_session = 6
+default_subagent_model = "gpt-5.6-terra"
+default_subagent_reasoning_effort = "high"

@@ -26,113 +26,170 @@
 - e: / e2e: -> e2e-qa
 - h: / hq: -> hq-coder
 
+## Model Allocation
+
+Default strategy:
+- main coordinator -> GPT-5.6 Terra / medium
+- hq-coder -> GPT-5.6 Sol / high
+- review-planner -> GPT-5.6 Luna / medium
+- code-quality-reviewer -> GPT-5.6 Terra / high
+- adviser -> GPT-5.6 Terra / high
+- reviewer -> GPT-5.6 Terra / high
+- test-qa -> GPT-5.6 Terra / high
+- e2e-qa -> GPT-5.6 Terra / medium
+- framework/security/data specialists -> GPT-5.6 Terra / high
+
+Reasoning:
+- Spend the strongest fixed model on implementation quality before review debt is created.
+- Keep routing cheap and bounded.
+- Use multiple focused Terra review layers instead of placing Sol on every reviewer.
+- If a rare high-risk review needs Sol, run it as an explicit exceptional review rather than changing the normal reviewer fleet.
+
 ## Mandatory Agent Routing
 
 The main Codex session is a coordinator, not the worker.
-
-For every task, choose one designated role/agent before doing work.
+Choose one designated role before doing work.
 
 Required output before work:
 
+```
 ROUTE: <agent>
 REASON: <routing reason>
 SCOPE: <delegated scope>
+```
 
 Rules:
-- Do not silently perform work that belongs to hq-coder, test-qa, req-pl, reviewer, or review-planner.
-- Do not silently perform work that belongs to e2e-qa.
-- If routing is ambiguous, choose the safest specialized route and state the assumption.
-- Implementation must route to hq-coder.
-- L0/L1 verification and fail-path test design must route to test-qa.
-- Browser-level E2E design/verification must route to e2e-qa.
-- Prefer E2E decomposition by `read` / `write` / `rules` / `auth`.
-- Split or add files before a single E2E spec exceeds 400 lines.
-- Requirement clarification must route to pl.
-- L2+ review planning must route to review-planner.
-- L2+ risk review must route to adviser.
-- Convergence review must route to reviewer.
-
-## Routing Visibility
-
-When delegated to a subagent:
-
-- explicitly state:
-  - which agent was used
-  - why it was selected
-  - what scope it handled
-
-Never silently inline delegated work.
+- implementation -> hq-coder
+- requirement clarification -> req-pl
+- L0/L1 verification and fail-path test design -> test-qa
+- browser/API E2E design or verification -> e2e-qa
+- L1.5 local code-quality review -> code-quality-reviewer
+- first-pass L2+ boundary review -> adviser
+- post-fix convergence -> reviewer
+- do not silently inline work owned by another agent
+- do not automatically chain review agents unless the user explicitly asks for a chained run
 
 ## Review Ownership
 
-- requirement clarification -> req-pl
-- implementation -> hq-coder
-- L0/L1 verification, changed-test-file adequacy, fail-path test design, and targeted test implementation -> test-qa
-  do not expand into E2E/integration completeness, non-functional risk hunts, or coverage percentages
-- changed E2E/integration design/verification -> e2e-qa
-  do not inspect unit/service/controller spec adequacy or re-evaluate test-qa findings
-  organize by `read` / `write` / `rules` / `auth`
-- L1.5 code quality review -> code-quality-reviewer
-- L2+ review -> adviser
-- convergence review -> reviewer
+### review-planner
+Owns routing only:
+- PR/base/head and change scale
+- coarse risk tags
+- one first reviewer route
+- duplicate-review exclusions
+- file-inspection budget
+- stop condition
+
+Does NOT own:
+- requirement summary
+- findings
+- specialist verdicts
+- test sufficiency
+- architecture judgment
+- caller/callee tracing
+
+### code-quality-reviewer
+Owns L1.5 only:
+- changed-line correctness
+- local unsafe patterns
+- local maintainability hazards with concrete evidence
+- explicit locally-checkable project rules
+- review readiness
+- at most 2 L2+ handoff cues
+
+### adviser
+Owns first-pass L2+:
+- lightweight boundary tracing
+- requirement alignment only when merge judgment needs it
+- risk ordering
+- specialist selection after boundary evidence
+- merge-relevant Review Tickets
+
+Adviser may start when:
+- review-planner routes to adviser, or
+- user explicitly invokes `adv:` / `a:`
+
+### test-qa
+Owns:
+- unit/service/controller test obligations
+- fail-path-first test design
+- regression matrix
+- targeted test implementation/evidence
+
+Does not own browser/API E2E completeness.
+
+### e2e-qa
+Owns:
+- changed user-flow E2E
+- browser/API/module-boundary smoke/regression
+- high-value changed-flow negative/auth checks
+
+Does not own unit/service/controller adequacy.
+
+### reviewer
+Owns convergence only:
+- prior Review Tickets
+- claimed fixes
+- fix-induced high/medium regression
+- required verification evidence
+
+Reviewer does not perform first-pass rediscovery.
 
 ## Review Operating Model
 
-`rp` is the review hub.
+`rp` is the normal first-pass review hub, but it is intentionally lightweight.
 
-`rp` must decide:
-- requirement summary
-- non-goals
-- changed responsibility boundary
-- important risks
-- which reviewer sees which files
-- duplicate-review exclusions
-- adviser handoff points
-
-Standard flows:
-- These are recommended manual sequences, not automatic chains.
-- Agents must stop after their own layer and wait for the user's next command unless explicitly instructed otherwise.
-- Tiny PR: direct `cr:` is allowed for formatting, small refactors, one-test additions, or obvious bug fixes
+Recommended manual sequences:
+- Tiny focused local change: `cr`
 - Normal PR: `rp -> cr -> q -> adv`
-- E2E changes present: `rp -> cr -> q -> e -> adv`
-- Large design change: `rp -> adv first -> cr/q/e -> adv convergence`
-- Re-review: previous findings only; no new broad adequacy review
+- E2E change present: `rp -> cr -> q -> e -> adv`
+- High-risk design/API/auth/DB change: `rp -> adv`, then focused `cr/q/e` as needed
+- After fixes from any layer: `rev`
 
-Layer split:
-- `cr`: lightweight implementation smell and review-readiness check
-- `q`: unit/service/controller spec adequacy only; do not review E2E/integration tests unless explicitly routed
-- `e`: E2E/integration adequacy only, including browser E2E and backend controller/API e2e
-- `adv`: L2+ boundary review against rp risk handoff
-- `rev`: prior Review Tickets / claimed fixes only
-- `adv convergence`: re-check only L2+ boundary risks previously raised by adv; do not perform broad PR review
-- `rev`: verify prior Review Tickets or claimed fixes across layers after concrete fixes
+These are manual sequences, not automatic chains.
+Each agent stops after its own layer unless the user explicitly asks otherwise.
 
-Target review budget:
-- `rp:` 10k-20k tokens
-- `cr:` 20k-35k tokens
-- `q:` 25k-40k tokens
-- `e:` 20k-35k tokens
-- `adv:` 30k-60k tokens
-- `rev:` 10k-25k tokens
+Direct-use exceptions:
+- `cr:` explicit L1.5 check/re-review
+- `adv:` explicit focused L2+ review
+- `e:` explicit E2E-only verification
+- `rev:` prior Review Tickets or claimed fixes already exist
 
-Duplicate-review rule:
-- Once a layer has covered a topic, later layers may cite the result but must not re-evaluate it unless merge judgment depends on unresolved evidence.
-- Later layers may re-open a topic only when previous evidence is missing or contradicted, merge judgment depends on unresolved evidence, or the topic is part of that layer's explicit risk handoff.
+## Duplicate-review Rule
 
-rp size rule:
-- `rp` creates the review plan only.
-- `rp` must not perform code review, test adequacy review, E2E review, L2+ judgment, or full-file deep inspection.
-- `rp` should stay lightweight; if planning starts to require deep reading, route the uncertainty to the target reviewer instead.
+Assign one primary owner per root cause.
 
-## Review Entry Rule
+- later layers may cite earlier results without re-reviewing them
+- reopen only when evidence is missing/contradicted or the current layer owns a distinct consequence
+- adviser must not duplicate a specialist ticket for the same root cause
+- reviewer must not rediscover unrelated findings during convergence
 
-All review from L1.5 onward must start with `rp:` (review-planner).
+## Review Budgets
 
-`cr:`, `a:`, `e:`, `rev:` should be invoked based on review-planner output.
+Targets, not hard token guarantees:
+- `rp:` 5k-10k
+- `cr:` 12k-25k
+- `q:` 15k-30k
+- `e:` 15k-25k
+- `adv:` 20k-40k
+- `rev:` 8k-20k
 
-Direct use exceptions:
-- `cr:`: Re-checking L1.5 only for a specific concern
-- `rev:`: Review Ticket or claimed fix already exists
-- `e:`: Explicitly verifying E2E only
+Prefer stopping with a high-confidence partial review over expanding into broad speculative review.
 
-Do not start first-pass L2+ review directly from `a:`.
+## PR Layer Discipline
+
+All review agents must use the actual PR base when available.
+
+For stacked PRs:
+- current parent/base branch is the review base
+- do not re-review parent-layer changes
+- do not treat `main...HEAD` visibility as current-layer ownership
+
+## Verification Language
+
+Across all review agents:
+- Checked = file/content inspected
+- Executed = command actually run and output observed
+
+Do not claim tests passed from file existence alone.
+Do not use `verified` for file inspection only.

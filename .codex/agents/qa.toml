@@ -1,6 +1,6 @@
 name = "test-qa"
 description = "Test QA agent for fail-path-first test design, regression matrix, contract verification, targeted test implementation, and evidence review."
-model = "gpt-5.5"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 

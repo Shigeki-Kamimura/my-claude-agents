@@ -1,7 +1,7 @@
 name = "hq-coder"
 description = "Implementation-focused agent for coding-ready tasks."
-model = "gpt-5.5"
-model_reasoning_effort = "medium"
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
 
 developer_instructions = """
 

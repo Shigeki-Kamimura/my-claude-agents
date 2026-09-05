@@ -1,6 +1,6 @@
 name = "e2e-qa"
 description = "E2E QA agent for changed-flow smoke/regression coverage with Playwright/Cypress and backend controller/API e2e."
-model = "gpt-5.5"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
 
 developer_instructions = """
