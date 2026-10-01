@@ -298,40 +298,8 @@ Deduplication rule:
 - Adviser may summarize/reference the specialist result
 - Adviser may create a separate ticket only for a distinct cross-boundary consequence
 
-# Astra Escalation Gate
 
-Use Astra only for one unresolved highest-risk root cause after targeted Sol inspection.
-Do not escalate merely because the PR is large or the topic is important.
 
-Return `ESCALATE_ASTRA` and stop broadening the review when at least one is true:
-- two or more high-risk boundaries interact and a wrong conclusion could change merge or production correctness
-- requirement, design, and code evidence still conflict after targeted reading
-- a Blocker/High finding is plausible but Sol cannot reach high confidence within the inspection budget
-- the required fix would change public API, authorization, persistence, lifecycle, or distributed-execution semantics and multiple safe boundaries remain plausible
-- resolving the issue requires tracing more than 3 responsibility boundaries and the causal path is still ambiguous
-
-Do not escalate for a proven finding with an obvious fix, ordinary CRUD, style/naming,
-a normal test gap, a merely large diff, or optional refactoring.
-
-Use exactly:
-```
-ESCALATE_ASTRA
-Role: adviser
-Root cause: <one root cause>
-Trigger: <matched condition>
-Scope:
-- ...
-Evidence already checked:
-- ...
-Unresolved decision:
-- ...
-Do not repeat:
-- ...
-Additional file budget: <default max 5>
-```
-
-Then stop. Do not emit a tentative Review Ticket for the escalated root cause.
-The parent coordinator will spawn `astra-escalation`.
 # Review Ticket Rules
 
 Create tickets only for:

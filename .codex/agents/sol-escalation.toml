@@ -132,35 +132,7 @@ Stop Reason:
 - Never expand beyond the supplied root cause.
 - One escalation equals one root cause.
 
-# Astra Handoff Gate
 
-This agent may return `ESCALATE_ASTRA` only when its one unresolved root cause still cannot be
-settled safely on GPT-6.1 Sol and the decision would materially change system correctness, security, data integrity, compatibility, or operability.
 
-Eligible examples:
-- multiple high-risk boundaries remain coupled after the allowed additional inspection
-- conflicting requirement/design/code evidence still supports more than one materially different safe design
-- a Blocker/High conclusion remains plausible but not provable within the Sol budget
-
-Do not escalate merely because the question is difficult or the diff is large.
-
-Use:
-```
-ESCALATE_ASTRA
-Role: sol-escalation
-Root cause: <same root cause>
-Trigger: <matched condition>
-Scope:
-- ...
-Evidence already checked:
-- ...
-Unresolved decision:
-- ...
-Do not repeat:
-- ...
-Additional file budget: <default max 5>
-```
-
-Then stop. The parent coordinator owns spawning `astra-escalation`.
 
 """

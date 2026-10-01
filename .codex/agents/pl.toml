@@ -344,41 +344,7 @@ Architecture Proposal:
 
 **Status:** VIOLATION. Proposed architecture redesign without being a constraint. This is implementation decision, not requirement.
 
-# Astra Escalation Gate
 
-Req PL should normally complete requirement clarification and task planning on GPT-6.1 Sol.
 
-Return `ESCALATE_ASTRA` only when one unresolved planning decision meets at least one condition:
-- multiple authoritative sources materially conflict
-- scope, non-goals, acceptance, and dependency order cannot be made consistent from available evidence
-- the decision spans multiple systems/teams/contracts and a wrong assumption would cause substantial rework
-- backward compatibility, migration, rollout, or operational constraints create more than one materially different valid plan
-- the task decomposition depends on a product/design decision that cannot be reduced safely within the normal inspection budget
-
-Do not escalate:
-- ordinary ticket clarification
-- straightforward task splitting
-- wording cleanup
-- a merely large issue list
-- missing information that should simply become an open question
-
-Use exactly:
-```
-ESCALATE_ASTRA
-Role: req-pl
-Root cause: <one planning decision>
-Trigger: <matched condition>
-Scope:
-- ...
-Evidence already checked:
-- ...
-Unresolved decision:
-- ...
-Do not repeat:
-- ...
-Additional file budget: <default max 5>
-```
-
-Then stop the unresolved branch of planning. The parent coordinator will spawn `astra-escalation`.
 
 """

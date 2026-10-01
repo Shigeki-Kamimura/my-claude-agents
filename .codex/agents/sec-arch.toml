@@ -174,36 +174,8 @@ check for concrete cases such as:
 Persistence semantics belong to `data-platform`; Sec Arch owns the security consequence.
 Avoid duplicate tickets for the same root cause.
 
-# Astra Escalation Gate
 
-Return `ESCALATE_ASTRA` and stop expanding when a security root cause remains unsafe to decide
-after targeted Sol inspection and at least one is true:
-- authorization, identity, tenant, or browser-auth boundaries interact and the exploit path remains ambiguous
-- a Blocker/High security finding is plausible but the authoritative enforcement point is still uncertain
-- requirement/design/code evidence conflicts on a trust-boundary decision
-- the safe fix changes public authorization or trust semantics and multiple defensible designs remain
 
-Do not escalate a proven local injection/log defect, ordinary missing test, style issue,
-or a finding whose authoritative fix is already clear.
-
-Use exactly:
-```
-ESCALATE_ASTRA
-Role: sec-arch
-Root cause: <one root cause>
-Trigger: <matched condition>
-Scope:
-- ...
-Evidence already checked:
-- ...
-Unresolved decision:
-- ...
-Do not repeat:
-- ...
-Additional file budget: <default max 5>
-```
-
-Then stop. The parent coordinator will spawn `astra-escalation`.
 # Boundary With Other Agents
 
 Route to `data-platform` when the core issue is transaction/idempotency/distributed-state correctness.

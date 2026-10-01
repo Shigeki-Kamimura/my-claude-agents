@@ -15,7 +15,6 @@
 - nestjs-backend
 - spring-boot
 - sol-escalation
-- astra-escalation
 
 ## Routing
 
@@ -28,7 +27,6 @@
 - e: / e2e: -> e2e-qa
 - h: / hq: -> hq-coder
 - sol: -> sol-escalation (explicit manual override only)
-- astra: -> astra-escalation (explicit manual override only)
 
 ## Model Allocation
 
@@ -46,12 +44,10 @@ Default strategy:
 - data-platform -> GPT-6.1 Sol / xhigh
 - React/Vue/NestJS/Spring specialists -> GPT-6 Luna / xhigh
 - sol-escalation -> GPT-6.1 Sol / high
-- astra-escalation -> GPT-6 Astra / high
 
 Reasoning:
 - Use GPT-6.1 Sol for normal requirement planning, implementation, and high-value review.
 - Keep routing, E2E, and narrow framework checks on Luna when the task boundary is explicit.
-- Use Astra only after normal targeted work proves that a materially consequential decision remains unresolved.
 - Escalate only the unresolved decision, never an entire PR, task, or repository.
 - Model choice follows task complexity and decision cost, not project name, workflow stage, or diff size.
 
@@ -108,7 +104,7 @@ Owns L1.5 only:
 - review readiness
 - at most 2 L2+ handoff cues
 
-CR never escalates directly to Astra.
+CR does not escalate models directly.
 A broader concern goes to adviser/security/data through the normal handoff.
 
 ### adviser
@@ -123,7 +119,6 @@ Adviser may start when:
 - review-planner routes to adviser, or
 - user explicitly invokes `adv:` / `a:`
 
-Adviser may request Astra escalation under the rules below.
 
 ### test-qa
 Owns:
@@ -133,7 +128,7 @@ Owns:
 - targeted test implementation/evidence
 
 Does not own browser/API E2E completeness.
-QA does not escalate directly to Astra; route unresolved boundary risk to adviser/sec/data.
+QA does not escalate models directly; route unresolved boundary risk to adviser/sec/data.
 
 ### e2e-qa
 Owns:
@@ -142,7 +137,7 @@ Owns:
 - high-value changed-flow negative/auth checks
 
 Does not own unit/service/controller adequacy.
-E2E QA does not escalate directly to Sol or Astra; route unresolved boundary risk to adviser/sec/data.
+E2E QA does not escalate models directly; route unresolved boundary risk to adviser/sec/data.
 
 ### reviewer
 Owns convergence only:
@@ -151,7 +146,7 @@ Owns convergence only:
 - fix-induced high/medium regression
 - required verification evidence
 
-Reviewer does not perform first-pass rediscovery and does not escalate to Astra.
+Reviewer does not perform first-pass rediscovery and does not escalate models.
 If specialist depth is still required, return the exact unresolved question to the original route.
 
 ## Model Escalation
@@ -159,9 +154,9 @@ If specialist depth is still required, return the exact unresolved question to t
 Escalation is a continuation of one unresolved root cause, not another review layer.
 Never escalate an entire PR/task because it is large.
 
-### Luna -> GPT-6.1 Sol
+### GPT-6 Luna -> GPT-6.1 Sol
 
-Automatic Luna-to-Sol escalation is intended for narrow framework specialists:
+Automatic Luna-to-Sol escalation is intended only for narrow Luna specialists:
 - react-ui-flow
 - vue-frontend
 - nestjs-backend
@@ -172,11 +167,13 @@ These specialists may return `ESCALATE_SOL` only when:
 - the unresolved question materially affects correctness
 - the answer requires deeper cross-file reasoning than the specialist budget safely allows
 
-Not eligible for direct automatic Sol escalation:
+Not eligible for direct automatic model escalation:
 - review-planner
 - e2e-qa
-- req-pl (already Sol; it may escalate directly to Astra when its planning gate is met)
-- code-quality-reviewer / test-qa / reviewer (already Sol or must use their normal handoff)
+- req-pl
+- code-quality-reviewer
+- test-qa
+- reviewer
 
 Handoff:
 ```
@@ -203,62 +200,12 @@ Parent coordinator behavior:
 5. Use Sol only for the unresolved question.
 6. Allow at most one Sol escalation per root cause.
 
-### GPT-6.1 Sol -> GPT-6 Astra
+GPT-6.1 Sol is the terminal model tier.
+If a Sol agent still cannot decide safely, return the unresolved contract/evidence gap
+instead of escalating to another model.
 
-Automatic Sol-to-Astra escalation is allowed only from:
-- req-pl
-- hq-coder
-- adviser
-- sec-arch
-- data-platform
-- sol-escalation
-
-Use Astra only when targeted Sol work still leaves a high-cost decision unresolved, such as:
-- two or more high-risk boundaries interact
-- requirement/design/code evidence conflicts
-- a Blocker/High conclusion remains plausible but cannot be established confidently within budget
-- the safe fix changes public API, authorization, persistence, lifecycle, migration, rollback, or distributed semantics and multiple materially different designs remain plausible
-- system correctness, security, data integrity, compatibility, operability, or major rework risk depends on the unresolved judgment
-
-Do NOT escalate for:
-- style/naming
-- ordinary CRUD
-- a merely large diff
-- a normal test gap
-- a proven finding with an obvious fix
-- optional refactoring
-
-Handoff:
-```
-ESCALATE_ASTRA
-Role: <origin role>
-Root cause: <one root cause>
-Trigger: <matched condition>
-Scope:
-- ...
-Evidence already checked:
-- ...
-Unresolved decision:
-- ...
-Do not repeat:
-- ...
-Additional file budget: <default max 5>
-```
-
-Parent coordinator behavior:
-1. Detect exact `ESCALATE_ASTRA`.
-2. Spawn `astra-escalation`.
-3. Pass the handoff unchanged.
-4. Do not restart broad discovery or implementation.
-5. Use Astra only for the unresolved decision.
-6. Allow at most one Astra escalation per root cause.
-
-### Manual Override
-
-- `sol:` -> explicit GPT-6.1 Sol escalation for one bounded question
-- `astra:` -> explicit GPT-6 Astra escalation for one bounded highest-risk question
-
-Astra is the terminal model tier. Do not recursively escalate from Astra.
+Manual override:
+- `sol:` -> one bounded GPT-6.1 Sol escalation question
 
 ## Review Operating Model
 
@@ -273,7 +220,7 @@ Recommended manual sequences:
 
 These are manual sequences, not automatic chains.
 Each agent stops after its own layer unless the user explicitly asks otherwise.
-Sol/Astra escalation is the one exception: it is a continuation of the same unresolved root cause,
+Sol escalation is the one exception: it is a continuation of the same unresolved root cause,
 not a new review layer.
 
 Direct-use exceptions:
@@ -282,7 +229,6 @@ Direct-use exceptions:
 - `e:` explicit E2E-only verification
 - `rev:` prior Review Tickets or claimed fixes already exist
 - `sol:` explicit manual high-complexity override
-- `astra:` explicit manual highest-complexity override
 
 ## Duplicate-review Rule
 
@@ -293,8 +239,7 @@ Assign one primary owner per root cause.
 - adviser must not duplicate a specialist ticket for the same root cause
 - reviewer must not rediscover unrelated findings during convergence
 - sol-escalation must not re-run already completed Luna checks
-- astra-escalation must not re-run already completed Sol/Luna checks
-- only one Sol escalation and one Astra escalation are allowed per root cause
+- only one Sol escalation is allowed per root cause
 
 ## Review Budgets
 
@@ -306,7 +251,6 @@ Targets, not hard token guarantees:
 - `adv:` 20k-40k
 - `rev:` 8k-20k
 - `sol-escalation:` only the unresolved question, default <=5 additional files
-- `astra-escalation:` only the unresolved decision, default <=5 additional files
 
 Prefer stopping with a high-confidence partial review over expanding into broad speculative review.
 
