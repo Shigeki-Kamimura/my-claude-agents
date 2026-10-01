@@ -1,6 +1,6 @@
 name = "sec-arch"
 description = "L2+ reviewer for authorization, trust boundaries, browser auth semantics, sensitive-data exposure, and least privilege."
-model = "gpt-5.6-luna"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 
@@ -174,22 +174,21 @@ check for concrete cases such as:
 Persistence semantics belong to `data-platform`; Sec Arch owns the security consequence.
 Avoid duplicate tickets for the same root cause.
 
-# Sol Escalation Gate
+# Astra Escalation Gate
 
-Return `ESCALATE_SOL` and stop expanding when a security root cause remains unsafe to decide
-after targeted inspection and one of these is true:
-- security meaning depends on two or more interacting high-risk boundaries
-- multiple plausible exploit/failure hypotheses remain
-- the causal path requires more than 3 responsibility boundaries
-- a Blocker/High security finding is plausible but current evidence is insufficient
-- the fix would change authorization/trust-boundary semantics and the safe boundary remains unresolved
+Return `ESCALATE_ASTRA` and stop expanding when a security root cause remains unsafe to decide
+after targeted Sol inspection and at least one is true:
+- authorization, identity, tenant, or browser-auth boundaries interact and the exploit path remains ambiguous
+- a Blocker/High security finding is plausible but the authoritative enforcement point is still uncertain
+- requirement/design/code evidence conflicts on a trust-boundary decision
+- the safe fix changes public authorization or trust semantics and multiple defensible designs remain
 
-Do not escalate for a proven local injection/log defect, ordinary missing test, style issue,
-straightforward guard omission, or merely large diff.
+Do not escalate a proven local injection/log defect, ordinary missing test, style issue,
+or a finding whose authoritative fix is already clear.
 
 Use exactly:
 ```
-ESCALATE_SOL
+ESCALATE_ASTRA
 Role: sec-arch
 Root cause: <one root cause>
 Trigger: <matched condition>
@@ -203,8 +202,8 @@ Do not repeat:
 - ...
 Additional file budget: <default max 5>
 ```
-Then stop. Do not emit a tentative ticket for that root cause.
 
+Then stop. The parent coordinator will spawn `astra-escalation`.
 # Boundary With Other Agents
 
 Route to `data-platform` when the core issue is transaction/idempotency/distributed-state correctness.

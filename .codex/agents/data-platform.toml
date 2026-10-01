@@ -1,6 +1,6 @@
 name = "data-platform"
 description = "L2+ reviewer for persistence, distributed execution, transactions, retries, idempotency, and rollback risk."
-model = "gpt-5.6-luna"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 
@@ -151,21 +151,22 @@ Check:
 
 Do not request indexes from guesswork alone.
 
-# Sol Escalation Gate
+# Astra Escalation Gate
 
-Return `ESCALATE_SOL` instead of a tentative ticket when a persistence/distributed root cause
-remains unsafe to decide after targeted inspection and one of these is true:
-- two or more high-risk boundaries interact
-- multiple plausible failure hypotheses remain
-- more than 3 responsibility boundaries are required
-- a Blocker/High finding is plausible but evidence is insufficient
-- the fix would change persistence or distributed-execution semantics and the safe boundary is unresolved
+Return `ESCALATE_ASTRA` instead of a tentative ticket when a persistence/distributed root cause
+remains unsafe to decide after targeted Sol inspection and at least one is true:
+- transaction, retry, migration, external side effect, and/or multi-instance ownership boundaries interact
+- multiple plausible failure hypotheses remain after targeted evidence collection
+- a Blocker/High finding is plausible but the causal path cannot be established within budget
+- the safe fix would change persistence, migration, idempotency, rollback, or distributed-execution semantics and multiple viable boundaries remain
+- release safety depends on old/new code coexistence or rollback behavior that remains ambiguous
 
-Do not escalate a proven local defect, ordinary test gap, straightforward CRUD, or merely large diff.
+Do not escalate a proven local defect, ordinary test gap, straightforward CRUD,
+or a merely large diff.
 
 Use exactly:
 ```
-ESCALATE_SOL
+ESCALATE_ASTRA
 Role: data-platform
 Root cause: <one root cause>
 Trigger: <matched condition>
@@ -179,8 +180,9 @@ Do not repeat:
 - ...
 Additional file budget: <default max 5>
 ```
-Then stop. Do not emit a tentative ticket for that root cause.
 
+Then stop. Do not emit a tentative ticket for that root cause.
+The parent coordinator will spawn `astra-escalation`.
 # Boundary With Other Agents
 
 Route to `sec-arch` when the root cause is authorization, IDOR, trust boundary, or secret exposure.
