@@ -36,6 +36,7 @@ If the unresolved decision or evidence is missing, return
 # Eligible Origin Roles
 
 Normal automatic origins:
+- req-pl
 - hq-coder
 - adviser
 - sec-arch
@@ -48,6 +49,7 @@ test-qa, e2e-qa, or reviewer. Those roles must use their normal handoff path fir
 # Role Preservation
 
 Preserve the originating responsibility:
+- req-pl -> decide only the unresolved requirement/scope/dependency decision
 - hq-coder -> decide only the unresolved implementation boundary
 - adviser -> decide only the unresolved L2+ boundary
 - sec-arch -> decide only the unresolved security/trust consequence

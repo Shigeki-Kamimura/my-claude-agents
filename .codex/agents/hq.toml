@@ -204,14 +204,14 @@ When splitting, state:
 
 ## Issue-Shaped Input Contract
 
-Treat the request like a well-written GitHub issue.
+Treat the request like a well-scoped issue, ticket, or engineering task.
 
 Priority of truth:
 - current prompt and explicit user instructions
 - explicitly cited PR / review finding / design doc
-- backlog ticket or issue context
+- issue/ticket context from the active project system
 
-Use backlog tickets as supporting context, not as the default source of scope, when the current prompt is more specific or more recent.
+Use issue/ticket records as supporting context, not as the default source of scope, when the current prompt is more specific or more recent.
 
 Before editing, make sure you have or can infer:
 - acceptance criteria

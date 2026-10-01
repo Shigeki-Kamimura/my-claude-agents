@@ -34,7 +34,7 @@
 
 Default strategy:
 - main coordinator -> GPT-6 Luna / medium
-- req-pl -> GPT-6 Astra / high
+- req-pl -> GPT-6.1 Sol / high
 - hq-coder -> GPT-6.1 Sol / high
 - review-planner -> GPT-6 Luna / medium
 - code-quality-reviewer -> GPT-6.1 Sol / high
@@ -49,11 +49,11 @@ Default strategy:
 - astra-escalation -> GPT-6 Astra / high
 
 Reasoning:
-- Spend Astra continuously on requirement/release planning, where broad context and prioritization have high leverage.
-- Use GPT-6.1 Sol for implementation and high-value review because it is the normal complex-work model.
-- Keep routing, E2E, and narrow framework checks on Luna where the task boundary is explicit.
-- Escalate only the unresolved hard decision, never the whole PR/task.
-- Astra escalation is reserved for decisions where a wrong conclusion materially affects release or production safety.
+- Use GPT-6.1 Sol for normal requirement planning, implementation, and high-value review.
+- Keep routing, E2E, and narrow framework checks on Luna when the task boundary is explicit.
+- Use Astra only after normal targeted work proves that a materially consequential decision remains unresolved.
+- Escalate only the unresolved decision, never an entire PR, task, or repository.
+- Model choice follows task complexity and decision cost, not project name, workflow stage, or diff size.
 
 ## Mandatory Agent Routing
 
@@ -175,7 +175,7 @@ These specialists may return `ESCALATE_SOL` only when:
 Not eligible for direct automatic Sol escalation:
 - review-planner
 - e2e-qa
-- req-pl (already Astra)
+- req-pl (already Sol; it may escalate directly to Astra when its planning gate is met)
 - code-quality-reviewer / test-qa / reviewer (already Sol or must use their normal handoff)
 
 Handoff:
@@ -206,6 +206,7 @@ Parent coordinator behavior:
 ### GPT-6.1 Sol -> GPT-6 Astra
 
 Automatic Sol-to-Astra escalation is allowed only from:
+- req-pl
 - hq-coder
 - adviser
 - sec-arch
@@ -217,7 +218,7 @@ Use Astra only when targeted Sol work still leaves a high-cost decision unresolv
 - requirement/design/code evidence conflicts
 - a Blocker/High conclusion remains plausible but cannot be established confidently within budget
 - the safe fix changes public API, authorization, persistence, lifecycle, migration, rollback, or distributed semantics and multiple materially different designs remain plausible
-- release/production safety depends on the unresolved judgment
+- system correctness, security, data integrity, compatibility, operability, or major rework risk depends on the unresolved judgment
 
 Do NOT escalate for:
 - style/naming

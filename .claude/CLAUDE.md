@@ -50,35 +50,83 @@ If a scoped review is likely to exceed its target, reduce scope before reading m
 
 ## Model Allocation
 
-Use Opus only where broad judgment has the highest leverage:
-- `req-pl` -> Opus / high
-- `adviser` -> Opus / high
-
-Use Sonnet for normal execution and bounded review:
-- main coordinator
-- `hq-coder`
-- `review-planner`
-- `code-quality-reviewer`
-- `reviewer`
-- `test-qa`
-- `e2e-qa`
-- `sec-arch`
-- `data-platform`
-- framework specialists
+Default strategy:
+- main coordinator -> Sonnet
+- req-pl -> Sonnet / high
+- hq-coder -> Sonnet / high
+- review-planner -> Sonnet / medium
+- code-quality-reviewer -> Sonnet / high
+- adviser -> Sonnet / high
+- reviewer -> Sonnet / high
+- test-qa -> Sonnet / high
+- e2e-qa -> Sonnet / medium
+- sec-arch / data-platform -> Sonnet / high
+- framework specialists -> Sonnet / high
+- opus-escalation -> Opus / high
 
 Budget rule:
-- Do not upgrade another agent to Opus merely because the task is large.
-- Opus agents must use targeted reads and stop conditions.
-- Do not automatically chain Opus agents.
-- With Codex/Astra/Sol output available, use Claude Opus as an independent challenger/reviewer,
-  not as a second full execution of the same work.
+- Sonnet is the default worker for normal planning, implementation, and review.
+- Do not use Opus merely because a task or diff is large.
+- Escalate only one unresolved high-cost decision after targeted Sonnet work.
+- Opus escalation is terminal for that root cause; do not recursively escalate.
+- Model choice follows task complexity and decision cost, not repository, product, workflow stage, or ticket source.
 
-Cross-model operating mode:
-- Codex may remain the primary planner/implementer when available.
-- `req-pl` challenges release scope, task decomposition, assumptions, and missing prerequisites.
-- `adviser` provides independent L2+ cross-model review for high-risk boundaries.
-- Sonnet agents handle implementation, local review, tests, convergence, and framework-specific checks.
-- In Claude-only projects, `req-pl` may act as the primary planner when no prior plan exists.
+Prior-work reuse:
+- A plan/review from another model, tool, human, CI system, or earlier session is evidence, not authority.
+- Reuse confirmed evidence instead of re-running the same work.
+- Challenge only assumptions or root causes that could materially change the decision.
+- Claude-only workflows remain fully supported; prior external work is optional.
+
+## Opus Escalation
+
+Opus is an escalation tier for one unresolved decision, not a normal review layer.
+
+Eligible automatic origins:
+- `req-pl`
+- `adviser`
+
+Typical triggers:
+- authoritative requirement/design sources materially conflict
+- multiple high-risk boundaries interact and the causal path remains ambiguous
+- a high-impact decision has multiple materially different valid options after targeted Sonnet inspection
+- compatibility, migration, rollback, authorization, persistence, or cross-system behavior cannot be decided safely within the normal budget
+- a wrong conclusion would cause substantial rework or correctness risk
+
+Do not escalate for:
+- style or naming
+- ordinary CRUD
+- straightforward task splitting
+- a normal missing test
+- merely large diffs or issue lists
+- missing information that should become an open question
+
+Handoff:
+```
+ESCALATE_OPUS
+Role: <req-pl | adviser>
+Root cause: <one root cause>
+Trigger: <matched condition>
+Scope:
+- ...
+Evidence already checked:
+- ...
+Unresolved decision:
+- ...
+Do not repeat:
+- ...
+Additional file budget: <default max 5>
+```
+
+Coordinator behavior:
+1. Detect exact `ESCALATE_OPUS`.
+2. Spawn `opus-escalation`.
+3. Pass the handoff unchanged.
+4. Do not repeat completed Sonnet work.
+5. Use Opus only for the unresolved decision.
+6. Allow at most one Opus escalation per root cause.
+
+Manual override:
+- `o:` / `opus:` -> one bounded Opus escalation question
 
 ## Core Priorities
 
@@ -109,6 +157,7 @@ Use agents by prefix:
 - `q:` / `qa:` -> `test-qa`
 - `a:` / `adv:` -> `adviser` (L2+ review routing)
 - `e:` / `e2e:` -> `e2e-qa`
+- `o:` / `opus:` -> `opus-escalation` (explicit bounded override only)
 
 Default without prefix:
 - answer directly when the task is simple
@@ -163,7 +212,7 @@ Rules:
 
 `rp` is the lightweight review hub.
 
-`rp` must decide only:
+`rp` decides only:
 - PR/base/head and rough change scale
 - coarse risk tags
 - first reviewer route
@@ -171,7 +220,7 @@ Rules:
 - file-inspection budget
 - stop condition
 
-`rp` must NOT decide:
+`rp` does NOT decide:
 - requirement correctness
 - review findings
 - specialist verdicts
@@ -181,30 +230,31 @@ Rules:
 
 Standard flows:
 - These are recommended manual sequences, not automatic chains.
-- Agents must stop after their own layer and wait for the user's next command unless explicitly instructed otherwise.
-- Tiny PR: direct `cr:` is allowed for formatting, small refactors, one-test additions, or obvious bug fixes
+- Agents stop after their own layer unless explicitly instructed otherwise.
+- Tiny local change: direct `cr:`
 - Normal PR: `rp -> cr -> q -> adv`
-- E2E changes present: `rp -> cr -> q -> e -> adv`
-- High-risk design/API/auth/DB change: `rp -> adv`, then focused `cr/q/e` only as needed
+- E2E changes: `rp -> cr -> q -> e -> adv`
+- High-risk API/auth/data/design change: `rp -> adv`, then focused specialists as needed
 - Re-review after fixes: `rev`
-- Cross-model review: pass existing Codex findings/plan to `req-pl` or `adv` as challenge input; do not restart all layers
+- Prior plan/review available: pass it as evidence to the relevant agent; do not restart every layer
 
 Layer split:
-- `cr`: lightweight implementation smell and review-readiness check
-- `q`: unit/service/controller spec adequacy only
-- `e`: E2E/integration adequacy only
-- `adv`: Opus L2+ boundary review and cross-model challenge
+- `cr`: local implementation quality and review readiness
+- `q`: unit/service/controller test adequacy and failure-mode evidence
+- `e`: E2E/integration adequacy
+- `adv`: L2+ boundary review and high-risk assumption challenge
 - `rev`: prior Review Tickets / claimed fixes only
 
 Duplicate-review rule:
-- Once a layer has covered a topic, later layers may cite the result but must not re-evaluate it unless merge judgment depends on unresolved evidence.
-- Later layers may re-open a topic only when evidence is missing or contradicted, merge judgment depends on unresolved evidence, or the current layer owns a distinct consequence.
-- Cross-model review should challenge high-risk assumptions, not reproduce already-proven low-risk findings.
+- Once a layer has proven a topic, later layers may cite it without re-evaluating it.
+- Re-open only when evidence is missing/contradicted, merge judgment depends on unresolved evidence,
+  or the current layer owns a distinct consequence.
+- Different-model review should seek independent failure evidence, not produce a second copy of the same review.
 
 rp size rule:
 - `rp` creates the review route only.
 - `rp` must not perform code review, test adequacy review, E2E review, L2+ judgment, or full-file deep inspection.
-- If routing starts to require deep reading, route that uncertainty to the target reviewer instead.
+- If routing requires deep reading, route that uncertainty to the target reviewer instead.
 
 ## QA Boundary
 
@@ -301,10 +351,14 @@ Require:
 
 ---
 
-## Backlog Ticket Reference
+## Issue / Ticket Reference
 
-Canonical ticket directory:
-- チケット名と現在いるプロジェクト(リポジトリ)と自明でない場合は必ずユーザーに質問すること
-```bash
-~/work-flow-helper/projects/
-```
+Issue and ticket systems are project-specific.
+
+Rules:
+- Use the source explicitly named by the user or project instructions.
+- A local ticket cache, Backlog, GitHub Issues, Jira, or another tracker may be used when configured.
+- Do not assume one tracker or local path is canonical across repositories.
+- If the referenced ticket/project is ambiguous and cannot be resolved from current context, ask only when the ambiguity blocks safe work.
+- A more recent explicit user instruction overrides stale ticket text.
+

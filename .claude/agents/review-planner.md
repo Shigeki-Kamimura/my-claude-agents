@@ -3,7 +3,7 @@ name: review-planner
 description: Lightweight review router for PR/diff scope, risk tags, exclusions, and first reviewer selection. Never executes reviews.
 tools: Grep, Glob
 model: sonnet
-effort: high
+effort: medium
 permissionMode: plan
 ---
 

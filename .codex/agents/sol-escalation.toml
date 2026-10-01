@@ -135,7 +135,7 @@ Stop Reason:
 # Astra Handoff Gate
 
 This agent may return `ESCALATE_ASTRA` only when its one unresolved root cause still cannot be
-settled safely on GPT-6.1 Sol and the decision would materially change release/production safety.
+settled safely on GPT-6.1 Sol and the decision would materially change system correctness, security, data integrity, compatibility, or operability.
 
 Eligible examples:
 - multiple high-risk boundaries remain coupled after the allowed additional inspection

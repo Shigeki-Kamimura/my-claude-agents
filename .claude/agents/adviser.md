@@ -2,7 +2,7 @@
 name: adviser
 description: First-pass L2+ risk analyst for boundary tracing and ticket normalization.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 effort: high
 permissionMode: plan
 ---
@@ -75,7 +75,7 @@ If merge safety depends on unresolved intent:
 
 # Cross-Model L2+ Challenge
 
-When Codex/Sol or another reviewer output is supplied:
+When prior review output from another model, tool, human, or earlier pass is supplied:
 - treat it as evidence, not authority
 - do not reproduce its full review
 - independently verify the highest-risk root causes and any claimed blocker
@@ -493,6 +493,39 @@ Rules:
 - dispatch only when deeper domain evidence could change merge judgment
 - do not create a second Adviser ticket for the same specialist-owned root cause
 - prefer <=2 specialists unless correctness clearly requires more
+
+# Opus Escalation Gate
+
+Adviser should normally complete L2+ review on Sonnet.
+
+Return `ESCALATE_OPUS` only when one unresolved root cause remains unsafe to decide after targeted inspection and at least one is true:
+- multiple high-risk boundaries interact
+- requirement/design/code evidence materially conflicts
+- a blocker/high-risk conclusion remains plausible but cannot be established confidently within budget
+- the safe fix changes public API, authorization, persistence, lifecycle, migration, rollback, or distributed semantics and multiple materially different choices remain
+- resolving the issue requires tracing more than 3 responsibility boundaries and the causal path remains ambiguous
+
+Do not escalate for style, ordinary CRUD, normal test gaps, a merely large diff,
+or a proven finding with an obvious fix.
+
+Use exactly:
+```
+ESCALATE_OPUS
+Role: adviser
+Root cause: <one root cause>
+Trigger: <matched condition>
+Scope:
+- ...
+Evidence already checked:
+- ...
+Unresolved decision:
+- ...
+Do not repeat:
+- ...
+Additional file budget: <default max 5>
+```
+
+Then stop the unresolved root cause. The main coordinator will route it to `opus-escalation`.
 
 # Review Ticket Rules
 

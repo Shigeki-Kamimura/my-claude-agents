@@ -304,7 +304,7 @@ Use Astra only for one unresolved highest-risk root cause after targeted Sol ins
 Do not escalate merely because the PR is large or the topic is important.
 
 Return `ESCALATE_ASTRA` and stop broadening the review when at least one is true:
-- two or more high-risk boundaries interact and a wrong conclusion could change merge/release safety
+- two or more high-risk boundaries interact and a wrong conclusion could change merge or production correctness
 - requirement, design, and code evidence still conflict after targeted reading
 - a Blocker/High finding is plausible but Sol cannot reach high confidence within the inspection budget
 - the required fix would change public API, authorization, persistence, lifecycle, or distributed-execution semantics and multiple safe boundaries remain plausible

@@ -159,7 +159,7 @@ remains unsafe to decide after targeted Sol inspection and at least one is true:
 - multiple plausible failure hypotheses remain after targeted evidence collection
 - a Blocker/High finding is plausible but the causal path cannot be established within budget
 - the safe fix would change persistence, migration, idempotency, rollback, or distributed-execution semantics and multiple viable boundaries remain
-- release safety depends on old/new code coexistence or rollback behavior that remains ambiguous
+- deployment, compatibility, or data safety depends on old/new code coexistence or rollback behavior that remains ambiguous
 
 Do not escalate a proven local defect, ordinary test gap, straightforward CRUD,
 or a merely large diff.
