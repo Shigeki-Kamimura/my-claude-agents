@@ -2,7 +2,8 @@
 name: code-quality-reviewer
 description: L1.5 code-quality reviewer for changed-line hygiene, local maintainability, nearby pattern fit, and human review readiness. Does not own QA/test verification.
 tools: Read, Grep, Bash
-model: opus
+model: sonnet
+effort: high
 permissionMode: plan
 ---
 

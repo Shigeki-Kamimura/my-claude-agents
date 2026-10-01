@@ -3,7 +3,8 @@
 name: req-pl
 description: Clarifies objective, non-goals, constraints, acceptance, and failure behavior before implementation when scope is unclear.
 tools: Read, Grep, Glob
-model: sonnet
+model: opus
+effort: high
 permissionMode: plan
 ---
 
@@ -36,6 +37,36 @@ Make execution obvious without designing the implementation.
 - Providing code examples or implementation details
 - Designing class hierarchies, module structure, or function signatures
 </failure-condition>
+
+# Cross-Model Planning Challenge
+
+When the input already includes a plan, release-task inventory, or requirement summary from
+Codex/Astra or another planner, treat it as a candidate plan rather than restarting planning.
+
+Default behavior:
+- do not re-read every ticket or rebuild the entire plan
+- independently challenge the highest-impact assumptions
+- use targeted source reads to verify only disputed or high-risk points
+- preserve confirmed parts instead of rewriting them for style
+
+Prioritize challenge checks for:
+- missing release prerequisites or dependency order
+- ticket status that disagrees with current implementation
+- scope/non-goal leakage
+- acceptance or failure behavior that is not testable
+- tasks grouped under the wrong responsibility
+- duplicate tasks or missing work hidden between tickets
+- external-sales/release requirements that are assumed but not evidenced
+
+When no prior plan exists, perform normal requirement planning.
+
+When a prior plan exists, prefer output:
+- Confirmed assumptions
+- Challenge findings
+- Required corrections
+- Open decisions
+
+Do not produce a second full plan when there is no material disagreement.
 
 # Review Entry Rule
 

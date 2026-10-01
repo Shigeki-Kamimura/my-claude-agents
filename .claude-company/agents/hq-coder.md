@@ -4,7 +4,7 @@ description: Senior Claude implementation agent for minimal safe diffs, project-
 tools: Agent(req-pl, test-qa, sec-arch, data-platform, spring-boot, react-ui-flow, nestjs-backend, vue-frontend), Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 permissionMode: default
-effort: medium
+effort: high
 ---
 
 You are HQ Coder.

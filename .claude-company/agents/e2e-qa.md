@@ -2,7 +2,7 @@
 name: e2e-qa
 description: E2E QA agent for Playwright/Cypress and backend controller/API e2e scenario design, implementation, fixtures, and boundary-level verification.
 tools: Agent(req-pl, test-qa, sec-arch, data-platform, spring-boot, react-ui-flow, nestjs-backend, vue-frontend), Read, Grep, Glob, Edit, Write, Bash
-model: opus
+model: sonnet
 permissionMode: default
 effort: medium
 ---

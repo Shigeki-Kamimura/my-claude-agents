@@ -48,6 +48,38 @@ If a scoped review is likely to exceed its target, reduce scope before reading m
 
 ---
 
+## Model Allocation
+
+Use Opus only where broad judgment has the highest leverage:
+- `req-pl` -> Opus / high
+- `adviser` -> Opus / high
+
+Use Sonnet for normal execution and bounded review:
+- main coordinator
+- `hq-coder`
+- `review-planner`
+- `code-quality-reviewer`
+- `reviewer`
+- `test-qa`
+- `e2e-qa`
+- `sec-arch`
+- `data-platform`
+- framework specialists
+
+Budget rule:
+- Do not upgrade another agent to Opus merely because the task is large.
+- Opus agents must use targeted reads and stop conditions.
+- Do not automatically chain Opus agents.
+- With Codex/Astra/Sol output available, use Claude Opus as an independent challenger/reviewer,
+  not as a second full execution of the same work.
+
+Cross-model operating mode:
+- Codex may remain the primary planner/implementer when available.
+- `req-pl` challenges release scope, task decomposition, assumptions, and missing prerequisites.
+- `adviser` provides independent L2+ cross-model review for high-risk boundaries.
+- Sonnet agents handle implementation, local review, tests, convergence, and framework-specific checks.
+- In Claude-only projects, `req-pl` may act as the primary planner when no prior plan exists.
+
 ## Core Priorities
 
 Accuracy > reproducibility > maintainability > ease > speed
@@ -129,16 +161,23 @@ Rules:
 
 ## Review Operating Model
 
-`rp` is the review hub.
+`rp` is the lightweight review hub.
 
-`rp` must decide:
-- requirement summary
-- non-goals
-- changed responsibility boundary
-- important risks
-- which reviewer sees which files
+`rp` must decide only:
+- PR/base/head and rough change scale
+- coarse risk tags
+- first reviewer route
 - duplicate-review exclusions
-- adviser handoff points
+- file-inspection budget
+- stop condition
+
+`rp` must NOT decide:
+- requirement correctness
+- review findings
+- specialist verdicts
+- test sufficiency
+- architecture correctness
+- caller/callee execution paths
 
 Standard flows:
 - These are recommended manual sequences, not automatic chains.
@@ -146,26 +185,26 @@ Standard flows:
 - Tiny PR: direct `cr:` is allowed for formatting, small refactors, one-test additions, or obvious bug fixes
 - Normal PR: `rp -> cr -> q -> adv`
 - E2E changes present: `rp -> cr -> q -> e -> adv`
-- Large design change: `rp -> adv first -> cr/q/e -> adv convergence`
-- Re-review: previous findings only; no new broad adequacy review
+- High-risk design/API/auth/DB change: `rp -> adv`, then focused `cr/q/e` only as needed
+- Re-review after fixes: `rev`
+- Cross-model review: pass existing Codex findings/plan to `req-pl` or `adv` as challenge input; do not restart all layers
 
 Layer split:
 - `cr`: lightweight implementation smell and review-readiness check
-- `q`: unit/service/controller spec adequacy only; do not review E2E/integration tests unless explicitly routed
-- `e`: E2E/integration adequacy only, including browser E2E and backend controller/API e2e
-- `adv`: L2+ boundary review against rp risk handoff
+- `q`: unit/service/controller spec adequacy only
+- `e`: E2E/integration adequacy only
+- `adv`: Opus L2+ boundary review and cross-model challenge
 - `rev`: prior Review Tickets / claimed fixes only
-- `adv convergence`: re-check only L2+ boundary risks previously raised by adv; do not perform broad PR review
-- `rev`: verify prior Review Tickets or claimed fixes across layers after concrete fixes
 
 Duplicate-review rule:
 - Once a layer has covered a topic, later layers may cite the result but must not re-evaluate it unless merge judgment depends on unresolved evidence.
-- Later layers may re-open a topic only when previous evidence is missing or contradicted, merge judgment depends on unresolved evidence, or the topic is part of that layer's explicit risk handoff.
+- Later layers may re-open a topic only when evidence is missing or contradicted, merge judgment depends on unresolved evidence, or the current layer owns a distinct consequence.
+- Cross-model review should challenge high-risk assumptions, not reproduce already-proven low-risk findings.
 
 rp size rule:
-- `rp` creates the review plan only.
+- `rp` creates the review route only.
 - `rp` must not perform code review, test adequacy review, E2E review, L2+ judgment, or full-file deep inspection.
-- `rp` should stay lightweight; if planning starts to require deep reading, route the uncertainty to the target reviewer instead.
+- If routing starts to require deep reading, route that uncertainty to the target reviewer instead.
 
 ## QA Boundary
 
@@ -180,18 +219,17 @@ rp size rule:
 
 ## Review Entry Rule
 
-All review from L1.5 onward must start with `rp:` (review-planner).
-
-`cr:`, `a:`, `e:`, `rev:` should be invoked based on review-planner output.
+First-pass review normally starts with `rp:`, but direct focused review is allowed.
 
 Direct use exceptions:
-- `cr:`: Re-checking L1.5 only for a specific concern
+- `cr:`: explicit L1.5 check or re-check
+- `adv:` / `a:`: explicit focused L2+ review
 - `rev:`: Review Ticket or claimed fix already exists
-- `e:`: Explicitly verifying E2E only
+- `e:`: explicit E2E-only verification
 
-Do not start first-pass L2+ review directly from `a:`.
-
----
+When `rp:` output exists, downstream agents must honor its scope, exclusions, file budget, and stop condition.
+When `adv:` is invoked directly, Adviser must resolve the real PR base and apply the same bounded-inspection discipline.
+Do not run a hidden full review-planner pass inside Adviser.
 
 ## Boundary Principle
 

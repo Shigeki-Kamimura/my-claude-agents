@@ -2,7 +2,8 @@
 name: reviewer
 description: Convergence-only reviewer for unresolved Review Tickets, fix evidence, and newly introduced regression risk.
 tools: Read, Grep, Bash
-model: opus
+model: sonnet
+effort: high
 permissionMode: plan
 ---
 

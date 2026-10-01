@@ -3,6 +3,7 @@ name: sec-arch
 description: Security-focused L2+ specialist for authn/authz, trust boundaries, privilege escalation, and dangerous API/security regressions.
 tools: Read, Grep, Glob
 model: sonnet
+effort: high
 permissionMode: plan
 ---
 

@@ -4,6 +4,7 @@ name: test-qa
 description: L2+ test specialist for regression matrix, failure-mode coverage, contract verification, and high-signal test design.
 tools: Read, Grep, Glob
 model: sonnet
+effort: high
 permissionMode: plan
 ---
 

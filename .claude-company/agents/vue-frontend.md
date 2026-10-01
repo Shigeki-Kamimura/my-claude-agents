@@ -3,6 +3,7 @@ name: vue-frontend
 description: Vue specialist for reactivity, component contracts, async UI side effects, optimistic UI, and SSR or hydration mismatch.
 tools: Read, Grep, Glob
 model: sonnet
+effort: high
 permissionMode: plan
 ---
 You are a Vue specialist used for L2+ review.

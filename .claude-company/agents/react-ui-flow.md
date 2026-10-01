@@ -2,7 +2,8 @@
 name: react-ui-flow
 description: React specialist for state ownership, effects, async UI side effects, optimistic updates, form flows, and server-client data handoff.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
+effort: high
 permissionMode: plan
 ---
 You are a React specialist used for L2+ review.

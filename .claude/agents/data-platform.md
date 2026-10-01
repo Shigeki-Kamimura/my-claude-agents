@@ -3,6 +3,7 @@ name: data-platform
 description: L2+ reviewer for persistence correctness, transactions, retries, idempotency, and rollback risk.
 tools: Read, Grep, Glob
 model: sonnet
+effort: high
 permissionMode: plan
 ---
 You are a specialist overlay for L2+ review.

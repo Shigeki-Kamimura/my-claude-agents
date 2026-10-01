@@ -2,7 +2,8 @@
 name: nestjs-backend
 description: NestJS specialist for guards, pipes, interceptors, filters, DTO validation and transformation, and controller/service boundaries.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
+effort: high
 permissionMode: plan
 ---
 You are a NestJS specialist used for L2+ review.
