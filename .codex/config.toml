@@ -12,7 +12,7 @@
 model = "gpt-6.1-sol"
 personality = "pragmatic"
 approval_policy = "on-request"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "high"
 
 project_root_markers = [".git"]
 
