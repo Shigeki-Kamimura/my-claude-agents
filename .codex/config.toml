@@ -9,12 +9,21 @@
 # - Keep CLI profiles in CODEX_HOME as separate *.config.toml files.
 ################################################################################
 
-model = "gpt-6-luna"
+model = "gpt-6.1-sol"
 personality = "pragmatic"
 approval_policy = "on-request"
 model_reasoning_effort = "medium"
 
 project_root_markers = [".git"]
+
+# Backlog MCP: credentials must come from the local Codex process environment.
+# Set BACKLOG_DOMAIN and BACKLOG_API_KEY outside this repository before launching
+# Codex. Do not put their values in this file or in a committed MCP config.
+[mcp_servers.backlog]
+command = "npx"
+args = ["-y", "backlog-mcp-server"]
+env_vars = ["BACKLOG_DOMAIN", "BACKLOG_API_KEY"]
+default_tools_approval_mode = "prompt"
 
 [agents]
 max_concurrent_threads_per_session = 6
