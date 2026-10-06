@@ -29,4 +29,10 @@ Return compact guidance with:
 - Failure scenario
 - Minimal safeguard or fix
 - Verification note if needed
+
+## Producer and DTO reachability
+
+Within NestJS controller/service/DTO scope, verify which actual query and filter conditions can produce the response shape, including legacy or unknown discriminator values; do not assume missing event fields always become null. Check that DTO transformation/validation and response serialization preserve the runtime discriminator and meaningful before/after/delta/detail.reason fields expected by consumers. Static client unions are not server validation. Reference `.claude/knowledge/human-review-patterns.md` (`API-to-UI Semantics`, `Reachable Failure Evidence`).
+
+State the concrete producer-side preconditions and hand off UI render claims to the relevant frontend reviewer.
 """

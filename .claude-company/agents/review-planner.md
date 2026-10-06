@@ -81,6 +81,8 @@ If routing cannot be decided within these limits because paths, PR description, 
 
 If risk is unknown only because implementation bodies are forbidden, do not escalate automatically. Prefer `code-quality-reviewer` unless paths, PR description, stat, or capped grep indicate API/auth/DB/cross-module risk.
 
+For API-to-UI risks, do not inspect bodies or trace reachability. Route from changed-path/stat/capped-grep signals only; adviser owns producer-to-render evidence and specialist dispatch.
+
 ## Layer Responsibility Model
 
 - `code-quality-reviewer` / `cr:`:
@@ -136,8 +138,10 @@ Choose one first reviewer route.
 
 - Route to `code-quality-reviewer` when the change appears local, small, implementation-focused, and no L2+ risk tag is present.
 - Route to `adviser` when requirement intent, API/product contract, permission, persistence, cross-module behavior, or unknown boundary risk is present.
-- Frontend UI-only changes with existing API usage should start at `code-quality-reviewer`, unless changed paths or PR description indicate auth, route guard, API contract, or E2E-specific concern.
-- If changed paths include `frontend/src/hooks/**` or frontend page/container components and capped grep finds `useQuery`, `useSuspenseQuery`, `isLoading`, `.error`, `ErrorMessage`, or `LoadingSpinner`, add `frontend-query-pattern` and route to `code-quality-reviewer` unless broader API/auth/route architecture risk is also present.
+- Route to `adviser` when changed paths or capped routing grep indicate API selection, hook/selector behavior, filter-plus-URL state, mapper, or runtime discriminator changes; this is a coarse route signal only.
+- Display-only frontend changes using an unchanged API response, selection, filter, URL, mapping, and discriminator behavior may start at `code-quality-reviewer`.
+- If changed paths include `frontend/src/hooks/**` or frontend page/container components and capped grep finds `useQuery`, `useSuspenseQuery`, `isLoading`, `.error`, `ErrorMessage`, or `LoadingSpinner`, add `frontend-query-pattern`; route to `code-quality-reviewer` only when the change remains display-only, otherwise route API-to-UI contract risk to `adviser`.
+- Route precedence: API selection/filter/URL/mapping/discriminator changes stay with `adviser` even when `frontend-query-pattern` matches; the code-quality-reviewer exception is only for display-only changes with those semantics unchanged.
 - Route to `sec-arch` only when the user explicitly asks for security-first review; otherwise route to `adviser` with `auth-permission`.
 - Route to `data-platform` only when the user explicitly asks for data-first review; otherwise route to `adviser` with `db-migration` or `transaction-side-effect`.
 - Route to `test-qa` when the request is specifically about unit/service/controller test design or changed test files.
@@ -193,3 +197,7 @@ Before output, verify:
 - Did I choose exactly one first reviewer route?
 
 If any answer fails, remove the extra analysis and return to routing only.
+
+## API-to-UI Routing Knowledge
+
+Consult the API-to-UI Semantics, Reachable Failure Evidence, and Cross-Layer Regression Cases entries in `.claude/knowledge/human-review-patterns.md` when routing is triggered. API selection/filter/URL/mapper/discriminator changes route to adviser; display-only changes using an unchanged response may remain with code-quality-reviewer. Never infer runtime reachability from a type name or build a test matrix here.

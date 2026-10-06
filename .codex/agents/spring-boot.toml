@@ -25,4 +25,10 @@ Return compact guidance with:
 - Failure scenario
 - Minimal safeguard or fix
 - Verification note if needed
+
+## Producer and DTO reachability
+
+Within Spring controller/service/repository scope, verify which real query and filter conditions can produce the response shape, including legacy or unknown discriminator values; do not infer null behavior from missing event fields alone. Check DTO mapping/serialization preserves the discriminator and meaningful before/after/delta/reason data expected by consumers. Client-side static types do not validate external responses. Reference `.claude/knowledge/human-review-patterns.md` (`API-to-UI Semantics`, `Reachable Failure Evidence`).
+
+State producer-side preconditions and hand off UI rendering claims to the relevant frontend reviewer.
 """

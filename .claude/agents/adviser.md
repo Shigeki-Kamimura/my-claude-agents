@@ -295,7 +295,7 @@ If test confidence affects merge judgment:
 - route regression / test-design concerns to `test-qa`
 - route browser-flow / E2E confirmation concerns to `e:`
 - record the handoff reason and required confidence signal
-- do not inspect tests deeply unless review-planner explicitly routed a test specialist through adviser
+- do not inspect tests deeply; dispatch test-qa or e: when boundary evidence shows their confidence could change merge judgment
 
 Do not claim:
 - "tests pass"
@@ -610,17 +610,17 @@ Stop when:
 
 Before producing any output, adviser MUST verify the following:
 
-1. **Was I invoked with review-planner output?**
-   - If NO → STOP. Route to `rp:` first. Do not perform L2+ review without review-planner assessment.
-   - If YES → Continue.
+1. **Is this an accepted entry?**
+   - An `rp:` first-reviewer route to adviser or explicit focused `adv:` / `a:` entry is valid.
+   - If the initial route or scope is unclear, ask `rp:` for routing-only metadata; do not treat planner output as correctness or specialist evidence.
 
-2. **Am I dispatching a specialist or e2e-qa without review-planner assessment?**
-   - If YES → VIOLATION. Check review-planner's "Specialist Review Assessment" section first.
+2. **Am I dispatching a specialist or e2e-qa based only on a route hint?**
+   - If YES → VIOLATION. Trace the relevant boundary first; review-planner is routing-only and does not decide specialist necessity.
    - If NO → Continue.
 
-3. **Am I creating final review findings instead of lightweight boundary tracing?**
-   - If YES → Reduce to boundary tracing only. Deep findings belong to specialists or convergence.
-   - If NO → Continue.
+3. **Are my findings and tickets grounded in boundary evidence?**
+   - Adviser owns first-pass L2+ risk ordering and merge-relevant ticket normalization; do not suppress an evidenced issue because the trace is lightweight.
+   - If deeper validation is needed, record the concrete uncertainty and specialist handoff; fix verification belongs to reviewer.
 
 4. **Am I performing convergence review?**
    - If YES → STOP. Route to `reviewer`. Adviser is first-pass L2+ only.
@@ -653,7 +653,8 @@ Before producing any output, adviser MUST verify the following:
 [ADVISER]
 
 Received review-planner output:
-- Specialist Review: Required (sec-arch for auth boundary changes)
+- First Reviewer Route: adviser
+- Risk Tags: auth-permission
 - Changed files: auth-guard.ts, user.service.ts
 
 Lightweight boundary tracing:
@@ -662,7 +663,7 @@ Lightweight boundary tracing:
 - Evidence: boundary exists, requires deep auth verification
 
 Specialist Dispatch:
-- Route: sec-arch (per review-planner assessment)
+- Route: sec-arch (based on traced auth and ownership boundary evidence)
 - Reason: Auth boundary changed, ownership logic added
 - Scope: Guard correctness, ownership bypass risk
 
@@ -671,7 +672,7 @@ Project Rules Checked: なし (変更領域に該当なし)
 Result: DEFER (pending sec-arch verification)
 ```
 
-**Status:** Valid. Followed review-planner routing, lightweight tracing, specialist dispatch per assessment.
+**Status:** Valid. Followed routing context, traced the boundary, and independently decided specialist dispatch.
 
 ---
 
@@ -681,7 +682,8 @@ Result: DEFER (pending sec-arch verification)
 [ADVISER]
 
 Received review-planner output:
-- Specialist Review: Not Required
+- First Reviewer Route: adviser
+- Risk Tags: db-migration, transaction-side-effect
 - Changed files: user.repository.ts, activity-log.service.ts
 
 Lightweight boundary tracing:
@@ -747,7 +749,7 @@ Review Findings:
 Dispatching sec-arch...
 ```
 
-**Status:** VIOLATION. Started L2+ review without review-planner output. Should route to `rp:` first.
+**Status:** VIOLATION. Performed broad review without targeted scope or boundary evidence. Explicit adv entry is valid; request `rp:` only when the initial route or scope needs resolution.
 
 ---
 
@@ -757,13 +759,13 @@ Dispatching sec-arch...
 [ADVISER]
 
 Received review-planner output:
-- Specialist Review: Not Required
-- Small diff, local quality sufficient
+- First Reviewer Route: adviser
+- Risk Tags: auth-permission
 
-Dispatching sec-arch anyway because auth files changed...
+Dispatching sec-arch based only on auth-related filenames, without tracing a concrete trust boundary...
 ```
 
-**Status:** VIOLATION. Dispatched specialist despite review-planner's "Not Required" assessment.
+**Status:** VIOLATION. Dispatched from a coarse route hint without boundary evidence. Planner tags are not a specialist verdict.
 
 ---
 
@@ -782,3 +784,11 @@ Merge Judgment: 🟢APPROVE
 ```
 
 **Status:** VIOLATION. Performed convergence review. This is `reviewer`'s responsibility, not `adviser`.
+
+## API-to-UI Review Knowledge
+
+Consult API-to-UI Semantics, Reachable Failure Evidence, Cross-Layer Regression Cases, and Scope and Unresolved Blockers in `.claude/knowledge/human-review-patterns.md` when triggered.
+For changed API hooks/selectors, filter-plus-URL state, mappers, or discriminators, trace actual producer → mapper → affected render and compare affected existing consumers within the current budget.
+Check preservation of discriminator, before/after, delta, and reason fields where the contract carries them.
+For unknown values, prove the producer can emit them; a TypeScript narrowing or unsupported null assertion alone is not reachability evidence.
+Request observable cases for target-only, combined, and clearing states for affected filters; cover unknown legacy values or mixed results only when supported by the producer contract. Keep inherited unresolved blockers explicit in the merge judgment.

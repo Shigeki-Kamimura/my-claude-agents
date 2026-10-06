@@ -24,4 +24,10 @@ Return compact findings with:
 - Failure scenario
 - Reactivity / SSR concern
 - Minimal safeguard or fix
+
+## API-to-UI flow contracts
+
+When the changed Vue boundary includes a selector, filter/URL sync, or mapper, trace input through the actual response and props/state mapping to rendered output, comparing the affected existing consumer. Preserve runtime discriminators and relevant before/after/delta/reason fields; static TypeScript types do not validate external values. Check legacy/unknown values only when the producer can return them, filter states when the filter changed, and mixed data only when the contract permits it. Reference `.claude/knowledge/human-review-patterns.md` (`API-to-UI Semantics`, `Cross-Layer Regression Cases`).
+
+Establish that the actual query/filter can return the suspected value before raising a blocker, and state whether evidence came from a mocked seam or a real browser/API path.
 """

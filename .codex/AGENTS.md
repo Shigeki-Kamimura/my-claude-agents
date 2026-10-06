@@ -263,6 +263,17 @@ For stacked PRs:
 - do not re-review parent-layer changes
 - do not treat `main...HEAD` visibility as current-layer ownership
 
+## Shared Review Knowledge
+
+The configured project reference is `.claude/knowledge/human-review-patterns.md`, installed by setup for either Claude profile and shared with Codex review agents.
+For changed API-to-consumer behavior or supplied review tickets, read only the matching sections:
+- `## API-to-UI Semantics`
+- `## Reachable Failure Evidence`
+- `## Cross-Layer Regression Cases`
+- `## Scope and Unresolved Blockers`
+
+Apply only the selected role's checks within its existing file budget. Keep routing-only, first-pass, QA/E2E, and convergence responsibilities separate; this does not authorize automatic review chains.
+
 ## Verification Language
 
 Across all review agents:

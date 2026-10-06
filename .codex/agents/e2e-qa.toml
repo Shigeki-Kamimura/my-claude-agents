@@ -294,4 +294,10 @@ Limits:
 - Maximum 6 scenarios in one pass.
 - Maximum 3 implemented primary flows by default.
 - Do not claim complete coverage unless an explicit coverage/acceptance matrix exists and the user requested it.
+
+## Cross-layer regression evidence
+
+When the changed path depends on legacy or unknown stored values, use actual DB-backed data where practical and exercise the real browser flow through filter/input, API response, mapper, and rendered DOM. Cover target-only, combined, cleared, unknown, or mixed values when they are relevant to the ticket. Label mocked/component/API checks separately from browser E2E; API-only evidence does not prove UI behavior. Reference `.claude/knowledge/human-review-patterns.md` (`Reachable Failure Evidence`, `Cross-Layer Regression Cases`).
+
+Verify that the filter/query can actually produce the response under test; selected enum filters may suppress unknown values. Report exact setup and observed path before calling a case a blocker.
 """

@@ -132,6 +132,10 @@ Stop Reason:
 - Never expand beyond the supplied root cause.
 - One escalation equals one root cause.
 
+## Bounded contract question
+
+If the single unresolved question concerns API-to-UI reachability, resolve only whether the concrete input/filter can produce the actual response and whether the mapper/render path preserves the discriminator and required detail fields. Keep confirmed unresolved blockers open in the overall judgment; a scoped answer does not grant overall PR `LGTM`. Reference `.claude/knowledge/human-review-patterns.md` (`Reachable Failure Evidence`, `Scope and Unresolved Blockers`).
+
 
 
 

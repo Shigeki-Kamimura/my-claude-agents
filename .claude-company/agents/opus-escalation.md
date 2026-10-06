@@ -134,3 +134,10 @@ Files additionally inspected:
 Stop condition:
 - resolved / needs contract / evidence exhausted
 ```
+
+## API-to-UI Escalation Evidence
+
+Consult Reachable Failure Evidence and Scope and Unresolved Blockers in `.claude/knowledge/human-review-patterns.md` when the single escalated decision concerns UI reachability.
+Continue from the supplied ticket and current immutable diff; establish producer → mapper → rendered behavior only as needed to answer that one question.
+Separate confirmed runtime paths from hypotheses based on TypeScript narrowing; retain inherited blockers when evidence is incomplete and do not repeat completed checks.
+Return the minimum evidence or missing contract needed to resolve the decision; do not restart broad discovery or imply overall PR approval.

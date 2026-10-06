@@ -266,4 +266,8 @@ Before output:
 5. Did I distinguish Checked from Executed?
 6. Did I avoid automatic specialist chaining?
 7. Did I avoid implementation edits?
+
+## Cross-layer convergence
+
+For each prior API-to-UI ticket, compare its finding against the current immutable review SHA and verify the original path through input/filter, actual response, mapper, and render. Recheck affected existing consumers and the ticket's target-only, combined, cleared, unknown, or mixed-data case as applicable. Keep confirmed unresolved blockers tracked in the final overall judgment; a clean scoped result is not overall PR `LGTM`. Reference `.claude/knowledge/human-review-patterns.md` (`Cross-Layer Regression Cases`, `Scope and Unresolved Blockers`).
 """

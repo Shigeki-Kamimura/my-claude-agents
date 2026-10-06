@@ -47,5 +47,11 @@ Prefer:
 
 Do NOT use Provider as a generic “runs globally” component.
 
+## API-to-UI flow contracts
+
+For changed hooks, selectors, filter/URL sync, or mappers, trace the bounded flow from user input to actual response, mapper, and rendered state; compare the affected existing consumer. Preserve runtime discriminators and meaningful before/after/delta/detail.reason values, and handle legacy/unknown payloads at runtime because TypeScript unions do not validate external data. Check target-only/combined/cleared states when the filter changed and mixed rows only when the actual response contract can supply them. Reference `.claude/knowledge/human-review-patterns.md` (`API-to-UI Semantics`, `Cross-Layer Regression Cases`).
+
+Before labeling a failure reachable, verify the actual filter/query can return the value; selected enum filters may exclude unknowns. Report the exact DOM symptom and distinguish a mocked response from an observed backend response.
+
 ...
 """

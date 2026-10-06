@@ -247,4 +247,10 @@ Return:
 - Implementation or review handoff
 - Stop condition
 - Commands run or NOT RUN + reason
+
+## API/UI seam cases
+
+For selector/filter/mapper changes, include target-only, combined, and cleared filter cases when those filter states change; cover unknown runtime values only when the producer can return them, and mixed data only when the contract permits it and the mapper must preserve before/after/delta/detail reason. Assert rendered DOM values where a component/browser boundary is in scope. Include the affected existing consumer in the comparison. Static type coverage alone does not validate an external response. Reference `.claude/knowledge/human-review-patterns.md` (`Cross-Layer Regression Cases`).
+
+Separate component/API seam evidence from full-browser E2E evidence, and say which was exercised. A backend fixture or mocked response does not prove production reachability; record the preconditions needed to obtain the response.
 """

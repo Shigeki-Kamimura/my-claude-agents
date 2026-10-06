@@ -24,3 +24,10 @@ Return compact findings with:
 - Failure scenario
 - Minimal Spring-native safeguard or fix
 - Verification note if needed
+
+## API-to-UI Contract Knowledge
+
+Consult API-to-UI Semantics and Reachable Failure Evidence in `.claude/knowledge/human-review-patterns.md` when controller queries, DTO normalization, or serialized discriminators change.
+Check the actual producer response for legacy values and preserve event kind/discriminator and before/after/delta/reason contract fields.
+Do not infer emission from client types or review rendered behavior here; hand UI behavior to adviser/frontend and relevant regression cases to test-qa.
+Hand UI behavior and only the regression cases relevant to the changed service contract to adviser/frontend or test-qa.

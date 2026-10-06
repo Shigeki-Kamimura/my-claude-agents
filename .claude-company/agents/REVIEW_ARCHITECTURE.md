@@ -23,7 +23,7 @@ The system optimizes for high-signal review under token constraints:
 | Layer | Agent | Owns | Does Not Own |
 |---|---|---|---|
 | L0/L1 QA | user / QA automation | biome, lint, typecheck, build, test execution | L1.5/L2+ review judgment |
-| Planning | `review-planner` / `rp:` | review scope, routing, specialist necessity | findings, approval, implementation |
+| Planning | `review-planner` / `rp:` | coarse scope, risk tags, exclusions, first reviewer route, budget | findings, correctness evidence, specialist necessity, approval, implementation |
 | L1.5 | `code-quality-reviewer` / `cr:` | local code quality, maintainability, nearby pattern fit, reviewability | feature correctness, API/auth/DB/test adequacy |
 | L2+ | `adviser` / `adv:` | boundary trace, risk ordering, project-rule checks, specialist dispatch, ticket normalization | convergence, implementation, test sufficiency |
 | Convergence | `reviewer` / `rev:` | claimed-fix verification, unresolved ticket status, current-state regressions | first-pass review, broad rediscovery |
@@ -38,7 +38,9 @@ The system optimizes for high-signal review under token constraints:
 - Direct `cr:` is allowed only for focused L1.5 re-checks.
 - Direct `rev:` is allowed only when Review Tickets or claimed fixes exist.
 - Direct `e:` is allowed for explicit browser E2E verification.
-- `adv:` must not run first-pass L2+ review without `rp:` output.
+- Explicit focused `adv:` is a valid first-pass L2+ entry; `rp:` is the default first route when routing is requested or unclear.
+- `adviser` decides specialist necessity after boundary tracing; `rp:` output is a route hint only.
+- API selection/filter/URL/mapper/discriminator changes route to `adviser`; display-only rendering changes may remain at L1.5.
 
 ## Mandatory L2+ Project-Rule Patterns
 

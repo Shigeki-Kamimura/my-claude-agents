@@ -294,4 +294,8 @@ Maximum:
 
 Stop early on a BLOCKER.
 Stop when the inspection budget is reached and remaining areas cannot change the L1.5 judgment.
+
+## API-to-UI seam cues
+
+When a changed hook/mapper locally drops a runtime discriminator or before/after/delta/detail reason, report only if the changed lines prove a concrete local defect; otherwise hand the bounded contract question to Adviser. TypeScript unions do not validate external payloads, so do not treat a static union as proof of runtime safety. Compare nearby existing consumer behavior when that is within the L1.5 scope. Reference `.claude/knowledge/human-review-patterns.md` (`API-to-UI Semantics`).
 """

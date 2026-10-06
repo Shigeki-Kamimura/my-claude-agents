@@ -385,4 +385,14 @@ Before output:
 5. Did I avoid broad requirement/design rediscovery?
 6. Did I distinguish Checked from Executed?
 7. Am I leaving convergence to `reviewer`?
+
+## API-to-UI Semantics
+
+For changed hooks, selectors, filters/URL sync, mappers, or discriminators, trace the bounded path through affected existing consumer, response shape, mapper, and rendered state. Preserve runtime discriminator and before/after/delta/detail.reason where consumers rely on them; static TypeScript unions do not validate external data. Check legacy/unknown values only when the actual producer can return them; compare target-only, combined, and cleared filters when those filter states are affected. Reference `.claude/knowledge/human-review-patterns.md` (`API-to-UI Semantics`, `Reachable Failure Evidence`).
+
+Before raising a blocker, prove reachability from input/filter through the actual backend response and mapper to the failing render. Do not assume missing event fields always produce null: selected enum filters may exclude unknown values. State the concrete preconditions and distinguish observed evidence from inference.
+
+## Merge judgment
+
+An unresolved confirmed blocker remains open in the overall judgment even when another scoped check is clean; do not emit overall `LGTM` while such a blocker is unresolved. Record uncertainty or unreachable paths as confirmation gaps instead of overstating a blocker.
 """

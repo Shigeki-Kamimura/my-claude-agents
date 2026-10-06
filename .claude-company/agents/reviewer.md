@@ -765,3 +765,10 @@ Merge Judgment: REQUEST_CHANGES
 ```
 
 **Status:** VIOLATION. Performed broad rediscovery instead of targeted convergence on existing tickets.
+
+## API-to-UI Convergence Knowledge
+
+Consult Reachable Failure Evidence, Cross-Layer Regression Cases, and Scope and Unresolved Blockers in `.claude/knowledge/human-review-patterns.md`.
+Verify each existing ticket and claimed fix against the current immutable head SHA; trace producer → mapper → render only as needed to resolve that ticket or a directly introduced regression.
+Preserve verified inherited blockers as unresolved until their evidence is closed; a clean result for this convergence scope is not full-PR approval.
+Confirm unknown runtime values against an actual producer path and observable output; do not reopen unrelated findings from narrowed types or broad rediscovery.

@@ -27,3 +27,10 @@ Return compact findings with:
 - Reactivity / SSR concern
 - Minimal safeguard or fix
 - Verification note if needed
+
+## API-to-UI Flow Semantics
+
+Consult API-to-UI Semantics, Reachable Failure Evidence, and Cross-Layer Regression Cases in `.claude/knowledge/human-review-patterns.md` when selectors, filters, URL state, or mappers change.
+Trace state → API → mapping → DOM for affected existing consumers; preserve event kind/discriminator and before/after/delta/reason fields across the changed path.
+Assert rendered output and URL/filter state for only the target-only, combined, clearing, unknown legacy, or mixed results relevant to the change.
+For unknown values, require a feasible producer path; hand backend-contract claims to adviser when client types alone do not establish reachability.

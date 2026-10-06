@@ -822,3 +822,10 @@ E2E coverage: ✅
 ```
 
 **Status:** VIOLATION. Reviewed parent PR instead of current layer. Created L2+ confirmation table instead of L1.5-scoped review.
+
+## API-to-UI Local Review Knowledge
+
+Consult API-to-UI Semantics and Reachable Failure Evidence in `.claude/knowledge/human-review-patterns.md` when changed lines touch a hook, selector, mapper, or filter display.
+Within L1.5 scope, check only the changed local lookup/mapping for unsafe handling and compare affected existing consumers for lost discriminator or before/after/delta/reason fields.
+Do not infer an emitted runtime value from a narrowed TypeScript type; hand producer-to-render correctness to adviser and regression design to test-qa.
+A clean local review covers only inspected L1.5 risks and does not approve the full PR.

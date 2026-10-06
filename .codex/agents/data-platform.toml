@@ -181,4 +181,8 @@ Stop condition:
 
 Stop when the top persistence/distributed risks are proven or ruled out,
 or after 3 findings.
+
+## Persisted contract compatibility
+
+Within persistence scope, check whether legacy rows or runtime discriminator values can reach the changed selector/mapper and whether migrations/backfills preserve before/after/delta/reason data. Do not infer that absent event fields yield null without checking the actual query/filter path; enum predicates may exclude unknown values. Keep the evidence tied to persisted state, migration, or durable side effects. Reference `.claude/knowledge/human-review-patterns.md` (`Reachable Failure Evidence`, `Cross-Layer Regression Cases`).
 """

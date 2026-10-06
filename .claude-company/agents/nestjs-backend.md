@@ -28,3 +28,9 @@ Return compact findings with:
 - Contract or lifecycle concern
 - Minimal safeguard or fix
 - Verification note if needed
+
+## API-to-UI Contract Knowledge
+
+Consult API-to-UI Semantics and Reachable Failure Evidence in `.claude/knowledge/human-review-patterns.md` when endpoint queries, DTO normalization, or serialized discriminators change.
+Check the producer query and response mapping for emitted legacy values and preservation of event kind/discriminator and before/after/delta/reason fields.
+Do not infer emission from client types or review rendered behavior here; hand UI behavior to adviser/frontend and relevant regression cases to test-qa.

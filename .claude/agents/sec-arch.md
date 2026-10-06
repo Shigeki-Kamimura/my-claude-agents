@@ -215,3 +215,10 @@ Rules:
 - include impacted boundary
 - include minimal safeguard
 - avoid speculative redesign
+
+## API-to-UI Trust and Reachability
+
+Consult Reachable Failure Evidence and Scope and Unresolved Blockers in `.claude/knowledge/human-review-patterns.md` when changed filters or mapped records affect authorization or sensitive-data exposure.
+Trace principal/tenant scope through the actual producer and mapper only far enough to prove whether the disputed record or value can cross the boundary.
+Check server-side authorization for changed selection/filter paths; a client discriminator or narrowed type is not authorization evidence.
+Keep findings scoped to data exposure or filter authorization, and hand display-only behavior to the frontend owner.

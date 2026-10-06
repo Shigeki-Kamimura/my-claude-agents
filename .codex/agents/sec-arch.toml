@@ -202,4 +202,8 @@ Stop condition:
 
 Stop when the top security risks are proven or ruled out,
 or after 3 findings.
+
+## Contract values at security boundaries
+
+Keep review within authorization, trust, and data-exposure scope. When an API-to-UI contract issue crosses that boundary, verify whether unknown/legacy values or retained detail fields expose data or alter access decisions; static client unions do not establish server-side validation. Trace only the relevant producer-to-consumer path and state reachability evidence. Reference `.claude/knowledge/human-review-patterns.md` (`API-to-UI Semantics`, `Reachable Failure Evidence`).
 """

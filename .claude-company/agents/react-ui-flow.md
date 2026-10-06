@@ -44,3 +44,10 @@ Prefer:
 - layout-mounted feature component
 
 Do not use Provider as a generic “runs globally” component.
+
+## API-to-UI Flow Semantics
+
+Consult API-to-UI Semantics, Reachable Failure Evidence, and Cross-Layer Regression Cases in `.claude/knowledge/human-review-patterns.md` when hooks, selectors, filters, URL state, or mappers change.
+Trace state → API → mapping → DOM for affected existing consumers; preserve event kind/discriminator and before/after/delta/reason fields across the changed path.
+Assert rendered output and URL/filter state for only the target-only, combined, clearing, unknown legacy, or mixed responses relevant to the change.
+For unknown values, require a feasible API producer path; route unsupported backend-contract assumptions instead of treating client types as runtime proof.

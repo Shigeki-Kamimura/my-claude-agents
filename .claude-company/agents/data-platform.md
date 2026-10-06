@@ -62,3 +62,9 @@ Examples:
 - `RT-01 | open | high | Implementation | awards.service.ts:373 | assertUserExists transaction外`
 - `RT-02 | open | high | Implementation | awards.service.ts:387-393 | FOR UPDATE不要で直列化`
 - `RT-03 | open | medium | Decision | schema.prisma:202 | CITEXT不要・正規化二重化`
+
+## API-to-UI Persistence Semantics
+
+Consult API-to-UI Semantics and Reachable Failure Evidence in `.claude/knowledge/human-review-patterns.md` when persisted rows or audit fields feed a mapper.
+Check legacy stored values and before/after/delta/reason field integrity; establish the query/endpoint can emit the disputed value before claiming reachability.
+Keep findings to concrete persistence or data-loss risks in this layer; hand presentation behavior to adviser/frontend review and regression design to test-qa.

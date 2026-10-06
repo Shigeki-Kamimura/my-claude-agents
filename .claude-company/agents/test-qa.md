@@ -280,3 +280,10 @@ For review specialist output, use:
 - Deferred / Handoff
 - Existing Evidence
 - Stop condition
+
+## API-to-UI Regression Design
+
+Consult API-to-UI Semantics, Reachable Failure Evidence, and Cross-Layer Regression Cases in `.claude/knowledge/human-review-patterns.md` when a changed API selection or mapping affects UI behavior.
+For the assigned boundary, use realistic fixtures through the real mapper to rendered output; cover target-only, combined, clearing, unknown legacy values when producible, or mixed results only where the change makes them relevant.
+Assert URL/filter state and compare affected existing consumers for lost discriminator or before/after/delta/reason fields; this is not a mandatory full matrix for unrelated changes.
+Treat narrowed TypeScript unions as test setup hints, not proof the server can return a value; record the producer evidence or mark that path unproven.

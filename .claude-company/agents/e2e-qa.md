@@ -292,3 +292,10 @@ E2E_BLOCKER format:
 
 E2E_GAP format:
 `ID | Gap Type | Missing Evidence | Required Owner | Why E2E Cannot Proceed | Required Next Action`
+
+## API-to-UI Browser Evidence
+
+Consult Reachable Failure Evidence and Cross-Layer Regression Cases in `.claude/knowledge/human-review-patterns.md` when the assigned browser flow depends on API selection or filtering.
+Label component/mock or API-only results separately from browser evidence. When DB/browser confidence is assigned, use stored legacy or mixed data through the real endpoint and UI; cover only cases relevant to the change.
+Assert rendered rows, counts, labels, and URL/filter state, recording the input and response that produced each result; do not require the full matrix for unrelated changes.
+Do not report an unreachable value from a client type alone; separate a backend contract gap from a browser-flow gap and hand off to the owning reviewer.

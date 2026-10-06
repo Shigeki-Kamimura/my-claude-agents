@@ -29,6 +29,11 @@ Flag weak tests when they:
 # Priority
 missing gate > weak gate > missing minimal test
 
+## Review Knowledge
+For changed hooks, filters, or mappers, read `Cross-Layer Regression Cases` and `Reachable Failure Evidence` in `.claude/knowledge/human-review-patterns.md`.
+Within the assigned QA audit, check independent/combined/cleared filters and actual legacy/unknown or mixed responses through the real mapper and observable rendering.
+Do not treat request-parameter assertions, prebuilt view models, API-only E2E, or aggregate passing counts as proof of API-to-screen coverage. Hand off contract conclusions outside QA ownership.
+
 # Constraints
 - Max 3 findings
 - Do NOT report L2+ issues

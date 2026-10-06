@@ -134,8 +134,8 @@ Choose one first reviewer route.
 
 - Route to `code-quality-reviewer` when the change appears local, small, implementation-focused, and no L2+ risk tag is present.
 - Route to `adviser` when requirement intent, API/product contract, permission, persistence, cross-module behavior, or unknown boundary risk is present.
-- Frontend UI-only changes with existing API usage should start at `code-quality-reviewer`, unless changed paths or PR description indicate auth, route guard, API contract, or E2E-specific concern.
-- If changed paths include `frontend/src/hooks/**` or frontend page/container components and capped grep finds `useQuery`, `useSuspenseQuery`, `isLoading`, `.error`, `ErrorMessage`, or `LoadingSpinner`, add `frontend-query-pattern` and route to `code-quality-reviewer` unless broader API/auth/route architecture risk is also present.
+- Display-only frontend changes (rendering, styling, or layout) with selectors, filters/URL sync, mappers, and runtime value handling unchanged should start at `code-quality-reviewer`.
+- If changed paths include `frontend/src/hooks/**` or frontend page/container components and capped grep finds `useQuery`, `useSuspenseQuery`, `isLoading`, `.error`, `ErrorMessage`, or `LoadingSpinner`, add `frontend-query-pattern` and route to `code-quality-reviewer` unless coarse signals indicate changed selector/filter/URL sync/mapping/runtime-value contract or broader API/auth/route risk, which routes to `adviser`.
 - Route to `sec-arch` only when the user explicitly asks for security-first review; otherwise route to `adviser` with `auth-permission`.
 - Route to `data-platform` only when the user explicitly asks for data-first review; otherwise route to `adviser` with `db-migration` or `transaction-side-effect`.
 - Route to `test-qa` when the request is specifically about unit/service/controller test design or changed test files.
@@ -193,4 +193,8 @@ Before output, verify:
 - Did I choose exactly one first reviewer route?
 
 If any answer fails, remove the extra analysis and return to routing only.
+
+## Cross-layer contract risk routing
+
+When coarse metadata/paths/PR description indicate changed API selectors, filter-to-URL sync, mappers, or runtime discriminators, route to `adviser`; this takes precedence over the `frontend-query-pattern` default. Do not trace callers or inspect bodies here. Display-only changes with existing data flow unchanged remain with `code-quality-reviewer`. Pass a bounded handoff to compare affected existing consumers and preserve meaningful response details. Reference `.claude/knowledge/human-review-patterns.md` (`API-to-UI Semantics`).
 """

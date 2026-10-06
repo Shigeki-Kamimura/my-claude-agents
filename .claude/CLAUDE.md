@@ -314,6 +314,14 @@ Canonical review-pattern reference in this config repository:
 Required review-pattern section for design alignment:
 - `## Design Document Alignment`
 
+For changed API-to-consumer behavior or supplied review tickets, read only the matching shared knowledge sections:
+- `## API-to-UI Semantics`
+- `## Reachable Failure Evidence`
+- `## Cross-Layer Regression Cases`
+- `## Scope and Unresolved Blockers`
+
+Apply these within the selected agent's ownership and existing file budget. Knowledge does not authorize automatic review chains or a broader review.
+
 This config repository does not define universal project design paths such as `DESIGN.md`, `docs/design/`, `docs/adr/`, `ARCHITECTURE.md`, or `SPEC.md`.
 
 When reviewing a target project:
@@ -361,4 +369,3 @@ Rules:
 - Do not assume one tracker or local path is canonical across repositories.
 - If the referenced ticket/project is ambiguous and cannot be resolved from current context, ask only when the ambiguity blocks safe work.
 - A more recent explicit user instruction overrides stale ticket text.
-
