@@ -56,7 +56,7 @@ Default strategy:
 - hq-coder -> Sonnet / high
 - review-planner -> Sonnet / medium
 - code-quality-reviewer -> Sonnet / high
-- adviser -> Sonnet / high
+- adviser -> Opus / high
 - reviewer -> Sonnet / high
 - test-qa -> Sonnet / high
 - e2e-qa -> Sonnet / medium
@@ -65,25 +65,37 @@ Default strategy:
 - opus-escalation -> Opus / high
 
 Budget rule:
-- Sonnet is the default worker for normal planning, implementation, and review.
-- Do not use Opus merely because a task or diff is large.
-- Escalate only one unresolved high-cost decision after targeted Sonnet work.
+- Sonnet remains the default for planning, implementation, L1.5, QA, specialists, and normal convergence review.
+- Adviser starts L2+ review on Opus; no preliminary Sonnet pass is required.
+- Outside this fixed Adviser allocation, do not use Opus merely because a task or diff is large.
+- Escalate only one unresolved high-cost planning decision after targeted Sonnet work.
 - Opus escalation is terminal for that root cause; do not recursively escalate.
-- Model choice follows task complexity and decision cost, not repository, product, workflow stage, or ticket source.
+- Apart from the fixed L2+ allocation, model choice follows task complexity and decision cost, not repository, product, or ticket source.
 
 Prior-work reuse:
 - A plan/review from another model, tool, human, CI system, or earlier session is evidence, not authority.
+- For Codex implementation, treat Codex review as implementer self-check; it does not replace requested Claude L1.5/L2+ review.
+- A no-findings verdict alone is not proof that a risk was checked; verify the current requirements and diff within the requested layer.
 - Reuse confirmed evidence instead of re-running the same work.
 - Challenge only assumptions or root causes that could materially change the decision.
 - Claude-only workflows remain fully supported; prior external work is optional.
 
+## L2+ Model Policy
+
+- `adv:` / `a:` and a planner route to `adviser` use Opus / high from the first pass.
+- This allocation changes the model, not the entry rules, review scope, or file budget.
+- `cr:`, normal `rev:`, QA, and specialist models remain unchanged.
+- Do not add automatic review chains, repeat passes, or a Sonnet prerequisite.
+- Adviser already runs on Opus; do not route it automatically to `opus-escalation`.
+- If Opus cannot run, report L2+ review as not completed instead of silently substituting Sonnet.
+
 ## Opus Escalation
 
-Opus is an escalation tier for one unresolved decision, not a normal review layer.
+`opus-escalation` is for one unresolved Sonnet planning decision or an explicit manual question.
+It is separate from the normal Opus-powered Adviser review.
 
 Eligible automatic origins:
 - `req-pl`
-- `adviser`
 
 Typical triggers:
 - authoritative requirement/design sources materially conflict
@@ -103,7 +115,7 @@ Do not escalate for:
 Handoff:
 ```
 ESCALATE_OPUS
-Role: <req-pl | adviser>
+Role: <req-pl | adviser (explicit manual question only)>
 Root cause: <one root cause>
 Trigger: <matched condition>
 Scope:
@@ -118,11 +130,11 @@ Additional file budget: <default max 5>
 ```
 
 Coordinator behavior:
-1. Detect exact `ESCALATE_OPUS`.
+1. Detect exact `ESCALATE_OPUS`; allow automatic routing only from `req-pl`, otherwise require an explicit manual request.
 2. Spawn `opus-escalation`.
 3. Pass the handoff unchanged.
 4. Do not repeat completed Sonnet work.
-5. Use Opus only for the unresolved decision.
+5. Keep `opus-escalation` limited to the unresolved decision; do not restart Adviser review.
 6. Allow at most one Opus escalation per root cause.
 
 Manual override:

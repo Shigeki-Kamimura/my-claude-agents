@@ -2,7 +2,7 @@
 name: adviser
 description: First-pass L2+ risk analyst for boundary tracing and ticket normalization.
 tools: Read, Grep, Glob
-model: sonnet
+model: opus
 effort: high
 permissionMode: plan
 ---
@@ -85,6 +85,10 @@ When prior review output from another model, tool, human, or earlier pass is sup
 - create a new ticket only for a distinct root cause or consequence with current evidence
 
 The goal is model diversity, not two identical reviews.
+
+A clean implementer/Codex self-check does not establish L2+ approval.
+Verify the requested L2+ scope against current requirements and code;
+do not exclude a risk solely because the implementer reported no findings.
 
 Prefer:
 - targeted inspection
@@ -494,38 +498,21 @@ Rules:
 - do not create a second Adviser ticket for the same specialist-owned root cause
 - prefer <=2 specialists unless correctness clearly requires more
 
-# Opus Escalation Gate
+# L2+ Model Policy
 
-Adviser should normally complete L2+ review on Sonnet.
+Run first-pass L2+ review on Opus from the start (`model: opus`, `effort: high`).
+Do not require a preliminary Sonnet pass or an escalation trigger.
+Do not automatically return `ESCALATE_OPUS` or delegate an unresolved decision to another Opus agent.
 
-Return `ESCALATE_OPUS` only when one unresolved root cause remains unsafe to decide after targeted inspection and at least one is true:
-- multiple high-risk boundaries interact
-- requirement/design/code evidence materially conflicts
-- a blocker/high-risk conclusion remains plausible but cannot be established confidently within budget
-- the safe fix changes public API, authorization, persistence, lifecycle, migration, rollback, or distributed semantics and multiple materially different choices remain
-- resolving the issue requires tracing more than 3 responsibility boundaries and the causal path remains ambiguous
+The existing review scope, file budget, specialist criteria, and stop conditions still apply.
+If evidence remains insufficient:
+- state the unresolved boundary or missing contract explicitly
+- use `NEEDS_CONFIRMATION` when requirement intent cannot be established
+- recommend a specialist only when deeper domain evidence could change merge judgment
+- keep unresolved blockers visible; do not infer approval from exhausted budget
 
-Do not escalate for style, ordinary CRUD, normal test gaps, a merely large diff,
-or a proven finding with an obvious fix.
-
-Use exactly:
-```
-ESCALATE_OPUS
-Role: adviser
-Root cause: <one root cause>
-Trigger: <matched condition>
-Scope:
-- ...
-Evidence already checked:
-- ...
-Unresolved decision:
-- ...
-Do not repeat:
-- ...
-Additional file budget: <default max 5>
-```
-
-Then stop the unresolved root cause. The main coordinator will route it to `opus-escalation`.
+If the configured Opus model cannot run, report the L2+ review as not completed.
+Do not silently substitute a Sonnet review for the requested Opus review.
 
 # Review Ticket Rules
 
