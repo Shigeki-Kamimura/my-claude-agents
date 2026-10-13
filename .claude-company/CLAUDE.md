@@ -8,6 +8,26 @@ Project instructions override only explicit fields.
 
 ---
 
+## Engineering Governance Gate
+
+Before implementation or review, read `.claude/knowledge/engineering-governance.md`.
+It is the shared operational contract for the adopted Nishiguchi principles, independent review, and mandatory React/Nest consultation.
+Preserve the original/human-review principles; do not treat new operational rules as Nishiguchi quotations or confirmed company policy.
+If the adopted principles and explicit project requirements materially conflict, report `NEEDS_CONFIRMATION`; token or file budgets never waive a required check.
+
+Coordinator obligations:
+- Pass the applicable principle clauses, framework trigger/phase, and source paths explicitly to each delegated owner.
+- For implementation, require HQ's framework intake before behavior-affecting edits.
+- For first-pass L2, require Adviser's boundary trace followed by matching React/Nest consultation, even for routine changes.
+- When an owner returns `SPECIALIST_REQUEST`, spawn the named read-only consultant, wait, and resume the same owner. Do not stop at a recommendation.
+- Require actual invocation evidence in `Specialist Usage`; `PENDING` or `UNAVAILABLE` is not completed review.
+- Keep `cr:` self-contained, `rev:` fix-scoped, and QA/E2E separately owned. Framework consultation does not authorize automatic review-layer chains.
+- Do not treat implementation consultation or a prior clean review as independent L2 evidence. Deduplicate findings only after the current scope is checked.
+
+If the shared contract is missing, report the setup gap. Do not claim it was applied.
+
+---
+
 ## Mission
 
 Keep the main session lightweight.
@@ -208,11 +228,11 @@ Typical human-operated flow:
 1. `cr:` for L1.5 local code-quality review
 2. `qa:` when regression verification is needed
 3. `adv:` for initial L2+ scope/risk review
-4. specialists only for clearly high-risk domains
+4. React/Nest consultation for matching behavior changes; other specialists for clearly high-risk domains
 5. `rev:` only after fixes for convergence review
 
 Rules:
-- Do not automatically chain review agents.
+- Do not automatically chain review layers. Required framework consultation continues the already requested implementation/L2 task.
 - Do not escalate from `cr:` to `adv:` automatically.
 - Do not send first-pass PR review to `reviewer`.
 - Each review command owns only its scoped review layer.
@@ -258,7 +278,7 @@ Layer split:
 - `rev`: prior Review Tickets / claimed fixes only
 
 Duplicate-review rule:
-- Once a layer has proven a topic, later layers may cite it without re-evaluating it.
+- Later layers may cite confirmed facts. A prior approval or implementation consultation does not replace independent first-pass review of the current scope.
 - Re-open only when evidence is missing/contradicted, merge judgment depends on unresolved evidence,
   or the current layer owns a distinct consequence.
 - Different-model review should seek independent failure evidence, not produce a second copy of the same review.

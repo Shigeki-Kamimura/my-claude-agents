@@ -1,3 +1,21 @@
+## Engineering Governance Gate
+
+Before implementation or review, read `.claude/knowledge/engineering-governance.md`.
+It is the shared operational contract for the adopted Nishiguchi principles, independent review, and mandatory React/Nest consultation.
+Preserve the original/human-review principles; do not treat new operational rules as Nishiguchi quotations or confirmed company policy.
+If the adopted principles and explicit project requirements materially conflict, report `NEEDS_CONFIRMATION`; token or file budgets never waive a required check.
+
+Coordinator obligations:
+- Pass the applicable principle clauses, framework trigger/phase, and source paths explicitly to each delegated owner.
+- For implementation, require HQ's framework intake before behavior-affecting edits.
+- For first-pass L2, require Adviser's boundary trace followed by matching React/Nest consultation, even for routine changes.
+- When an owner returns `SPECIALIST_REQUEST`, spawn the named read-only consultant, wait, and resume the same owner. Do not stop at a recommendation.
+- Require actual invocation evidence in `Specialist Usage`; `PENDING` or `UNAVAILABLE` is not completed review.
+- Keep `cr:` self-contained, `rev:` fix-scoped, and QA/E2E separately owned. Framework consultation does not authorize automatic review-layer chains.
+- Do not treat implementation consultation or a prior clean review as independent L2 evidence. Deduplicate findings only after the current scope is checked.
+
+If the shared contract is missing, report the setup gap. Do not claim it was applied.
+
 ## Available Agents
 
 - req-pl
@@ -220,8 +238,8 @@ Recommended manual sequences:
 
 These are manual sequences, not automatic chains.
 Each agent stops after its own layer unless the user explicitly asks otherwise.
-Sol escalation is the one exception: it is a continuation of the same unresolved root cause,
-not a new review layer.
+Sol escalation and required framework consultation continue the same scoped task;
+neither starts a new review layer.
 
 Direct-use exceptions:
 - `cr:` explicit L1.5 check/re-review
@@ -234,7 +252,7 @@ Direct-use exceptions:
 
 Assign one primary owner per root cause.
 
-- later layers may cite earlier results without re-reviewing them
+- later layers may cite confirmed facts; prior approval or implementation consultation never replaces independent first-pass review of the current scope
 - reopen only when evidence is missing/contradicted or the current layer owns a distinct consequence
 - adviser must not duplicate a specialist ticket for the same root cause
 - reviewer must not rediscover unrelated findings during convergence

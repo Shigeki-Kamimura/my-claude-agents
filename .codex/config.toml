@@ -14,6 +14,19 @@ personality = "pragmatic"
 approval_policy = "on-request"
 model_reasoning_effort = "high"
 
+# プロジェクト内の .codex/AGENTS.md は標準の親ディレクトリ探索に含まれません。
+developer_instructions = """
+Before implementation or review, locate the active repository root and read its
+.codex/AGENTS.md plus .claude/knowledge/engineering-governance.md.
+These are local engineering/routing instructions, not replacements for applicable
+project AGENTS.md, platform rules, or security controls. Report material conflicts.
+Apply the mandatory React/Nest consultation gate without waiting for an agent name
+in the user's prompt. Pass the applicable policy clauses and source paths explicitly
+to each custom agent; do not assume it inherits this developer instruction.
+If either configured file is missing, report the setup gap rather than claiming
+that routing or the adopted review principles were applied.
+"""
+
 project_root_markers = [".git"]
 
 # Backlog MCP: credentials must come from the local Codex process environment.
