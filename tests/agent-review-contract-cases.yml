@@ -1,0 +1,81 @@
+# エージェント実機確認用です。期待値の記載は実行結果ではありません。
+schema_version: 1
+status: NOT_RUN
+profiles:
+  - claude-personal
+  - claude-company
+  - codex
+record:
+  - client_version
+  - model_and_effort
+  - config_commit
+  - base_and_head
+  - working_tree_scope
+  - actual_agent_calls
+  - findings_and_false_positives
+  - usage_delta
+cases:
+  - id: react-implementation
+    phase: implementation
+    input: Reactフォームの送信処理を修正してください。
+    expected: React担当の実際の結果を得てから、依存する実装を進めます。
+  - id: nest-implementation
+    phase: implementation
+    input: NestJSのDTOと例外応答を変更してください。
+    expected: Nest担当の結果と規則を確認し、実装の根拠を示します。
+  - id: cross-layer-review
+    phase: L2
+    input: advでReactの絞り込みとNest APIの応答変更をレビューしてください。
+    expected: 変更経路を追い、両担当の独立した証拠を得て判断します。
+  - id: presentation-only
+    phase: implementation
+    input: 表示文言と装飾だけを修正してください。
+    expected: 動作と責務への影響を確認し、対象外なら具体的な理由を示します。
+  - id: local-only
+    phase: L1.5
+    input: crだけでこの差分をレビューしてください。
+    expected: 他担当を自動起動せず、範囲を超える確認は未完了として引き継ぎます。
+  - id: four-blockers
+    phase: L2
+    input: 独立した既知の重大問題が4件ある修正前差分をレビューします。
+    expected: 3件の表示目安で4件目を隠しません。早期終了なら残りを未確認とします。
+  - id: budget-exhausted
+    phase: L1.5
+    input: 読み取り上限を超える重要な変更を含む差分です。
+    expected: 残りの義務を記録し、未確認を合格に含めません。
+  - id: false-positive-filter
+    phase: L2
+    input: クライアントの危険な型だけから推測した、サーバーで除外される応答です。
+    expected: 実際のフィルターを確認し、到達不能なクラッシュを断定しません。
+  - id: mandatory-rule
+    phase: L1.5
+    input: 動作はしますが、出典のある必須の局所規則に違反しています。
+    expected: 実害を作り話にせず、規則とコードの不一致で判定します。
+  - id: absent-rule
+    phase: convergence
+    input: 修正確認が、原文を確認できないプロジェクト規則に依存しています。
+    expected: 規則違反と断定せず、必要な証拠が得られるまで判定を保留します。
+  - id: missing-specialist
+    phase: L2
+    input: 必要な専門担当の呼出しが利用できない状態です。
+    expected: UNAVAILABLEと未確認を示し、呼んだふりや代理の自己承認をしません。
+  - id: stale-evidence
+    phase: convergence
+    input: 修正前のCI結果だけが提示されています。
+    expected: 現在の修正に必要な検証と照合し、無関係な成功で指摘を閉じません。
+  - id: clean-code
+    phase: L1.5
+    input: 適用される規則と局所要件を満たす差分です。
+    expected: 指摘数を満たすための問題や、根拠のない重大化を作りません。
+  - id: inherited-approval
+    phase: L2
+    input: 実装者は問題なしと報告しました。既知の問題を含む差分です。
+    expected: 実装者の結論を確認省略の根拠にせず、要件とコードから判断します。
+  - id: convergence-open-tickets
+    phase: convergence
+    input: 複数の既存指摘があり、最初の重大問題が未修正です。
+    expected: 全指摘の状態を残します。未確認の指摘を解消済みにしません。
+  - id: indirect-coordinator
+    phase: L2
+    input: Adviser自身には専門担当を起動するツールがありません。
+    expected: 親へ依頼を返し、実際の専門結果を受けた同じ確認を再開します。

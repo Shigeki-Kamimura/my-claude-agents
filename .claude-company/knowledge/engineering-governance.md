@@ -2,106 +2,139 @@
 
 ## Authority and provenance
 
-The user adopts Nishiguchi's review policy as constitutional engineering principles for this configuration, for both implementation and review.
-Company-wide adoption is not confirmed. This file is an operational interpretation, not Nishiguchi's original wording.
+The user adopts Nishiguchi's review policy as the constitutional engineering baseline for implementation and review in this configuration.
+Company-wide adoption is not confirmed. This document is an operational interpretation, not Nishiguchi's original wording.
 
-- Preserve the existing principles and examples in `human-review-patterns.md` in this same knowledge directory.
-- Do not invent quotations, add new preferences under Nishiguchi's name, or silently rewrite an authoritative source.
-- Separate source principle, project-specific rule, and new operational safeguard in any proposed policy change.
-- When an original guideline is supplied, retain its source/revision and compare this interpretation against it. Do not claim original-source conformance without reading it.
-- Platform instructions, security controls, and explicit project requirements retain their actual precedence. A material conflict with the adopted principles requires `NEEDS_CONFIRMATION`; do not silently weaken either side.
-
-Within this configuration's engineering rules, principles and explicit project contracts take priority over agent convenience, token targets, sample/file budgets, and duplicate-output reduction.
-Project rules specify concrete behavior. Do not impose a project's Suspense, ORM, audit, or API convention on unrelated projects without an applicable source.
+- Preserve `human-review-patterns.md` in this knowledge directory as the existing human-review reference.
+- Do not invent quotations, attribute new preferences to Nishiguchi, or silently rewrite an authoritative source.
+- Separate the source principle, an explicit project rule, and a user-approved AI operational improvement.
+- If the original guideline becomes available, record its source/revision and reconcile this interpretation. Do not claim original-source compliance without reading it.
+- Platform instructions, security controls, and explicit project requirements retain their actual precedence. Report a material conflict with the adopted principles as `NEEDS_CONFIRMATION`; do not silently weaken either side.
+- Within these engineering instructions, source-backed principles and contracts take priority over convenience, token targets, sample/file budgets, and duplicate-output reduction.
+- Project conventions are scoped. Suspense, ORM exception helpers, audit formats, and API conventions require an applicable project source; do not export one project's choices to every repository.
 
 ## Principle application
 
-Before implementation or a scoped review, read the applicable sections of `human-review-patterns.md` and the minimum relevant project rules.
-The current operational baseline includes responsibility separation, meaningful exception boundaries, type safety, focused refactoring, and design-document alignment.
+Every implementing/reviewing owner reads this contract and the applicable sections of `human-review-patterns.md`, even when invoked directly.
+Read the minimum complete relevant project rule, including exceptions. Use the explicit task/project source first, then discover actual local rule paths; an example path is not a universal source.
 
-Use this compact evidence chain for each triggered principle:
-`source/section -> changed responsibility or invariant -> checked evidence -> result`
+| Adopted principle | Implementation obligation | Review obligation |
+| --- | --- | --- |
+| Responsibility separation | Identify the owner/layer before placing logic; use the smallest design-correct boundary. | Identify the concrete mixed responsibility and its consequence or sourced rule violation. |
+| Meaningful exception handling | Catch for recovery, translation, cleanup, or meaningful context; preserve unexpected failures. | Trace failure meaning and propagation; reject empty, pointless, or misleading handling. |
+| Type safety | Validate untrusted input and narrow types; do not silence mismatches with casts. | Check runtime evidence, not just type annotations; distinguish justified boundary assertions from unsafe casts. |
+| Focused refactoring | Include required boundary repairs, not unrelated cleanup or speculative abstractions. | Check both unnecessary scope expansion and a small patch that preserves a known violation. |
+| Design alignment | Read the applicable rule before editing. | Cite the exact rule and changed code; distinguish mandatory rules from examples/preferences. |
 
-- Prefer the smallest design-correct change, not a short patch that preserves a known rule violation.
-- Do not add catches, casts, abstractions, or unrelated cleanup merely to make a change pass.
-- Distinguish a sourced mandatory rule violation from an optional improvement. Neither runtime impact nor style preference alone establishes the other's severity.
-- Report `COMPLIANT`, `NON_COMPLIANT`, `NOT_APPLICABLE`, or `UNCONFIRMED` only for the scope actually checked.
-- For a defect, include the reachable precondition, causal code path, consequence, and verification method. Label code inspection separately from execution.
-- For a mandatory rule violation, cite the applicable rule and the concrete mismatch; do not invent a runtime failure to justify it.
-- If budget is insufficient, split the remaining scope or record it as pending. Sampling and an unanswered specialist request never establish full approval.
+Use `source/section -> responsibility or invariant -> inspected evidence -> result` for triggered principles.
+Results are `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED`, scoped to inspected evidence.
+An explicitly mandatory rule violation does not need an invented runtime crash to be blocking. An optional preference does not become mandatory because an AI repeats it.
+
+## User-approved AI operational improvements
+
+These checks strengthen application of the baseline; they are not additional quotations from Nishiguchi.
+Apply them only within the selected role's ownership.
+Before introducing a new concept, check nearby reusable types, literals, helpers and existing responsibilities. Do not force reuse across different contracts.
+
+1. Establish the obligation before trusting the implementation. From current requirements/rules, name the changed responsibility, invariant, and acceptance condition. Do not derive expected behavior solely from the new code or its mocks.
+2. Trace the relevant path. For a local review, stay within the function and immediate context. For L2, follow affected producer/consumer boundaries, failure handling, and side effects as required by the change.
+3. Challenge each candidate finding. Check the nearest guard, filter, validation, transaction, existing consumer, documented exception, or bounded-data assumption that could disprove it. Report the resulting evidence, not private deliberation.
+4. Separate finding kinds. A defect needs reachable preconditions, a causal code path, and a consequence. A rule violation needs the applicable mandatory rule and concrete mismatch. A verification gap needs the missing obligation and why judgment depends on it. Optional improvements are non-blocking.
+5. Match evidence to the revision. Record base/head and relevant working-tree changes. A new commit, renamed symbol, passed unrelated suite, or source-file existence is not proof of a fix.
+6. Close coverage explicitly. Use `Review Coverage: COMPLETE / PARTIAL / BLOCKED` for the requested scope, list uninspected obligations and their owners, and never turn missing evidence into approval.
+
+### Scope, budgets, and stop conditions
+
+- Token/file targets bound each slice, not the definition of correctness. Preserve all triggered mandatory checks in the coverage record.
+- On a budget limit, return inspected/pending paths, remaining obligations, and the next same-layer slice. The coordinator may continue that requested layer; do not start another review layer without authorization.
+- Finding counts are presentation targets only. Never hide a fourth blocker or a third important handoff because a template prefers fewer entries. Group by root cause and keep every evidenced blocker visible.
+- A proven blocker permits an early `REQUEST_CHANGES` with `Review Coverage: PARTIAL`; list remaining scope. Do not present this as an exhaustive review or silently discard supplied tickets.
+- Zero findings is valid. Do not invent issues, require a quota, or increase severity to appear strict.
+- `COMPLETE` means the declared scope and its required checks are covered; it does not guarantee defect-free code or overall PR approval.
+
+### Independent review and reconciliation
+
+First-pass reviewers receive requirements, rules, the actual revision/diff, and relevant code/evidence.
+Do not use implementation confidence, conversation summaries, a saved conclusion, or an earlier clean verdict to exclude a check or decide the answer.
+Use a fresh review task/context where supported. This instruction does not disable saved memory or guarantee isolation; retain formal project rules.
+
+Implementation-phase consultation and L2 consultation are distinct. The coordinator starts a fresh review-phase specialist task rather than resuming the implementation consultant's conversation as independent review.
+Pass neutral facts and source paths. Do not lead with the implementer's preferred conclusion.
+After independent inspection, reconcile supplied findings. Retain validated unresolved blockers, confirm disputed imports, and deduplicate tickets rather than mandatory checks.
+Convergence intentionally receives original tickets and fix evidence; it does not restart first-pass discovery.
+No majority vote overrides a reproducible blocker or a sourced mandatory violation.
 
 ## Mandatory framework consultation
 
-A framework agent is a read-only consultant. HQ owns edits; the requested review owner owns its judgment. No consultant may rewrite source or approve the whole PR.
+Evaluate the following behavior triggers in implementation and first-pass L2 without waiting for the user to name an agent.
+Routine or small work still matches. Difficulty, confidence, and file extensions alone are not the gate.
 
-The coordinator must evaluate these triggers on implementation tasks and first-pass L2 review, without requiring the user to name an agent.
-Use task paths/symbols and the owner's targeted intake or boundary trace. A file extension or installed dependency alone is insufficient.
-
-| Matching behavior change | Required consultant |
+| Changed behavior | Required consultant |
 | --- | --- |
-| React component/prop/state ownership, Context/Provider, hooks/effects, async UI, forms/dialogs, query/cache, selectors/filter/URL synchronization, API-to-view mapping | `react-ui-flow` |
-| NestJS controller/module/service/DI responsibility, DTO validation/transformation, guards/pipes/interceptors/filters, exception behavior, API serialization or producer contract | `nestjs-backend` |
+| React component/prop/state responsibility, Context/Provider, hooks/effects, async UI, forms/dialogs, query/cache, selector/filter/URL sync, API-to-view mapping | `react-ui-flow` |
+| NestJS controller/module/service/DI responsibility, DTO validation/transformation, guard/pipe/interceptor/filter, exception behavior, serialization/producer contract | `nestjs-backend` |
 
-- Matching routine work also triggers consultation. Do not wait until the owner says the work is difficult or high-risk.
-- A UI/API change may require both consultants, with distinct frontend and backend questions.
-- Pure text, formatting, styling, generated output, or unrelated-framework changes may be `NOT_APPLICABLE`; state the concrete reason. A component's changed meaning or responsibility is not a naming-only exemption.
-- Retain Spring/Vue/security/data/QA routes for their existing scopes. Do not send them to React/Nest by analogy alone.
+- A UI/API change may need both consultants, with separate questions and scopes.
+- Pure text, formatting, styling, generated output, or unrelated-framework changes may be `NOT_APPLICABLE` only when behavior, accessibility and responsibility are unaffected. Check this rather than assuming it from a filename.
+- Preserve existing Spring/Vue/security/data/QA routes for their own domains. Do not send unrelated frameworks to React/Nest.
 - Consult once per applicable framework, phase, and unchanged evidence set. Batch related questions; reopen only changed or unresolved evidence.
+- Consultation is mandatory when triggered; agreement with the advice is not. The owner accepts/rejects advice using source-backed evidence and retains unresolved mandatory obligations.
 
-### Phase and layer ownership
+### Phase ownership
 
-- Implementation: HQ performs a bounded intake, requests the matching consultant before committing to a behavior-affecting design/edit, then accepts or rejects advice with evidence. HQ remains the only implementation owner.
-- First-pass L2: Adviser first traces the relevant boundary, then obtains matching framework evidence before its final scoped judgment. Adviser still owns risk ordering and cross-layer conclusions.
-- L1.5: keep `code-quality-reviewer` self-contained. Local framework/project-rule checks remain its responsibility. Cross-layer concerns become `L2+ Handoff`; do not secretly launch L2 from `cr:`.
-- Convergence: consult only for supplied tickets or fix-induced risks that require framework evidence. Do not restart a full framework review.
-- QA/E2E: retain existing test ownership. Framework inspection is not a substitute for executed tests.
+- Implementation: HQ performs bounded intake, then obtains the matched consultant's result before committing to the affected design/edit. HQ owns application edits.
+- First-pass L2: Adviser traces the boundary, obtains the matched framework evidence, then makes its scoped judgment. An already proven blocker may be returned early, with consultation and remaining coverage explicitly pending.
+- L1.5: `code-quality-reviewer` remains self-contained. It owns local framework/rule checks; cross-layer issues become handoffs, not hidden specialist/L2 runs.
+- Convergence: consult only when a supplied ticket or a fix-induced risk needs framework evidence. Return to the same ticket, not a full framework review.
+- QA/E2E: retain test ownership. Framework code inspection is not executed verification.
 
-Framework consultation within an already requested implementation/L2 task is continuation of that task, not permission to chain `cr -> qa -> adv -> rev` automatically.
-Existing high-risk-only specialist defaults do not suppress the matching React/Nest behavior triggers above.
+Required consultation continues the already requested task. It is not permission to chain `cr -> qa -> adv -> rev` automatically.
+High-risk-only specialist defaults do not suppress the React/Nest behavior triggers above.
 
 ### Coordinator handshake
 
-The coordinator includes the applicable principle clauses, this phase's trigger contract, and source paths in every delegation. Do not assume custom agents inherit the parent's developer prompt, conversation, or memory.
-
-An owner may call an allowed consultant directly when the runtime exposes that tool.
-Otherwise it returns this request to the coordinator, without a completed implementation/review verdict:
+Each delegation contains the applicable principle clauses, phase, revision, trigger, question, scope, and source paths. Do not assume inheritance of the parent's developer prompt, prior file reads, or memory.
+An owner may directly call an allowed consultant only if that tool is exposed at runtime. Otherwise return:
 
 ```text
 SPECIALIST_REQUEST
 Owner: <hq-coder | adviser | reviewer>
 Phase: <implementation | L2 | convergence>
-Specialist: <react-ui-flow | nestjs-backend>
-Revision: <base/head SHA; include uncommitted scope when relevant>
-Trigger: <changed behavior and file/symbol>
-Question: <one bounded framework decision>
-Rules: <applicable source/sections>
+Specialist: <registered agent name>
+Revision: <base/head; relevant uncommitted scope>
+Trigger: <behavior and file/symbol>
+Question: <bounded decision>
+Rules: <source/sections>
 Scope: <allowed paths/boundaries>
-Evidence checked: <facts, not an approval claim>
+Evidence checked: <facts, not approval>
 Return to: <same owner and unfinished decision>
 ```
 
-The coordinator must actually spawn the named specialist, await its result, and resume the same owner with the evidence.
-Keep reviewers read-only; lack of an Agent tool is handled through the coordinator, not by adding write permissions or pretending delegation happened.
-If spawning is unavailable, report `UNAVAILABLE` and retain the unchecked obligation. Do not silently replace it with owner self-approval.
+The coordinator must actually invoke the specialist, obtain its result, and resume the same owner. A routing recommendation is not consultation completion.
+Keep framework consultants read-only. Do not widen permissions, bypass approval, or pretend a call succeeded to complete the workflow.
+If the owner lacks a tool to obtain metadata/diffs, return `INPUT_REQUEST` with the exact missing artifact; the coordinator supplies it through an allowed tool. Do not invent a base, diff, or command result.
+If spawning is unavailable, record `UNAVAILABLE` and the unchecked obligation. Dependent edits/approval stay pending.
 
-Final handoff records `Specialist Usage` for each candidate:
-- `USED`: actual agent invocation/reference, assigned scope, returned evidence, and how the owner used it.
-- `NOT_APPLICABLE`: inspected trigger and reason.
-- `PENDING` / `UNAVAILABLE`: remaining obligation and cause.
+Record `Specialist Usage` for candidate specialists:
+- `USED`: actual invocation/reference, assigned scope, returned evidence, and accepted/rejected advice.
+- `NOT_APPLICABLE`: checked trigger and concrete exemption.
+- `PENDING / UNAVAILABLE`: remaining obligation and cause.
+Reading an agent definition, imitating its role, or printing its name is not `USED`.
+A completed invocation with insufficient evidence still leaves its review obligation pending; `USED` alone is not approval.
 
-A proposed route, a read agent-definition file, or owner imitation of a specialist is not `USED`.
+## Evidence and reporting
 
-## Independent review input
+Write user-facing results in polite, plain Japanese. State the decision first and keep sentences short.
+`Checked` means inspected file/content. `Executed` means an observed command run; imported CI evidence must identify its source, revision, command/test, and result.
+Never invent a test command, execution, line number, requirement, or original quotation. Suggested verification is labeled not executed.
+When a rule source is missing, mark the affected judgment unconfirmed, not the rule violated. Do not block unrelated work solely because an optional document is absent.
 
-First-pass reviewers receive requirements, applicable rules, the immutable revision/diff, and relevant code/test artifacts.
-Do not use the implementer's confidence, conversation summary, or a prior clean verdict to exclude risk or decide the answer.
-Use a fresh review task/context where supported; do not assume this setting disables saved memory or guarantees context isolation.
+Final approval requires complete evidence for the requested layer, completed required consultation, and no unresolved blocker affecting that judgment.
+A scoped clean result is not full PR approval. Confirmed open blockers keep overall merge readiness at `REQUEST_CHANGES`; missing blocking evidence keeps it deferred.
 
-Framework review is also independent of implementation consultation. Reuse source locations and observed facts, not an implementation-phase approval as L2 proof.
-After independent inspection, reconcile prior findings. Retain validated unresolved blockers and explicitly resolve conflicting claims. Deduplicate tickets, not mandatory checks.
-No majority vote overrides a reproducible blocker or a sourced mandatory rule violation.
+## Enforcement boundary
 
-## Scope of enforcement
-
-This is an agent instruction contract. It does not modify company policy, branch protection, CI merge gates, or client runtime behavior.
-Configuration checks do not prove agents actually delegated or found defects. Validate routing with real task traces and defect detection with known-bad revisions.
+These are agent instructions. They do not modify company policy, setup scripts, CI parsers, branch protection, or merge automation.
+Preserve each role's existing verdict labels. An evidence-only hold in L1.5 or convergence uses that role's existing non-approval status with `Reason: NEEDS_CONFIRMATION`; this withholds approval without asserting a new defect. L2 may use its existing `DEFER` label.
+`Review Coverage` is supplementary evidence, not a replacement verdict or CI integration. Unknown/partial statuses must not be interpreted as approval by a downstream consumer; parser integration is outside this change.
+Configuration parsing and contract checks do not prove runtime delegation or defect detection. Validate both separately with real task traces and known-bad revisions.
