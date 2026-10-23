@@ -100,6 +100,14 @@ These two explicit workflows are the only exceptions to the default no-chain and
 - h: / hq: -> hq-coder
 - sol: -> sol-escalation (explicit manual override only)
 
+These are input aliases, not separate registered agents. Normalize an explicit
+agent request such as `hq`, `pl`, or `qa` (with or without `:`) to the canonical
+name above before spawning it. `rp` / `plan` always routes to `review-planner`.
+Use the canonical name in the actual invocation and `ROUTE` field. Do not pass
+an input alias as an agent type or add a second TOML/symlink for that alias.
+Each agent has one definition whose filename and `name` match; for example,
+`hq-coder.toml` contains `name = "hq-coder"`.
+
 ## Model Allocation
 
 Default strategy:

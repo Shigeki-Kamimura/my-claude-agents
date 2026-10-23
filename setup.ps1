@@ -1,5 +1,5 @@
 ﻿# Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため（Windows ネイティブ環境向け）。
-# Scope: .claude と .codex と .copilot のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
+# Scope: 設定リンクの作成、管理元が一致する旧 Codex リンクの移行、.git/info/exclude への登録。upstream ファイルは変更しない。
 # Usage: pwsh ~/.claude/setup.ps1 [-Target C:\path\to\your-project] [-p|-Profile personal|company]
 # 前提: 開発者モード ON（管理者権限不要でシンボリックリンクが使えるようになる）
 #   設定 > システム > 開発者向け > 開発者モード: オン
@@ -202,16 +202,57 @@ if ((Test-Path $codexConfigDest) -and (Get-Item $codexConfigDest).LinkType -ne "
 # --- Codex agents: ファイル単位でリンク ---
 New-Item -ItemType Directory -Path (Join-Path $CodexDir "agents") -Force | Out-Null
 
+# リンク先の実在を要求せず、壊れた旧リンクも管理元を照合します。
+function Test-ManagedCodexLink {
+    param($Item, [string]$ExpectedTarget)
+    if ($null -eq $Item -or $Item.LinkType -ne "SymbolicLink") { return $false }
+    $linkTarget = [string](@($Item.Target)[0])
+    if ([string]::IsNullOrEmpty($linkTarget)) { return $false }
+    if (-not [System.IO.Path]::IsPathRooted($linkTarget)) {
+        $linkTarget = Join-Path (Split-Path -Parent $Item.FullName) $linkTarget
+    }
+    $comparison = if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+        [System.StringComparison]::OrdinalIgnoreCase
+    } else {
+        [System.StringComparison]::Ordinal
+    }
+    return [string]::Equals(
+        [System.IO.Path]::GetFullPath($linkTarget),
+        [System.IO.Path]::GetFullPath($ExpectedTarget),
+        $comparison
+    )
+}
+
+$retiredCodexNames = @("hq.toml", "pl.toml", "qa.toml")
+$codexConflicts = 0
+foreach ($retiredName in $retiredCodexNames) {
+    $dest = Join-Path $CodexDir "agents\$retiredName"
+    $existing = Get-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue
+    if (Test-ManagedCodexLink $existing (Join-Path $SrcCodexAgents $retiredName)) {
+        Remove-Item -LiteralPath $dest -Force
+        Write-Host "  [REMOVE retired] .codex/agents/$retiredName"
+    } elseif ($null -ne $existing) {
+        Write-Warning "  [CONFLICT preserved] .codex/agents/$retiredName（実ファイル・外部リンクを保持。重複定義を手動確認してください）"
+        $codexConflicts++
+    }
+}
+
 $linkedCodexAgents = 0; $skippedCodexAgents = 0
 if (Test-Path $SrcCodexAgents) {
     foreach ($src in (Get-ChildItem -Path $SrcCodexAgents -Filter "*.toml" -File)) {
+        if ($retiredCodexNames -contains $src.Name) { continue }
         $dest = Join-Path $CodexDir "agents\$($src.Name)"
+        $existing = Get-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue
 
-        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+        if ($null -ne $existing -and $existing.LinkType -eq "SymbolicLink" -and -not (Test-ManagedCodexLink $existing $src.FullName)) {
+            Write-Warning "  [CONFLICT preserved] .codex/agents/$($src.Name)（外部リンクを保持。適用する定義を確認してください）"
+            $codexConflicts++
+            $skippedCodexAgents++
+        } elseif ($null -ne $existing -and $existing.LinkType -ne "SymbolicLink") {
             Write-Host "  [SKIP upstream] .codex/agents/$($src.Name)"
             $skippedCodexAgents++
         } else {
-            if (Test-Path $dest) { Remove-Item $dest -Force }
+            if ($null -ne $existing) { Remove-Item -LiteralPath $dest -Force }
             New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
             Write-Host "  [LINK] .codex/agents/$($src.Name) -> $($src.FullName)"
             $linkedCodexAgents++
@@ -258,7 +299,10 @@ Write-Host "=== 完了 ===" -ForegroundColor Green
 Write-Host "  claude agents   : $linkedAgents linked, $skippedAgents skipped (upstream)"
 Write-Host "  claude skills   : $linkedSkills linked, $skippedSkills skipped (upstream)"
 Write-Host "  claude knowledge: $linkedKnowledge linked, $skippedKnowledge skipped (upstream)"
-Write-Host "  codex agents    : $linkedCodexAgents linked, $skippedCodexAgents skipped (upstream)"
+Write-Host "  codex agents    : $linkedCodexAgents linked, $skippedCodexAgents skipped (upstream/external)"
 Write-Host "  copilot agents  : $linkedCopilotAgents linked, $skippedCopilotAgents skipped (upstream)"
+if ($codexConflicts -gt 0) {
+    Write-Warning "  Codex移行: $codexConflicts 件の競合が残っています。統合完了ではありません。"
+}
 Write-Host ""
 Write-Host "upstream を汚さないために .git/info/exclude を使用しています（.gitignore は変更していません）"

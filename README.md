@@ -38,6 +38,44 @@ git -C "$env:USERPROFILE\projects\my-claude-agents" pull
 
 ## プロジェクト側の運用
 
+### Codex定義の統合と既存環境の移行
+
+Codexの定義は、正式名ごとに1ファイルへ統合しています。
+短縮名は入力用のaliasとして残し、起動時に正式名へ変換します。
+
+| 入力alias | 正式名・定義ファイル |
+| --- | --- |
+| `h:` / `hq:` | `hq-coder` / `hq-coder.toml` |
+| `p:` / `pl:` | `req-pl` / `req-pl.toml` |
+| `q:` / `qa:` | `test-qa` / `test-qa.toml` |
+| `rp:` / `plan:` | `review-planner` / `review-planner.toml` |
+
+担当を明示した`hq`・`pl`・`qa`の依頼も、同じ正式名へ変換します。
+alias用のTOMLや同名定義のシンボリックリンクは追加しません。
+
+更新後は、導入済みの各プロジェクトでsetupを再実行してください。
+ファイル単位のリンクなので、追加・削除は`git pull`だけでは反映されません。
+
+```bash
+git -C ~/projects/my-claude-agents pull --ff-only origin exp/xml-agents
+bash ~/projects/my-claude-agents/setup.sh --profile company /path/to/your-project
+```
+
+Windowsネイティブでは、PowerShell版を再実行します。
+
+```powershell
+git -C "$env:USERPROFILE\projects\my-claude-agents" pull --ff-only origin exp/xml-agents
+pwsh "$env:USERPROFILE\projects\my-claude-agents\setup.ps1" -Profile company -Target C:\path\to\your-project
+```
+
+profileは現在使用中の`personal`または`company`に合わせます。
+setupは、この設定リポジトリを参照する旧`hq.toml`・`pl.toml`・`qa.toml`のリンクを除去します。
+リンク先が削除済みでも、管理元が一致すれば移行できます。
+実ファイルや他の設定を参照するリンクは保持します。
+`CONFLICT preserved`が出た場合は、残った定義を確認して手動で整理してください。
+`SKIP upstream`の場合も、適用される実ファイルの内容を確認してください。
+展開後は新規Codexセッションで正式名の読み込みと起動を確認します。
+
 ### 方針
 - upstream リポジトリを汚さない（`.gitignore` は変更しない）
 - upstream が `agents/` 実ファイル・`settings.json` を持っている場合はそちらを優先

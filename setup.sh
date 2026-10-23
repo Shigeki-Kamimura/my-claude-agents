@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため。
-# Scope: .claude と .codex と .copilot のシンボリックリンク作成と .git/info/exclude への登録のみ。upstream ファイルは変更しない。
+# Scope: 設定リンクの作成、管理元が一致する旧 Codex リンクの移行、.git/info/exclude への登録。upstream ファイルは変更しない。
 # Usage: bash ~/.claude/setup.sh [-p|-profile personal|company] [TARGET_PROJECT_DIR...]
 
 set -euo pipefail
@@ -74,6 +74,23 @@ SRC_CODEX_INSTRUCTIONS="$SELF_DIR/.codex/AGENTS.md"
 SRC_CODEX_CONFIG="$SELF_DIR/.codex/config.toml"
 SRC_COPILOT_INSTRUCTIONS="$SELF_DIR/.copilot/copilot-instructions.md"
 SRC_COPILOT_AGENTS="$SELF_DIR/.copilot/agents"
+
+# 末尾のファイルが消えたリンクも、親ディレクトリとファイル名で照合します。
+is_managed_codex_link() {
+  local dest="$1"
+  local expected="$2"
+  local link_target link_parent expected_parent
+  [ -L "$dest" ] || return 1
+  link_target="$(readlink "$dest")" || return 1
+  case "$link_target" in
+    /*) ;;
+    *) link_target="$(dirname "$dest")/$link_target" ;;
+  esac
+  [ "$(basename "$link_target")" = "$(basename "$expected")" ] || return 1
+  link_parent="$(cd -P "$(dirname "$link_target")" 2>/dev/null && pwd -P)" || return 1
+  expected_parent="$(cd -P "$(dirname "$expected")" 2>/dev/null && pwd -P)" || return 1
+  [ "$link_parent" = "$expected_parent" ]
+}
 
 setup_target() {
   local target_input="$1"
@@ -233,15 +250,34 @@ setup_target() {
   # --- Codex agents: ファイル単位でリンク ---
   mkdir -p "$codex_dir/agents"
 
+  # 旧名は入力 alias として残し、同じ name の TOML は展開しません。
+  local retired_name
+  local codex_conflicts=0
+  for retired_name in hq.toml pl.toml qa.toml; do
+    dest="$codex_dir/agents/$retired_name"
+    if is_managed_codex_link "$dest" "$SRC_CODEX_AGENTS/$retired_name"; then
+      rm "$dest"
+      echo "  [REMOVE retired] .codex/agents/$retired_name"
+    elif [ -e "$dest" ] || [ -L "$dest" ]; then
+      echo "  [CONFLICT preserved] .codex/agents/$retired_name（実ファイル・外部リンクを保持。重複定義を手動確認してください）" >&2
+      codex_conflicts=$((codex_conflicts + 1))
+    fi
+  done
+
   local linked_codex_agents=0
   local skipped_codex_agents=0
   if [ -d "$SRC_CODEX_AGENTS" ]; then
     for src in "$SRC_CODEX_AGENTS"/*.toml; do
       [ -e "$src" ] || continue
       name="$(basename "$src")"
+      case "$name" in hq.toml|pl.toml|qa.toml) continue ;; esac
       dest="$codex_dir/agents/$name"
 
-      if [ -f "$dest" ] && [ ! -L "$dest" ]; then
+      if [ -L "$dest" ] && ! is_managed_codex_link "$dest" "$src"; then
+        echo "  [CONFLICT preserved] .codex/agents/$name（外部リンクを保持。適用する定義を確認してください）" >&2
+        codex_conflicts=$((codex_conflicts + 1))
+        skipped_codex_agents=$((skipped_codex_agents + 1))
+      elif [ -e "$dest" ] && [ ! -L "$dest" ]; then
         echo "  [SKIP upstream] .codex/agents/$name"
         skipped_codex_agents=$((skipped_codex_agents + 1))
       else
@@ -291,8 +327,11 @@ setup_target() {
   echo "  claude agents   : ${linked_agents} linked, ${skipped_agents} skipped (upstream)"
   echo "  claude skills   : ${linked_skills} linked, ${skipped_skills} skipped (upstream)"
   echo "  claude knowledge: ${linked_knowledge} linked, ${skipped_knowledge} skipped (upstream)"
-  echo "  codex agents    : ${linked_codex_agents} linked, ${skipped_codex_agents} skipped (upstream)"
+  echo "  codex agents    : ${linked_codex_agents} linked, ${skipped_codex_agents} skipped (upstream/external)"
   echo "  copilot agents  : ${linked_copilot_agents} linked, ${skipped_copilot_agents} skipped (upstream)"
+  if [ "$codex_conflicts" -gt 0 ]; then
+    echo "  Codex移行: ${codex_conflicts} 件の競合が残っています。統合完了ではありません。" >&2
+  fi
   echo ""
   echo "upstream を汚さないために .git/info/exclude を使用しています（.gitignore は変更していません）"
 }
