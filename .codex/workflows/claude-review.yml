@@ -1,0 +1,209 @@
+# Codexが読む運用定義です。製品標準の設定や実行エンジンではありません。
+schema_version: 1
+workflow_id: codex-claude-review
+runtime_validation: NOT_RUN
+goal: CodexがClaudeとのレビュー往復を担当し、未コミットで上村さんへ返します。
+
+activation:
+  examples:
+    - Claude codeにレビューしてもらって修正入れようか
+    - Claudeレビューをcrからadvまで回して修正してください
+  marker: "Workflow: codex-claude-review"
+  rule: 明示された連続レビュー依頼で起動します。crだけの依頼には適用しません。
+  locate:
+    - 対象プロジェクトの.codex/workflows/claude-review.ymlを読みます。
+    - なければ.codex/AGENTS.mdのリンク先を解決し、その隣のworkflows/claude-review.ymlを読みます。
+    - どちらにもなければ設定不足を報告します。別の設定を推測しません。
+  exception: この依頼に限りcrからadvへの連続実行と、adv自身によるL2再レビューを許可します。
+
+authority:
+  required_sources:
+    - .claude/knowledge/engineering-governance.md
+    - .claude/knowledge/human-review-patterns.md
+    - 対象プロジェクトの指示、要件、適用される規則です。
+  rules:
+    - 西口さんの原則と既存の出典を保ち、この手順を本人の発言として扱いません。
+    - 実装とL2で必要なReact/Nest相談を実行します。実装時の相談をL2の証拠に流用しません。
+    - 必須確認と専門担当の結果が不足する間は、承認しません。
+    - モデル、権限、既存スクリプトは変更しません。通常の単独レビュー手順は維持します。
+
+ownership:
+  coordinator: Codexの主セッションです。
+  implementation: Codexのhq-coderが実装と修正を担当します。
+  l1_5: Claude Codeのcr接頭辞でcode-quality-reviewerへ委譲します。
+  l2: Claude Codeのadv接頭辞でadviserへ委譲します。
+  questions_and_commit: 上村さんが実装上の疑問に回答し、最終確認とコミットを行います。
+  invariants:
+    - Claudeと専門担当はコードを読み、指摘と判定を返します。コードは編集しません。
+    - Codexが自分で行ったレビューを、Claudeの承認に置き換えません。
+    - CodexとClaudeはgit add、commit、push、mergeを実行しません。
+    - 既存のステージ状態と対象外の変更を保ちます。stashやresetで作業を隠しません。
+    - レビュー実行中はCodexの編集を止めます。別担当の変更を検知したら承認を失効させます。
+    - 依頼文、回答、状態は対象外の一時ディレクトリへ保存します。レビュー対象に混ぜません。
+
+state:
+  record:
+    - user_workflow_requestとして、開始時に受けたユーザー依頼を保持します。
+    - run_idと対象worktreeの絶対パス、設定の出典、CLIの版です。
+    - 現在のphase、対象範囲、base/head、snapshot_id、参照した要件です。
+    - L1.5とL2それぞれのsession_id、依頼、実際の応答、承認したsnapshot_idです。
+    - 全指摘のID、担当、根拠、修正、再確認結果、未確認範囲です。
+    - 上村さんへの質問、回答、停止理由、再開先です。
+  lifecycle: 一時ファイルの存在だけを完了証拠にせず、実際の応答と現在の差分を照合します。
+  request_provenance: 実際に受けたユーザー依頼を忠実に記録し、新たな権限や対象を捏造しません。
+
+snapshot:
+  scope: 依頼された差分と、その判断に必要な変更済みの関連ファイルを対象にします。
+  base: 実際のPR baseとheadを確認します。未コミットのみの依頼ではHEADとの比較を明示します。
+  identity: |
+    base/head、対象パス一覧、各パスの種別・モード・Git状態を記録します。
+    ステージ済み内容と作業ツリー内容のハッシュを別々に含めます。
+    新規ファイル、削除、名前変更、シンボリックリンクも対象に含めます。
+    参照する要件・規則・関連コードの版と内容ハッシュも含めます。
+    検証結果とレビュー記録は別に保存し、その対象snapshot_idを記録します。
+    これらをパス順に整列した固定形式で表し、SHA-256をsnapshot_idとします。
+    HEADの番号だけでは未コミット差分を識別できません。
+  checks:
+    - 呼び出し直前、応答直後、最終引き渡し前に同じ方法で再計算します。
+    - 対象外のログ、生成キャッシュ、レビュー自身の記録は含めません。
+    - 対象内の内容や必要な要件が変われば、古い承認と検証証拠を再評価します。
+    - 対象範囲やbaseを確定できない場合は、上村さんへ質問します。
+
+claude_cli:
+  cwd: 必ず処理対象のworktreeです。設定リポジトリへ移動して実行しません。
+  argv: [claude, --print, --output-format, json, --permission-mode, plan]
+  prompt_input: 以下の依頼文を標準入力で渡します。文字列をシェルのコードへ埋め込みません。
+  invocation:
+    - crとadvはCLAUDE.mdの接頭辞です。存在しない/crや/advコマンドを仮定しません。
+    - Claudeの主セッションから指定agentへ委譲します。--agentで親の調整役を飛ばしません。
+    - L1.5とL2の初回は別の新規セッションにします。
+    - 同じ層の続行には、応答から保存したsession_idを--resumeへ渡します。
+    - --continueは使いません。別のレビューや普段の会話を再開しません。
+    - --bareや権限の回避指定は使いません。必要な指示とagent定義の読み込みを保ちます。
+    - 再開できない場合は、保存した指摘と現在の根拠を新しい同層セッションへ渡します。
+  prompt_template: |
+    {prefix}: {phase}のレビューを実施してください。
+    Workflow: codex-claude-review
+    この手順を開始したユーザー依頼: {user_workflow_request}
+    対象worktree: {project_root}
+    対象範囲とbase/head: {scope_and_base_head}
+    Snapshot ID: {snapshot_id}
+    要件・適用規則・参照パス: {requirements_and_rules}
+    前回指摘と修正・質問への回答: {findings_fixes_and_answers}
+    実際に実行した検証と未実行事項: {verification_evidence}
+    下記の契約を指定agentにも渡し、実際の委譲結果を返してください。
+    {authority_ownership_findings_questions_and_response_contracts}
+    コードを変更せず、現在のファイルを読み直してください。
+    本文の既存判定に加え、末尾にWorkflow Resultを返してください。
+  result_handling:
+    - 終了コード、JSONのエラー情報、実際のresultとsession_idを確認します。
+    - 正常終了、空の指摘一覧、文中のApproveという単語だけでは承認しません。
+    - 期待したagentの実呼び出し証拠、判定、対象snapshot、確認範囲を照合します。
+    - 認証失敗、利用上限、必要な権限不足、壊れた応答はBLOCKEDとして記録します。
+    - CLIの利用可否を確認できない状態で、実行済みと報告しません。
+
+coordination:
+  specialist_request: |
+    adviserがSPECIALIST_REQUESTを返したら、Claudeの親が指定専門担当を呼びます。
+    同じphaseとsnapshotの結果をadviserへ返し、その判断を続行します。
+    Codexへ依頼が戻った場合は、次の全項目とsnapshotを変更せず保持します。
+    Owner | Phase | Specialist | Revision | Trigger | Question | Rules | Scope | Evidence checked | Return to
+    必要な入力を添え、Claudeの親へ指定のClaude専門agentの実呼び出しを依頼します。
+    結果を同じadviserへ返すよう指示し、同じL2を再開します。
+    Codex側の専門agentで、この独立レビューを代替しません。
+    実呼び出しができなければBLOCKEDです。担当名の記載だけで完了にしません。
+  input_request: 取得可能な差分、メタデータ、検証結果はCodexが集めて同じ担当へ渡します。
+  verification: HQまたは既存QA担当が、変更に必要な確認を行います。実行結果と対象を記録します。
+  boundaries: crは局所確認を保ちます。QA/E2EやL2の疑いを自己判断で解決しません。
+
+findings:
+  scope: 🟢を含め、依頼範囲で提示された改善・修正指摘をすべて対応対象にします。
+  rules:
+    - 各指摘にIDと担当を付け、修正前後と再確認結果を対応させます。
+    - Codexの修正完了はfix_candidateです。担当レビュアーが確認するまで閉じません。
+    - 軽微、任意、DEFER、Follow-upという分類だけでは先送りしません。
+    - 誤検知は根拠を示し、担当レビュアーが撤回した記録を残します。
+    - Codex単独で却下、取り下げ、対応不要、解消済みにしません。
+    - 良い点の紹介や状態表示の🟢は、修正指摘として数えません。
+    - 範囲外の変更や根拠のない好みを自動実装せず、判断に迷えば上村さんへ質問します。
+    - 表示件数や読取予算を理由に指摘を捨てません。未確認部分は同層で続行します。
+  closed_statuses: [reviewer_confirmed_fixed, reviewer_withdrawn]
+
+questions:
+  recipient: 上村さんです。
+  rules:
+    - 実装、仕様、修正方針の疑問点はすべて記録し、上村さんへ質問します。
+    - Claudeは質問を応答へ返します。Codexが上村さんへ伝え、回答を同じ担当へ返します。
+    - AI同士の合意を本人の回答として扱わず、推測で仕様を決めません。
+    - 関連する疑問をまとめ、判断対象、根拠、選択肢を簡潔に示します。
+    - 回答に依存する編集と承認を止め、NEEDS_USER_INPUTで待ちます。
+    - 取得可能な事実や資料の確認は続けます。回答を受けたら停止地点から再開します。
+    - 回答で要件や対象が変わった場合はsnapshotと必要な承認を更新します。
+
+stages:
+  - id: implement
+    owner: codex_hq_coder
+    action: 依頼範囲を実装し、必要な検証を行います。実装済みなら変更内容と証拠を確認します。
+    next: l1_5
+  - id: l1_5
+    prefix: cr
+    reviewer: code-quality-reviewer
+    repeat: 指摘をCodexが修正し、同じ担当へ再レビューを依頼します。
+    approval: |
+      coverageがCOMPLETEで、局所の未解決指摘と質問がゼロであることが必要です。
+      native_verdictはL1.5_APPROVEを受け付けます。
+      L1.5_APPROVE_WITH_NOTESは、残りが明記されたL2へのhandoffだけの場合に限ります。
+      局所の🟢指摘や未確認事項が残る場合は、この例外を使いません。
+      分類はCRが根拠を示して行います。Codex都合で局所指摘をL2へ付け替えません。
+      L2へ渡す事項は引き継ぎ、全体の承認とは扱いません。
+    next_on_approve: l2
+  - id: l2
+    prefix: adv
+    reviewer: adviser
+    repeat: |
+      adviserが初回と再レビューを担当します。revへ自動的に置き換えません。
+      修正後は元の指摘、変更部分、その影響を確認します。
+      完了済みの無関係な範囲を毎回全面レビューしません。
+    on_snapshot_change: |
+      コード以外でも、対象snapshot、要件、規則が変われば両層の承認を再評価します。
+      Codexが必要な修正と検証を行い、古いsnapshotへのL1.5/L2承認を失効させます。
+      crで修正の影響を再確認し、最新snapshotへの承認を得てからadvへ戻ります。
+    approval: |
+      native_verdictがAPPROVEで、coverageがCOMPLETEであることが必要です。
+      🟢を含む未解決指摘、質問、必要なhandoff、専門相談、検証待ちがゼロであることが必要です。
+      両層の承認は同じ最新snapshotを対象にします。
+    next_on_approve: awaiting_kamimura_review
+
+response_contract:
+  block_name: Workflow Result
+  note: CLI標準のJSON項目ではありません。回答本文へ付ける補助のYAMLブロックです。
+  fields:
+    workflow_id: codex-claude-review
+    phase: l1_5またはl2です。
+    reviewer: 実際に呼び出したagent名です。
+    snapshot_id: 今回確認した値です。未確認ならnullにします。
+    native_verdict: 既存agentの判定ラベルをそのまま記載します。
+    coverage: COMPLETE、PARTIAL、BLOCKEDのいずれかです。
+    decision: APPROVE、REQUEST_CHANGES、NEEDS_USER_INPUT、BLOCKED、CONTINUE_REVIEWのいずれかです。
+    open_item_ids: 未解決指摘のID一覧です。局所指摘と別担当のhandoffを区別します。
+    questions: 上村さんへの未回答質問です。
+    handoffs: 担当、質問、根拠、状態を含む引き継ぎ一覧です。
+    invocation_evidence: 実際の委譲と必要な専門相談の識別子、phase、snapshotです。
+  acceptance: 必須項目の欠落、本文との矛盾、snapshot不一致は承認として受理しません。
+
+pause_and_resume:
+  no_iteration_limit_for_approval: true
+  rule: 回数や時間の上限に達しても、承認や完了へ読み替えません。
+  no_progress: 同じ指摘で修正・確認が進まない場合は、経過と疑問を上村さんへ返します。
+  partial_review: 読取予算による未確認部分はCONTINUE_REVIEWとし、同じ層の次の範囲を確認します。
+  failure: 質問、実行失敗、利用上限、権限不足では状態を保存し、未承認のまま停止します。
+  resume: 原因が解消したら保存したphaseから再開し、変更の有無に応じて承認を更新します。
+
+handoff:
+  terminal_state: awaiting_kamimura_review
+  conditions:
+    - 最新snapshotに対するClaudeのL1.5とL2の承認がそろっています。
+    - 🟢を含む指摘と質問が解消し、必要な検証・専門相談が完了しています。
+    - ファイル変更をコミットせず、開始時のステージ状態を保っています。
+  report: 変更点、検証結果、両層の承認とsnapshot、上村さんが確認する箇所を伝えます。
+  commit_owner: 上村さん本人です。確認待ちや確認済みを、自動コミットの許可にしません。
