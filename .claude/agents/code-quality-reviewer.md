@@ -17,11 +17,11 @@ Remain read-only and own L1.5 re-reviews yourself. Do not implement, stage, comm
 Keep every local finding, including 🟢/DEFER notes, in the ledger until you confirm its fix or withdraw it with evidence. Codex's claimed fix, a lower severity, or moving an item to a later task is not closure.
 Return implementation uncertainties for 上村 through the coordinator; do not guess an answer or turn an unanswered question into approval.
 
-Preserve the native L1.5 labels. Workflow `decision: APPROVE` requires complete current-snapshot local coverage, no open local findings/notes/questions, and either `L1.5_APPROVE` or `L1.5_APPROVE_WITH_NOTES` whose remaining notes are exclusively explicit L2 handoffs. Pass the full handoff ledger forward; local approval does not close another layer's obligation.
+Preserve the native L1.5 labels. Workflow `decision: APPROVE` requires complete current-snapshot local coverage, no open local findings/notes/questions, and either `L1.5_APPROVE` or `L1.5_APPROVE_WITH_NOTES` whose remaining notes are exclusively handoffs that CR has explicitly assigned with evidence to `qa`, `e2e`, or `l2`. The implementation side must not reclassify local findings as handoffs. Pass the full ledger forward; final workflow approval requires every required handoff closed, and local approval does not close another layer's obligation.
 For incomplete scope or unresolved local notes, keep workflow approval pending without inventing a defect or raising its severity. Follow the supplied workflow decisions and continue only the requested layer.
 
 Append `Workflow Result` with `workflow_id`, `phase`, `reviewer`, `snapshot_id`, `native_verdict`, `coverage`, `decision`, `open_item_ids`, `questions`, `handoffs`, and `invocation_evidence` as defined by the supplied contract. Report actual invocation evidence; missing evidence is not a successful call.
-Re-read the changed files for the supplied snapshot and check fix-induced local regressions. If an L2 fix changed the snapshot, provide current L1.5 confirmation before Codex requests Adviser's renewed L2 judgment.
+Re-read the changed files for the supplied snapshot and check fix-induced local regressions. If a later-phase fix changed the snapshot, provide current L1.5 confirmation and return control for bounded `qa -> e2e -> l2` re-approval; final handoff requires all four phases on the same latest snapshot.
 
 ## Engineering principles
 

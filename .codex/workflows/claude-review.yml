@@ -14,7 +14,7 @@ activation:
     - 対象プロジェクトの.codex/workflows/claude-review.ymlを読みます。
     - なければ.codex/AGENTS.mdのリンク先を解決し、その隣のworkflows/claude-review.ymlを読みます。
     - どちらにもなければ設定不足を報告します。別の設定を推測しません。
-  exception: この依頼に限りcrからadvへの連続実行と、adv自身によるL2再レビューを許可します。
+  exception: この依頼に限りcr、qa、e、advの順の連続実行と、各担当自身による再レビューを許可します。
 
 authority:
   required_sources:
@@ -31,6 +31,8 @@ ownership:
   coordinator: Codexの主セッションです。
   implementation: Codexのhq-coderが実装と修正を担当します。
   l1_5: Claude Codeのcr接頭辞でcode-quality-reviewerへ委譲します。
+  qa: Claude Codeのqa接頭辞でtest-qaへ委譲します。
+  e2e: Claude Codeのe接頭辞でe2e-qaへ委譲します。
   l2: Claude Codeのadv接頭辞でadviserへ委譲します。
   questions_and_commit: 上村さんが実装上の疑問に回答し、最終確認とコミットを行います。
   invariants:
@@ -46,7 +48,9 @@ state:
     - user_workflow_requestとして、開始時に受けたユーザー依頼を保持します。
     - run_idと対象worktreeの絶対パス、設定の出典、CLIの版です。
     - 現在のphase、対象範囲、base/head、snapshot_id、参照した要件です。
-    - L1.5とL2それぞれのsession_id、依頼、実際の応答、承認したsnapshot_idです。
+    - 実装担当と各reviewerのプラットフォーム・モデル設定・実呼び出し証拠です。
+    - l1_5、qa、e2e、l2ごとのsession_id、依頼、実際の応答、承認したsnapshot_idです。
+    - phaseごとの固定した全対象と、累積coverage台帳です。確認済み・未確認の義務とパス、根拠、次sliceを保持します。
     - 全指摘のID、担当、根拠、修正、再確認結果、未確認範囲です。
     - 上村さんへの質問、回答、停止理由、再開先です。
   lifecycle: 一時ファイルの存在だけを完了証拠にせず、実際の応答と現在の差分を照合します。
@@ -69,18 +73,42 @@ snapshot:
     - 対象内の内容や必要な要件が変われば、古い承認と検証証拠を再評価します。
     - 対象範囲やbaseを確定できない場合は、上村さんへ質問します。
 
+review_gates:
+  order: [l1_5, qa, e2e, l2]
+  independence: |
+    実装側はCodex、外部レビュー側はClaude Codeです。
+    qaとe2eは実装者と別モデルの実agentへ委譲します。実装側の同名QAで代用しません。
+    実装担当と外部reviewerのプラットフォーム、モデル設定と実呼び出しを記録します。
+    既存モデルとeffortは変更しません。同じ実装モデルへの置換や架空のtraceは不可です。
+    別モデルでの実呼び出しを確認できなければ、承認を保留します。
+  coverage: |
+    phaseごとの全対象を固定し、各sliceの確認済み・未確認の義務を累積台帳に残します。
+    COMPLETEは全対象の完了です。PARTIALなら同phaseを続行し、未確認範囲を捨てません。
+    範囲変更や過去の証拠の再利用には、現行snapshotでの有効性を確認します。
+  on_snapshot_change: |
+    どのphaseでもコード、テスト、要件、規則でsnapshotが変われば、古い4段階の承認を失効させます。
+    Codexが修正と必要な検証を行い、順序の最も早い未承認phaseから再確認します。
+    各担当は修正の影響を確認し、変わらない証拠の有効性を確かめて新しい承認を出します。
+    調整役だけで古い承認を新しいsnapshotへ付け替えません。
+    完了済みの無関係な範囲を毎回全面レビューしません。未確認範囲は台帳から継続します。
+    E2EやL2で修正した場合も、cr、qa、e2e、advの順に最終snapshotへの承認をそろえます。
+  on_new_prior_phase_finding: |
+    新しい根拠で承認済みの前段担当へ指摘を返す場合、その承認と依存する後続承認をpendingへ戻します。
+    snapshotが同じでも、その担当から順に必要な確認と再承認を行います。
+
 claude_cli:
   cwd: 必ず処理対象のworktreeです。設定リポジトリへ移動して実行しません。
   argv: [claude, --print, --output-format, json, --permission-mode, plan]
   prompt_input: 以下の依頼文を標準入力で渡します。文字列をシェルのコードへ埋め込みません。
   invocation:
-    - crとadvはCLAUDE.mdの接頭辞です。存在しない/crや/advコマンドを仮定しません。
+    - cr、qa、e、advはCLAUDE.mdの接頭辞です。存在しないslashコマンドを仮定しません。
     - Claudeの主セッションから指定agentへ委譲します。--agentで親の調整役を飛ばしません。
-    - L1.5とL2の初回は別の新規セッションにします。
-    - 同じ層の続行には、応答から保存したsession_idを--resumeへ渡します。
+    - l1_5、qa、e2e、l2の初回はそれぞれ別の新規セッションにします。
+    - 同じphaseの続行には、その応答から保存したsession_idを--resumeへ渡します。
+    - 親とsubagentのplanモードを保ちます。権限を切り替えず、agent-team teammateは使いません。
     - --continueは使いません。別のレビューや普段の会話を再開しません。
     - --bareや権限の回避指定は使いません。必要な指示とagent定義の読み込みを保ちます。
-    - 再開できない場合は、保存した指摘と現在の根拠を新しい同層セッションへ渡します。
+    - 再開できない場合は、全指摘、累積coverage台帳、現在の根拠を新しい同層セッションへ渡します。
   prompt_template: |
     {prefix}: {phase}のレビューを実施してください。
     Workflow: codex-claude-review
@@ -88,11 +116,18 @@ claude_cli:
     対象worktree: {project_root}
     対象範囲とbase/head: {scope_and_base_head}
     Snapshot ID: {snapshot_id}
+    Review role: {review_role}
+    今回の受信runtime: Claude Code / 委譲先agent: {reviewer}
+    実装担当とreviewerのプラットフォーム・モデル設定・呼び出し証拠: {model_and_invocation_evidence}
+    qa/e2e phaseでは、このruntimeの上記agentを外部のテスト過不足レビュー担当として明示的に割り当てます。
+    実装側QAの作成・実行作業は行わず、必要な作業を実装側へ返してください。
     要件・適用規則・参照パス: {requirements_and_rules}
     前回指摘と修正・質問への回答: {findings_fixes_and_answers}
+    当該層の全対象、累積確認済み根拠、未確認義務とパス、次slice: {phase_scope_and_coverage_ledger}
     実際に実行した検証と未実行事項: {verification_evidence}
     下記の契約を指定agentにも渡し、実際の委譲結果を返してください。
     {authority_ownership_findings_questions_and_response_contracts}
+    {review_gates_qa_contract_and_current_phase_contract}
     コードを変更せず、現在のファイルを読み直してください。
     本文の既存判定に加え、末尾にWorkflow Resultを返してください。
   result_handling:
@@ -104,17 +139,46 @@ claude_cli:
 
 coordination:
   specialist_request: |
-    adviserがSPECIALIST_REQUESTを返したら、Claudeの親が指定専門担当を呼びます。
-    同じphaseとsnapshotの結果をadviserへ返し、その判断を続行します。
+    現在のreview ownerがSPECIALIST_REQUESTを返したら、Claudeの親が指定専門担当を呼びます。
+    同じphaseとsnapshotの結果を元のownerへ返し、その判断を続行します。
     Codexへ依頼が戻った場合は、次の全項目とsnapshotを変更せず保持します。
     Owner | Phase | Specialist | Revision | Trigger | Question | Rules | Scope | Evidence checked | Return to
     必要な入力を添え、Claudeの親へ指定のClaude専門agentの実呼び出しを依頼します。
-    結果を同じadviserへ返すよう指示し、同じL2を再開します。
-    Codex側の専門agentで、この独立レビューを代替しません。
+    実装側の相談で、この独立レビューを代替しません。
+    QA/E2Eから隠れたL2を開始せず、未解決の境界判断は担当を付けて引き継ぎます。
     実呼び出しができなければBLOCKEDです。担当名の記載だけで完了にしません。
-  input_request: 取得可能な差分、メタデータ、検証結果はCodexが集めて同じ担当へ渡します。
-  verification: HQまたは既存QA担当が、変更に必要な確認を行います。実行結果と対象を記録します。
-  boundaries: crは局所確認を保ちます。QA/E2EやL2の疑いを自己判断で解決しません。
+  input_request: 取得可能な差分、メタデータ、検証結果はCodexが集めて元の担当へ渡します。
+  verification: |
+    CodexのHQまたは実装側QAが、テストの追加・修正・削除と必要な実行を担当します。
+    外部のClaude Code QA/E2Eは読み取り相談と提示結果の評価に限定し、実行を実装側へ依頼します。
+    返された実行結果を対象snapshotと照合します。ファイルの存在だけで成功にしません。
+  boundaries: cr、qa、e2e、l2は各自の担当範囲を保ち、同じ義務を重複評価しません。
+
+qa_contract:
+  assignment: qaとe2eはexternal_test_adequacy_reviewerとして割り当て、両方の実agentを必ず呼びます。
+  scope:
+    qa: unit、service、controller等の局所契約と、担当する結合テストの過不足を確認します。
+    e2e: ブラウザーの利用導線、API、HTTP・module境界をまたぐ検証の過不足を確認します。
+  checks:
+    - テストの変更がゼロでも、変更した責務と要件から必要な検証を確かめます。
+    - controllerの直接呼び出しとHTTP経由の検証など、実際に通る境界で担当を分けます。
+    - 期待する動作、入力・失敗条件、assertion、fixture、mock、実行結果を必要な範囲で照合します。
+    - 不足は未検証の契約と影響を示します。過剰は不要な理由と削除後も残る検証を示します。
+    - 過剰の例は、意味のない重複、実装細部への過剰依存、変更範囲外、効果のないケースです。
+    - 件数、行数、coverage率だけを減らすために削除しません。別の責務で必要な検証を保ちます。
+    - 不足・過剰の全指摘を台帳に残します。上位3件などの表示目安で残りを捨てません。
+    - 対象なしは実agentが変更内容から根拠付きで判断します。ファイルなしだけで承認しません。
+    - 実装側の自己点検、既存の同名QA出力、未実行のテストを独立した実行証拠に置き換えません。
+  ownership:
+    - 外部QA/E2Eは読み取り専用です。テストの作成・削除・実行が必要なら実装側へ返します。
+    - 各担当が自分の指摘の解消を確認します。別phaseの結論や権限を代行しません。
+    - 自分の検証が完了していれば、後続担当への明示handoffを残して層として承認できます。
+    - 自分の判断に必要な未確認事項を、後続handoffへ移して承認しません。
+  verdicts:
+    APPROVE: 担当する全範囲を確認し、不足・過剰の指摘、質問、必要な証拠待ちがゼロです。
+    REQUEST_CHANGES: 根拠のある不足・過剰の指摘が残っています。🟢も対象です。
+    DEFER: 必要な証拠、委譲、別モデルの確認、環境の確認が不足しています。
+  clean_output: 指摘がなければ短いAPPROVEと必須のWorkflow Resultで足ります。問題を作りません。
 
 findings:
   scope: 🟢を含め、依頼範囲で提示された改善・修正指摘をすべて対応対象にします。
@@ -148,30 +212,46 @@ stages:
   - id: l1_5
     prefix: cr
     reviewer: code-quality-reviewer
-    repeat: 指摘をCodexが修正し、同じ担当へ再レビューを依頼します。
+    review_role: external_code_reviewer
+    repeat: 指摘をCodexが修正し、review_gatesの順序で必要な再承認を得ます。
     approval: |
-      coverageがCOMPLETEで、局所の未解決指摘と質問がゼロであることが必要です。
+      当該phaseの全対象と必須確認を完了し、coverageがCOMPLETEであることが必要です。
+      局所の未解決指摘と質問がゼロであることが必要です。
       native_verdictはL1.5_APPROVEを受け付けます。
-      L1.5_APPROVE_WITH_NOTESは、残りが明記されたL2へのhandoffだけの場合に限ります。
-      局所の🟢指摘や未確認事項が残る場合は、この例外を使いません。
-      分類はCRが根拠を示して行います。Codex都合で局所指摘をL2へ付け替えません。
-      L2へ渡す事項は引き継ぎ、全体の承認とは扱いません。
+      L1.5_APPROVE_WITH_NOTESは、残りが明記されたqa、e2e、l2へのhandoffだけの場合に限ります。
+      分類はCRが根拠を示して行います。実装側都合で局所の🟢指摘や未確認事項を付け替えません。
+      後続への事項は担当を付けて引き継ぎ、全体の承認とは扱いません。
+    next_on_approve: qa
+  - id: qa
+    prefix: qa
+    reviewer: test-qa
+    review_role: external_test_adequacy_reviewer
+    repeat: 不足・過剰の全指摘をCodexが修正し、test-qaが解消を確認します。
+    approval: |
+      担当する全対象を確認し、native_verdictがAPPROVE、coverageがCOMPLETEであることが必要です。
+      担当する不足・過剰の指摘、質問、必要な証拠待ちはゼロです。対象なしにも確認根拠が必要です。
+      担当外のe2eまたはl2への明示handoffは残せます。自分の未確認義務を付け替えません。
+    next_on_approve: e2e
+  - id: e2e
+    prefix: e
+    reviewer: e2e-qa
+    review_role: external_test_adequacy_reviewer
+    repeat: 不足・過剰の全指摘をCodexが修正し、e2e-qaが解消を確認します。
+    approval: |
+      担当する全対象を確認し、native_verdictがAPPROVE、coverageがCOMPLETEであることが必要です。
+      担当する不足・過剰の指摘、質問、必要な証拠待ちはゼロです。対象なしにも確認根拠が必要です。
+      担当外のl2への明示handoffは残せます。自分の未確認義務を付け替えません。
     next_on_approve: l2
   - id: l2
     prefix: adv
     reviewer: adviser
-    repeat: |
-      adviserが初回と再レビューを担当します。revへ自動的に置き換えません。
-      修正後は元の指摘、変更部分、その影響を確認します。
-      完了済みの無関係な範囲を毎回全面レビューしません。
-    on_snapshot_change: |
-      コード以外でも、対象snapshot、要件、規則が変われば両層の承認を再評価します。
-      Codexが必要な修正と検証を行い、古いsnapshotへのL1.5/L2承認を失効させます。
-      crで修正の影響を再確認し、最新snapshotへの承認を得てからadvへ戻ります。
+    review_role: external_code_reviewer
+    repeat: adviserが初回と再レビューを担当します。revへ置き換えず、修正の影響を確認します。
+    on_snapshot_change: review_gatesの規則で、最も早い未承認phaseから4段階の承認を取り直します。
     approval: |
-      native_verdictがAPPROVEで、coverageがCOMPLETEであることが必要です。
-      🟢を含む未解決指摘、質問、必要なhandoff、専門相談、検証待ちがゼロであることが必要です。
-      両層の承認は同じ最新snapshotを対象にします。
+      当該phaseの全対象を確認し、native_verdictがAPPROVE、coverageがCOMPLETEであることが必要です。
+      全phaseの🟢を含む指摘、質問、handoff、専門相談、必要な検証待ちがゼロであることが必要です。
+      4段階の承認は同じ最新snapshotを対象にします。
     next_on_approve: awaiting_kamimura_review
 
 response_contract:
@@ -179,31 +259,31 @@ response_contract:
   note: CLI標準のJSON項目ではありません。回答本文へ付ける補助のYAMLブロックです。
   fields:
     workflow_id: codex-claude-review
-    phase: l1_5またはl2です。
+    phase: l1_5、qa、e2e、l2のいずれかです。
     reviewer: 実際に呼び出したagent名です。
     snapshot_id: 今回確認した値です。未確認ならnullにします。
-    native_verdict: 既存agentの判定ラベルをそのまま記載します。
-    coverage: COMPLETE、PARTIAL、BLOCKEDのいずれかです。
+    native_verdict: 既存判定を記載します。qa/e2eはAPPROVE、REQUEST_CHANGES、DEFERです。
+    coverage: 当該phaseの全対象に対するCOMPLETE、PARTIAL、BLOCKEDです。今回sliceだけで判定しません。
     decision: APPROVE、REQUEST_CHANGES、NEEDS_USER_INPUT、BLOCKED、CONTINUE_REVIEWのいずれかです。
     open_item_ids: 未解決指摘のID一覧です。局所指摘と別担当のhandoffを区別します。
     questions: 上村さんへの未回答質問です。
     handoffs: 担当、質問、根拠、状態を含む引き継ぎ一覧です。
-    invocation_evidence: 実際の委譲と必要な専門相談の識別子、phase、snapshotです。
-  acceptance: 必須項目の欠落、本文との矛盾、snapshot不一致は承認として受理しません。
+    invocation_evidence: 外部review役割、プラットフォーム、実装者とreviewerのモデル設定、実委譲と必要な専門相談の識別子、phase、snapshotです。
+  acceptance: decisionがAPPROVEで、phaseの承認条件を満たす場合だけ受理します。項目欠落、本文との矛盾、snapshot不一致は未承認です。
 
 pause_and_resume:
   no_iteration_limit_for_approval: true
   rule: 回数や時間の上限に達しても、承認や完了へ読み替えません。
   no_progress: 同じ指摘で修正・確認が進まない場合は、経過と疑問を上村さんへ返します。
-  partial_review: 読取予算による未確認部分はCONTINUE_REVIEWとし、同じ層の次の範囲を確認します。
+  partial_review: 未確認部分はCONTINUE_REVIEWとし、累積coverage台帳を渡して同じphaseの次sliceを確認します。
   failure: 質問、実行失敗、利用上限、権限不足では状態を保存し、未承認のまま停止します。
   resume: 原因が解消したら保存したphaseから再開し、変更の有無に応じて承認を更新します。
 
 handoff:
   terminal_state: awaiting_kamimura_review
   conditions:
-    - 最新snapshotに対するClaudeのL1.5とL2の承認がそろっています。
-    - 🟢を含む指摘と質問が解消し、必要な検証・専門相談が完了しています。
+    - 最新snapshotに対するClaude Codeのl1_5、qa、e2e、l2の4承認がそろっています。
+    - 🟢を含む指摘、質問、handoffがすべて解消し、必要な検証・専門相談が完了しています。
     - ファイル変更をコミットせず、開始時のステージ状態を保っています。
-  report: 変更点、検証結果、両層の承認とsnapshot、上村さんが確認する箇所を伝えます。
+  report: 変更点、テスト過不足への対応、検証結果、4承認とsnapshot、上村さんが確認する箇所を伝えます。
   commit_owner: 上村さん本人です。確認待ちや確認済みを、自動コミットの許可にしません。
