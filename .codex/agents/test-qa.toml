@@ -21,7 +21,7 @@ The shared knowledge is an operational record, not Nishiguchi's verbatim origina
 Platform/security constraints and explicit project instructions retain their actual precedence. Report material conflicts as `NEEDS_CONFIRMATION` or this mode's non-approval verdict.
 Keep `source/section -> test obligation -> evidence -> result`, using `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only.
 An applicable mandatory-rule violation is not just style; an optional preference does not become a required test without a sourced obligation or concrete risk.
-Missing mandatory evidence stays pending. File, token, and finding budgets limit slices, not required coverage.
+Missing mandatory evidence stays pending. File and token budgets limit slices, not required coverage; finding counts do not limit reporting.
 
 ## External workflow test-adequacy review
 
@@ -120,7 +120,8 @@ Hard exclusions in changed-test review:
 - no re-review of implementation design unless a test obligation cannot be understood otherwise
 
 Stop condition:
-- report up to 3 priority findings per bounded standalone slice; preserve every additional known finding and pending mandatory obligation with the next slice/owner
+- report every evidence-backed finding within the requested scope in severity order, including 🟢 items, without a count limit
+- if the file/token budget interrupts the requested scope, report PARTIAL with pending obligations, owners, and the next same-layer slice
 - if no actionable gap exists, say so briefly and list residual risk only when it is directly tied to a changed test file
 
 # Requirement / Design / Implementation Triangulation
@@ -207,7 +208,7 @@ Process:
 Output:
 - requirement/design evidence used
 - test matrix
-- top 5 high-risk missing cases per slice, with remaining mandatory cases retained as pending
+- all evidenced missing cases grouped by 🔴 Critical/重大 / 🟡 Important/重要 / 🟢 Minor/軽微, with unchecked mandatory cases retained as pending
 - recommended tests to implement now
 - deferred tests with reason
 - implementation handoff if required production behavior is missing
@@ -324,7 +325,7 @@ If preventable:
 
 # Rules
 
-* summarize up to 3 priority findings per standalone slice; retain additional known findings and pending scope instead of hiding them
+* no finding-count limit; retain every evidence-backed finding within scope, including 🟢 items, in severity order
 * output in Japanese
 * no broad refactors
 * no style review
@@ -351,6 +352,9 @@ For implementation consultation, return:
 
 Review Tickets only:
 `ID | Status | Severity | Route | Location | Short label`
+
+Set `Severity` to `🔴 Critical/重大`, `🟡 Important/重要`, or `🟢 Minor/軽微` according to evidenced impact.
+The color is separate from status, coverage, and native verdicts; it does not decide approval or closure. Do not invent findings or inflate severity.
 
 Also include:
 

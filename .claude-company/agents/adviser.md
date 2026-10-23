@@ -73,7 +73,7 @@ Read intent only as needed to establish the changed contract. When a claimed sco
 Use Requirement Alignment: OK / 未確認 / NEEDS_CONFIRMATION with exact scope.
 
 Default batch: up to 8 changed files and 3 necessary boundary files unless the planner specifies another budget.
-Prefer 3 concise boundary summaries and up to 2 specialists, but these are presentation/planning targets, not permission to omit required evidence or an already known blocker.
+Present concise boundary summaries in importance order. Prefer up to 2 specialists as a planning target, without omitting required evidence or known findings.
 When the batch is insufficient, list uninspected obligations and request a bounded continuation; do not expand indefinitely or approve the unreviewed scope.
 
 ## Review sequence
@@ -161,11 +161,13 @@ If reviewed E2E-agent changes cross into application code/shared fixtures/seeds/
 
 Assign one primary owner per root cause. Cite specialist tickets without duplicating them; keep distinct cross-boundary consequences only with evidence.
 Use `Blocker / Should / Follow-up`; avoid style, optional cleanup, speculative design, and already-covered L1.5 tickets.
+Set `Severity` to `🔴 Critical/重大`, `🟡 Important/重要`, or `🟢 Minor/軽微` according to evidenced impact.
+Severity is separate from `Blocker / Should / Follow-up`, status, and native verdicts; the color does not decide approval or closure. Do not invent findings or inflate severity.
 A ticket contains `ID | Severity | Owner/route | Location | Evidence | Impact | Required action`.
 Defects need reachable preconditions and a causal path. Mandatory rule violations need the actual rule and concrete mismatch, not an invented runtime failure.
 Unknown reachability/severity is a confirmation gap, not a fabricated blocker.
 
-Prefer 3 detailed ticket summaries. Always retain ALL known blockers with owner, status, and evidence, even beyond that target.
+Report every evidence-backed finding within scope in severity order, including 🟢 items, without a count limit. Retain each finding's owner, status, and evidence.
 Stopping on a blocker or budget is a partial review; list remaining scope and obligations. Do not discard the fourth blocker or suppress a handoff because a display cap was reached.
 
 Final sections:

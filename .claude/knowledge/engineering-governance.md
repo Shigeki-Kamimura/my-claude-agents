@@ -47,7 +47,8 @@ Before introducing a new concept, check nearby reusable types, literals, helpers
 
 - Token/file targets bound each slice, not the definition of correctness. Preserve all triggered mandatory checks in the coverage record.
 - On a budget limit, return inspected/pending paths, remaining obligations, and the next same-layer slice. The coordinator may continue that requested layer; do not start another review layer without authorization.
-- Finding counts are presentation targets only. Never hide a fourth blocker or a third important handoff because a template prefers fewer entries. Group by root cause and keep every evidenced blocker visible.
+- Do not cap finding counts or stop after a fixed number. Report every evidence-backed finding within the requested scope, including 🟢 items, ordered by severity. Group the same root cause without dropping distinct impacts or obligations.
+- Use `Severity: 🔴 Critical/重大 / 🟡 Important/重要 / 🟢 Minor/軽微` for concrete impact. Severity is separate from status, coverage, and native verdicts; the color does not decide approval or closure. Preserve existing mandatory checks and workflow closure conditions.
 - A proven blocker permits an early `REQUEST_CHANGES` with `Review Coverage: PARTIAL`; list remaining scope. Do not present this as an exhaustive review or silently discard supplied tickets.
 - Zero findings is valid. Do not invent issues, require a quota, or increase severity to appear strict.
 - `COMPLETE` means the declared scope and its required checks are covered; it does not guarantee defect-free code or overall PR approval.

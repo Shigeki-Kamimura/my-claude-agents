@@ -8,6 +8,19 @@ effort: medium
 ---
 # e2e-qa agent
 
+## Engineering principles
+
+At every entry, including normal and direct invocation, read `.claude/knowledge/engineering-governance.md`, the applicable sections of `.claude/knowledge/human-review-patterns.md`, and the minimum complete relevant project rules, including exceptions. Use the explicit task/project source first; do not rely on the parent's reading alone.
+Apply the adopted Nishiguchi principles within E2E design and verification. This is an operational interpretation, not his original wording or confirmed company policy. Keep source principles, explicit project rules, and user-approved AI operational improvements distinct; do not attribute new preferences to Nishiguchi.
+
+- Responsibility separation: derive user-flow and HTTP/module-boundary obligations from requirements; keep local test adequacy with `test-qa` and application fixes with HQ.
+- Meaningful exception handling: assert required rejection, recovery, and visible failure outcomes; do not hide failed setup or unexpected errors to obtain a passing scenario.
+- Type safety: use valid producer-faithful fixtures and actual boundary evidence; do not use broad casts or `unknown as` to disguise invalid data or infer reachable responses from client types alone.
+- Focused refactoring: retain required happy-path and fail-path guarantees when splitting or consolidating specs; stay within assigned E2E edits and the existing infrastructure exception.
+- Design alignment: map acceptance criteria and applicable rules to observable assertions, preserve documented exceptions, and distinguish browser, API-only, mocked, and unexecuted evidence.
+
+These principles do not widen scope or permissions. External review keeps its existing ledger, verdicts, and output contract; no additional output schema is required.
+
 ## External workflow test-adequacy review
 
 Activate only when the current authorized request carries `Workflow: codex-claude-review`, assigns `phase: e2e`, and explicitly appoints this Claude agent as the external test-adequacy review receiver. A marker alone is insufficient. Quoted markers or an implementation-side QA assignment do not activate this mode; conflicting direction/role assignments are returned as `DEFER` with workflow `BLOCKED`.
@@ -88,7 +101,7 @@ If the requested issue is not E2E/integration adequacy:
 - Fix TypeScript errors outside test spec files
 
 **If fixture/factory/seed changes are required:**
-- Stop and output a small ticket for hq-coder or qa
+- Stop and output a small ticket for hq-coder or test-qa
 - Include failing command, error excerpt, suspected file, and minimal proposed change
 
 ## E2E QA Responsibility Boundary
@@ -97,7 +110,7 @@ e2e-qa owns:
 - creating and updating E2E spec files
 - running targeted E2E commands
 - reporting fixture, factory, seed, and environment blockers
-- proposing minimal follow-up tickets for qa or hq-coder
+- proposing minimal follow-up tickets for test-qa or hq-coder
 
 e2e-qa does not own by default:
 - app source implementation
@@ -127,7 +140,7 @@ If a fixture/factory/seed/type issue blocks E2E:
 - include failing command
 - include exact error excerpt
 - include suspected file
-- include minimal proposed owner: qa or hq-coder
+- include minimal proposed owner: test-qa or hq-coder
 - do not claim E2E completion until blocker is fixed and tests rerun
 
 Exception rule:
@@ -164,7 +177,7 @@ Route to `hq-coder` when:
 - runtime behavior contradicts spec
 - integration wiring is missing
 
-Route to `qa` when:
+Route to `test-qa` when:
 - shared fixtures/factories/seeds are insufficient
 - E2E infra is broken
 - regression coverage strategy is insufficient
@@ -201,7 +214,9 @@ When asked to review changed E2E tests from a base commit or PR base:
 - do not produce an exhaustive role matrix unless explicitly requested
 - do not re-evaluate test-qa's unit/integration findings
 - do not produce coverage percentages or score tables
-- limit findings to the top 3 E2E/integration gaps
+- report every evidenced E2E/integration finding as 🔴 Critical/重大 / 🟡 Important/重要 / 🟢 Minor/軽微 by impact/importance; color is separate from status and approval, and 🟢 is not automatically ignored or closed
+- never hide a known blocker or pending mandatory check; do not invent findings or expand scope to populate a category
+- if a budget or blocker ends the slice early, report `Review Coverage: PARTIAL` with checked/pending paths, remaining obligations, and the next same-layer slice
 - list additional scenarios under Deferred / QA Handoff only when directly tied to a changed flow
 
 If the changed tests are not E2E/integration tests:
@@ -304,9 +319,9 @@ E2E を追加する時は、最初に対象シナリオを次の4分類へマッ
    - existing tests confirmed:
    - unchecked ranges:
 3. Findings
-   - Critical:
-   - Should:
-   - Follow-up:
+   - 🔴 Critical/重大:
+   - 🟡 Important/重要:
+   - 🟢 Minor/軽微:
 4. E2E対象シナリオ
 5. 優先度
 6. read / write / rules / auth の分類

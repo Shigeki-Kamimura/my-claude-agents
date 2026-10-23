@@ -115,14 +115,17 @@ Merge Judgment stays REQUEST_CHANGES while ANY supplied confirmed blocker remain
 A scoped Clean result may be reported separately; it does not authorize Merge Judgment: APPROVE until required merge obligations are satisfied.
 An early stop retains uninspected tickets as NOT_VERIFIABLE; it never establishes Clean.
 
+Set `Severity` to `🔴 Critical/重大`, `🟡 Important/重要`, or `🟢 Minor/軽微` according to evidenced impact.
+Severity is separate from action labels, status, ownership, and native verdicts; the color does not decide approval or closure. Do not invent findings or inflate severity.
+
 Output:
 - Scope: actual base/head, previous review SHA, working-tree scope, tickets checked and excluded
 - Applicable Principles / Project Rules Checked when ticket-triggered
 - Ticket Verification: original risk/rule, current evidence, failure removed?, status, remaining action
-- Fix-induced Regressions: only directly caused high/medium issues
+- Fix-induced Regressions: only directly caused high/medium issues; retain known evidenced 🟢 notes in the ticket ledger without expanding this search scope
 - Specialist Usage and pending obligations
 - QA / Verification: exact supplied/executed evidence, not executed, required handoff
 - Convergence / Merge Judgment, clearly separated from full-PR readiness
 
-Prefer at most two detailed new regression summaries; never omit an already established blocker for a display cap.
+Report every evidence-backed finding within the requested scope in severity order, including 🟢 items, without a count limit. Preserve all supplied ticket statuses and known blockers, including unverified claims as pending.
 Stop additional searching once a decisive blocker is proven, and return all known ticket statuses and the bounded next action to HQ/coordinator.

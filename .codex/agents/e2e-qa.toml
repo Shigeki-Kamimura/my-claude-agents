@@ -229,7 +229,7 @@ Rules:
 - do not re-evaluate test-qa's unit/integration findings
 - do not produce an exhaustive role matrix unless explicitly requested
 - do not produce coverage percentages or score tables
-- limit findings to the top 3 E2E/integration gaps
+- report every evidence-backed E2E/integration finding within scope in severity order, including 🟢 items, without a count limit
 - list additional scenarios under Deferred / QA Handoff only when directly tied to a changed flow
 - if changed tests are not E2E/integration tests, stop and route to test-qa
 
@@ -282,6 +282,9 @@ Rules:
 - avoid adding all read/write/rules/auth files unless all are directly touched
 - split or add files before a single E2E spec exceeds 400 lines
 
+Set `Severity` to `🔴 Critical/重大`, `🟡 Important/重要`, or `🟢 Minor/軽微` according to evidenced impact.
+The color is separate from status, coverage, and native verdicts; it does not decide approval or closure. Do not invent findings or inflate severity.
+
 Return:
 - Scope
   - assumed base:
@@ -292,9 +295,9 @@ Return:
   - existing tests confirmed:
   - unchecked ranges:
 - Findings
-  - Critical:
-  - Should:
-  - Follow-up:
+  - 🔴 Critical/重大:
+  - 🟡 Important/重要:
+  - 🟢 Minor/軽微:
 - Edited files
   - spec files changed:
   - non-spec edits and why they were allowed:

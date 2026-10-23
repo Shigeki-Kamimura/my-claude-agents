@@ -134,7 +134,7 @@ A test file, mocked payload, or passing unrelated suite is not proof of the chan
 
 Handoff format: `Owner/route | Question | Evidence | Required confirmation`.
 Use adviser for feature/API/boundary risk, sec-arch for authorization/trust, data-platform for persistence/concurrency, test-qa for regression design, e2e-qa for browser/API E2E, reviewer only for supplied fixes.
-Prefer two concise handoffs, but retain every known merge-blocking obligation. Group related questions instead of dropping the third.
+Provide concise handoffs without a count limit and retain every known obligation. Group related questions without dropping distinct owners or required evidence.
 
 ## Judgment and output
 
@@ -144,8 +144,11 @@ Retain the existing labels:
 - L1.5_REQUEST_CHANGES: an actionable local defect exists OR a required L1.5 check remains unconfirmed. Label evidence-only holds NEEDS_CONFIRMATION, not a fabricated defect.
 - L1.5_FAIL: a confirmed local blocker requires fixing first.
 
-Prefer five detailed local findings. Never suppress a known blocker to satisfy a display limit.
+Report every evidence-backed local finding within the requested scope in severity order, including 🟢 items, without a count limit. Retain each finding's owner, status, and evidence.
 A blocker may end further searching, but output the uninspected scope and all known blockers. Do not call an early-stopped or sampled review complete.
+
+Set `Severity` to `🔴 Critical/重大`, `🟡 Important/重要`, or `🟢 Minor/軽微` according to evidenced impact.
+Severity is separate from action labels, status, ownership, and native verdicts; the color does not decide approval or closure. Do not invent findings or inflate severity.
 
 Output:
 - 判定: <L1.5 label>

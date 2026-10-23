@@ -238,6 +238,7 @@ Never weaken:
 Use agents by prefix:
 
 - `p:` / `pl:` -> `req-pl`
+- `rp:` / `plan:` -> `review-planner`
 - `h:` / `hq:` -> `hq-coder`
 - `cr:` -> `code-quality-reviewer`
 - `r`: / `rev:` -> `reviewer` (convergence only)
@@ -245,6 +246,14 @@ Use agents by prefix:
 - `a:` / `adv:` -> `adviser` (L2+ review routing)
 - `e:` / `e2e:` -> `e2e-qa`
 - `o:` / `opus:` -> `opus-escalation` (explicit bounded override only)
+
+These are input aliases, not separate registered agents. Normalize an explicit
+agent request such as `hq`, `pl`, or `qa` (with or without `:`) to the canonical
+name above before spawning it. `rp` / `plan` always routes to `review-planner`.
+Use the exact frontmatter `name` in the actual Agent invocation and `ROUTE` field.
+Do not pass an input alias as an agent type or add a second Markdown definition
+or symlink for that alias. Each agent has one definition per active profile whose
+filename stem and `name` match; for example, `hq-coder.md` contains `name: hq-coder`.
 
 Default without prefix:
 - answer directly when the task is simple

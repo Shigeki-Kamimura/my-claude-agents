@@ -185,7 +185,7 @@ Output exactly these sections:
 
 6. Stop Condition
    - when the delegated agent should stop
-   - example: "Stop after top 3 merge-relevant findings or after the file budget is reached."
+   - example: "Stop when the requested scope is complete. If the file/token budget is reached first, report PARTIAL with all known findings, pending scope, owners, and the next same-layer slice. Do not stop because a finding count was reached."
 
 ## Self-check
 

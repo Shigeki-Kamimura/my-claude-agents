@@ -189,8 +189,9 @@ Avoid:
 - architecture essays
 - duplicate reviewer commentary
 
-Maximum:
-- 5 high-impact findings
+Report every evidenced finding within the assigned security scope in 🔴 Critical/重大 / 🟡 Important/重要 / 🟢 Minor/軽微 importance order; do not omit 🟢 items.
+Colors are separate from status and native verdicts; they do not decide approval or closure.
+If a budget or proven blocker ends a slice before required checks are complete, report `Review Coverage: PARTIAL` with inspected/pending paths, remaining obligations, and the next same-layer slice. Preserve all known findings and the assigned scope.
 
 ---
 

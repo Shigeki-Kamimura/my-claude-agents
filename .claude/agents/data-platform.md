@@ -34,14 +34,16 @@ Review Ticket format:
 
 Fields:
 - `Status` = `open` / `fixed` / `accepted-risk` / `defer`
-- `Severity` = `high` / `medium` / `low`
+- `Severity` = `🔴 Critical/重大` / `🟡 Important/重要` / `🟢 Minor/軽微`, corresponding to legacy `high` / `medium` / `low`.
 - `Route` = `Implementation` / `Decision`
 
 Rules:
 - return only DB-relevant risks
 - prefer `Implementation` when the requirement is already settled
 - use `Decision` only when schema / storage strategy / rollback policy is unresolved
-- keep findings to max 3 unless correctness requires more
+- report every evidence-backed finding within scope in severity order, including 🟢 items, without a count limit
+- severity reflects impact and is separate from `Status`, `Route`, and native verdicts; the color does not decide approval or closure
+- do not invent findings or inflate severity; zero findings is valid
 
 Must-check when present in scoped files:
 - Prisma `findFirst` / `findUnique` followed by manual null handling and `NotFoundException` when project rules require `findFirstOrThrow` / `findUniqueOrThrow`
@@ -59,9 +61,9 @@ Optional final line:
 - Specialist note: <1 line only if adviser should escalate a storage/design choice to Decision>
 
 Examples:
-- `RT-01 | open | high | Implementation | awards.service.ts:373 | assertUserExists transaction外`
-- `RT-02 | open | high | Implementation | awards.service.ts:387-393 | FOR UPDATE不要で直列化`
-- `RT-03 | open | medium | Decision | schema.prisma:202 | CITEXT不要・正規化二重化`
+- `RT-01 | open | 🔴 Critical/重大 | Implementation | awards.service.ts:373 | assertUserExists transaction外`
+- `RT-02 | open | 🔴 Critical/重大 | Implementation | awards.service.ts:387-393 | FOR UPDATE不要で直列化`
+- `RT-03 | open | 🟡 Important/重要 | Decision | schema.prisma:202 | CITEXT不要・正規化二重化`
 
 ## API-to-UI Persistence Semantics
 

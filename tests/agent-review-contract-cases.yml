@@ -38,7 +38,7 @@ cases:
   - id: four-blockers
     phase: L2
     input: 独立した既知の重大問題が4件ある修正前差分をレビューします。
-    expected: 3件の表示目安で4件目を隠しません。早期終了なら残りを未確認とします。
+    expected: 件数上限なく全指摘を🔴🟡🟢で分類します。未了の範囲は未確認として残します。
   - id: budget-exhausted
     phase: L1.5
     input: 読み取り上限を超える重要な変更を含む差分です。
