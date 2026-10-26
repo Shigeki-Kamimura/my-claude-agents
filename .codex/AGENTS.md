@@ -362,3 +362,20 @@ Across all review agents:
 
 Do not claim tests passed from file existence alone.
 Do not use `verified` for file inspection only.
+
+## GuildBoard固有の成果物保存先
+
+この規則は `/home/shigeki/projects/guildboard-training-management` の作業だけに適用し、他のプロジェクトには適用しません。
+
+最終成果物の既定の保存先は次のフォルダーです。
+
+- WSL: `/mnt/c/Users/ShigekiKamimura/work/guildboard`
+- Windows: `C:\Users\ShigekiKamimura\work\guildboard`
+
+エビデンススクリーンショット、HTMLレポート、調査・レビュー・作業記録、その他の新規文書の完成版を保存します。ユーザーが別の保存先を指定した場合は、その指定を優先します。
+
+リポジトリで管理する既存文書は元の配置で編集します。閲覧用の完成版を別に作る場合は、上記フォルダーへ保存します。既存ファイルやフォルダーを勝手に移動・再編しません。
+
+一時ファイル、実行時データ、cache、ログは作業用の一時領域に置きます。それらを上記フォルダーへ移す必要はありません。
+
+実装ルートは `/home/shigeki/projects/guildboard-training-management` です。成果物の保存先を実装ルートとして扱いません。

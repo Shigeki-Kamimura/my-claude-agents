@@ -347,3 +347,7 @@ JSONLの`thread.started.thread_id`と、実際のagent委譲を確認します�
 - Windows で `setup.ps1` を使うには**開発者モード**が必要（設定 > システム > 開発者向け）
 - WSL と Windows で同じリポジトリのプロジェクトをまたぐ場合、それぞれの環境でセットアップを実行する
 - Windows VS Code + WSL Remote で開発する場合は WSL 側の `setup.sh` を使う
+
+## Desktop サブエージェントの更新
+
+Desktop の実効 CODEX_HOME へコピーする場合は、[専用の更新手順](desktop-subagent-sync.md)を使います。初期動作は差分確認だけです。既存のプロジェクト用 setup スクリプトとは対象が異なります。
