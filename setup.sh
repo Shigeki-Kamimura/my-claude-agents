@@ -227,6 +227,11 @@ setup_target() {
   fi
 
   # --- Codex: AGENTS.md ---
+  # フォルダー全体のリンクへコピーすると共有元を変更してしまうため禁止。
+  if [ -L "$codex_dir" ] || [ -L "$codex_dir/agents" ]; then
+    echo "ERROR: .codex / .codex/agents がシンボリックリンクです。共有先への書き込みを避けるため停止します。" >&2
+    return 1
+  fi
   mkdir -p "$codex_dir"
   add_exclude ".codex"
 
