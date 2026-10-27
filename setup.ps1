@@ -79,6 +79,14 @@ function Add-Exclude {
     }
 }
 
+# Gitで追跡中のファイルやシンボリックリンクを変更しません。
+function Test-TrackedPath {
+    param([string]$Relative)
+    $found = @(git -C $Target ls-files --cached -- "$Relative")
+    if ($LASTEXITCODE -ne 0) { throw "git ls-files に失敗しました: $Relative" }
+    return ($found.Count -gt 0)
+}
+
 # --- agents: ファイル単位でリンク（upstream 実ファイルは skip） ---
 New-Item -ItemType Directory -Path (Join-Path $ClaudeDir "agents") -Force | Out-Null
 Add-Exclude ".claude/agents"
@@ -87,7 +95,7 @@ $linkedAgents = 0; $skippedAgents = 0
 foreach ($src in (Get-ChildItem -Path $SrcAgents -Filter "*.md" -File)) {
     $dest = Join-Path $ClaudeDir "agents\$($src.Name)"
 
-    if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+    if ((Test-TrackedPath ".claude/agents/$($src.Name)") -or ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink")) {
         # upstream に実ファイルが存在 → 上書き禁止
         Write-Host "  [SKIP upstream] agents/$($src.Name)"
         $skippedAgents++
@@ -108,7 +116,7 @@ if (Test-Path $SrcSkills) {
     foreach ($src in (Get-ChildItem -Path $SrcSkills -Directory)) {
         $dest = Join-Path $ClaudeDir "skills\$($src.Name)"
 
-        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+        if ((Test-TrackedPath ".claude/skills/$($src.Name)") -or ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink")) {
             Write-Host "  [SKIP upstream] skills/$($src.Name)/"
             $skippedSkills++
         } else {
@@ -129,7 +137,7 @@ if (Test-Path $SrcKnowledge) {
     foreach ($src in (Get-ChildItem -Path $SrcKnowledge -Filter "*.md" -File)) {
         $dest = Join-Path $ClaudeDir "knowledge\$($src.Name)"
 
-        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+        if ((Test-TrackedPath ".claude/knowledge/$($src.Name)") -or ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink")) {
             Write-Host "  [SKIP upstream] knowledge/$($src.Name)"
             $skippedKnowledge++
         } else {
@@ -143,7 +151,7 @@ if (Test-Path $SrcKnowledge) {
 
 # --- CLAUDE.md: upstream が持っていれば触らない ---
 $claudeMdDest = Join-Path $ClaudeDir "CLAUDE.md"
-if ((Test-Path $claudeMdDest) -and (Get-Item $claudeMdDest).LinkType -ne "SymbolicLink") {
+if ((Test-TrackedPath ".claude/CLAUDE.md") -or ((Test-Path $claudeMdDest) -and (Get-Item $claudeMdDest).LinkType -ne "SymbolicLink")) {
     Write-Host "  [SKIP upstream] CLAUDE.md（upstream 優先）"
 } else {
     if (Test-Path $claudeMdDest) { Remove-Item $claudeMdDest -Force }
@@ -155,7 +163,7 @@ if ((Test-Path $claudeMdDest) -and (Get-Item $claudeMdDest).LinkType -ne "Symbol
 # --- SKILL.md: upstream が持っていれば触らない ---
 if (Test-Path $SrcSkillMd) {
     $skillMdDest = Join-Path $ClaudeDir "SKILL.md"
-    if ((Test-Path $skillMdDest) -and (Get-Item $skillMdDest).LinkType -ne "SymbolicLink") {
+    if ((Test-TrackedPath ".claude/SKILL.md") -or ((Test-Path $skillMdDest) -and (Get-Item $skillMdDest).LinkType -ne "SymbolicLink")) {
         Write-Host "  [SKIP upstream] SKILL.md（upstream 優先）"
     } else {
         if (Test-Path $skillMdDest) { Remove-Item $skillMdDest -Force }
@@ -167,7 +175,7 @@ if (Test-Path $SrcSkillMd) {
 
 # --- settings.json: upstream が持っていれば触らない ---
 $settingsDest = Join-Path $ClaudeDir "settings.json"
-if ((Test-Path $settingsDest) -and (Get-Item $settingsDest).LinkType -ne "SymbolicLink") {
+if ((Test-TrackedPath ".claude/settings.json") -or ((Test-Path $settingsDest) -and (Get-Item $settingsDest).LinkType -ne "SymbolicLink")) {
     Write-Host "  [SKIP upstream] settings.json（upstream 優先）"
 } else {
     if (Test-Path $settingsDest) { Remove-Item $settingsDest -Force }
@@ -188,7 +196,7 @@ New-Item -ItemType Directory -Path $CodexDir -Force | Out-Null
 Add-Exclude ".codex"
 
 $codexInstructionsDest = Join-Path $CodexDir "AGENTS.md"
-if ((Test-Path $codexInstructionsDest) -and (Get-Item $codexInstructionsDest).LinkType -ne "SymbolicLink") {
+if ((Test-TrackedPath ".codex/AGENTS.md") -or ((Test-Path $codexInstructionsDest) -and (Get-Item $codexInstructionsDest).LinkType -ne "SymbolicLink")) {
     Write-Host "  [SKIP upstream] .codex/AGENTS.md（upstream 優先）"
 } else {
     if (Test-Path $codexInstructionsDest) { Remove-Item $codexInstructionsDest -Force }
@@ -360,7 +368,7 @@ New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
 Add-Exclude ".copilot"
 
 $copilotInstructionsDest = Join-Path $CopilotDir "copilot-instructions.md"
-if ((Test-Path $copilotInstructionsDest) -and (Get-Item $copilotInstructionsDest).LinkType -ne "SymbolicLink") {
+if ((Test-TrackedPath ".copilot/copilot-instructions.md") -or ((Test-Path $copilotInstructionsDest) -and (Get-Item $copilotInstructionsDest).LinkType -ne "SymbolicLink")) {
     Write-Host "  [SKIP upstream] .copilot/copilot-instructions.md（upstream 優先）"
 } else {
     if (Test-Path $copilotInstructionsDest) { Remove-Item $copilotInstructionsDest -Force }
@@ -376,7 +384,7 @@ if (Test-Path $SrcCopilotAgents) {
     foreach ($src in (Get-ChildItem -Path $SrcCopilotAgents -Filter "*.md" -File)) {
         $dest = Join-Path $CopilotDir "agents\$($src.Name)"
 
-        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+        if ((Test-TrackedPath ".copilot/agents/$($src.Name)") -or ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink")) {
             Write-Host "  [SKIP upstream] .copilot/agents/$($src.Name)"
             $skippedCopilotAgents++
         } else {
