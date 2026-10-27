@@ -124,6 +124,11 @@ setup_target() {
     fi
   }
 
+  # 既存リポジトリで追跡されるファイル・リンクは変更しません。
+  is_tracked_path() {
+    git -C "$target" ls-files --error-unmatch -- "$1" >/dev/null 2>&1
+  }
+
   # --- agents: ファイル単位でリンク（upstream 実ファイルは skip） ---
   mkdir -p "$claude_dir/agents"
   add_exclude ".claude/agents"
@@ -138,7 +143,7 @@ setup_target() {
     name="$(basename "$src")"
     dest="$claude_dir/agents/$name"
 
-    if [ -f "$dest" ] && [ ! -L "$dest" ]; then
+    if is_tracked_path ".claude/agents/$name" || { [ -f "$dest" ] && [ ! -L "$dest" ]; }; then
       echo "  [SKIP upstream] .claude/agents/$name"
       skipped_agents=$((skipped_agents + 1))
     else
@@ -160,7 +165,7 @@ setup_target() {
       name="$(basename "$src")"
       dest="$claude_dir/skills/$name"
 
-      if [ -d "$dest" ] && [ ! -L "$dest" ]; then
+      if is_tracked_path ".claude/skills/$name" || { [ -d "$dest" ] && [ ! -L "$dest" ]; }; then
         echo "  [SKIP upstream] .claude/skills/$name/"
         skipped_skills=$((skipped_skills + 1))
       else
@@ -183,7 +188,7 @@ setup_target() {
       name="$(basename "$src")"
       dest="$claude_dir/knowledge/$name"
 
-      if [ -f "$dest" ] && [ ! -L "$dest" ]; then
+      if is_tracked_path ".claude/knowledge/$name" || { [ -f "$dest" ] && [ ! -L "$dest" ]; }; then
         echo "  [SKIP upstream] .claude/knowledge/$name"
         skipped_knowledge=$((skipped_knowledge + 1))
       else
@@ -196,7 +201,7 @@ setup_target() {
 
   # --- CLAUDE.md: upstream が持っていれば触らない ---
   local claude_md_dest="$claude_dir/CLAUDE.md"
-  if [ -f "$claude_md_dest" ] && [ ! -L "$claude_md_dest" ]; then
+  if is_tracked_path ".claude/CLAUDE.md" || { [ -f "$claude_md_dest" ] && [ ! -L "$claude_md_dest" ]; }; then
     echo "  [SKIP upstream] .claude/CLAUDE.md（upstream 優先）"
   else
     ln -sf "$SRC_CLAUDE_MD" "$claude_md_dest"
@@ -207,7 +212,7 @@ setup_target() {
   # --- SKILL.md: upstream が持っていれば触らない ---
   if [ -f "$SRC_SKILL_MD" ]; then
     local skill_md_dest="$claude_dir/SKILL.md"
-    if [ -f "$skill_md_dest" ] && [ ! -L "$skill_md_dest" ]; then
+    if is_tracked_path ".claude/SKILL.md" || { [ -f "$skill_md_dest" ] && [ ! -L "$skill_md_dest" ]; }; then
       echo "  [SKIP upstream] .claude/SKILL.md（upstream 優先）"
     else
       ln -sf "$SRC_SKILL_MD" "$skill_md_dest"
@@ -218,7 +223,7 @@ setup_target() {
 
   # --- settings.json: upstream が持っていれば触らない ---
   local settings_dest="$claude_dir/settings.json"
-  if [ -f "$settings_dest" ] && [ ! -L "$settings_dest" ]; then
+  if is_tracked_path ".claude/settings.json" || { [ -f "$settings_dest" ] && [ ! -L "$settings_dest" ]; }; then
     echo "  [SKIP upstream] .claude/settings.json（upstream 優先）"
   else
     ln -sf "$SRC_SETTINGS" "$settings_dest"
@@ -236,7 +241,7 @@ setup_target() {
   add_exclude ".codex"
 
   local codex_instructions_dest="$codex_dir/AGENTS.md"
-  if [ -f "$codex_instructions_dest" ] && [ ! -L "$codex_instructions_dest" ]; then
+  if is_tracked_path ".codex/AGENTS.md" || { [ -f "$codex_instructions_dest" ] && [ ! -L "$codex_instructions_dest" ]; }; then
     echo "  [SKIP upstream] .codex/AGENTS.md（upstream 優先）"
   else
     ln -sf "$SRC_CODEX_INSTRUCTIONS" "$codex_instructions_dest"
@@ -375,7 +380,7 @@ fi
   add_exclude ".copilot"
 
   local copilot_instructions_dest="$copilot_dir/copilot-instructions.md"
-  if [ -f "$copilot_instructions_dest" ] && [ ! -L "$copilot_instructions_dest" ]; then
+  if is_tracked_path ".copilot/copilot-instructions.md" || { [ -f "$copilot_instructions_dest" ] && [ ! -L "$copilot_instructions_dest" ]; }; then
     echo "  [SKIP upstream] .copilot/copilot-instructions.md（upstream 優先）"
   else
     ln -sf "$SRC_COPILOT_INSTRUCTIONS" "$copilot_instructions_dest"
@@ -393,7 +398,7 @@ fi
       name="$(basename "$src")"
       dest="$copilot_dir/agents/$name"
 
-      if [ -f "$dest" ] && [ ! -L "$dest" ]; then
+      if is_tracked_path ".copilot/agents/$name" || { [ -f "$dest" ] && [ ! -L "$dest" ]; }; then
         echo "  [SKIP upstream] .copilot/agents/$name"
         skipped_copilot_agents=$((skipped_copilot_agents + 1))
       else
