@@ -316,7 +316,7 @@ if (-not (Test-Path -LiteralPath $SrcCodexConfig -PathType Leaf)) {
 }
 $codexCopied = 0; $codexCurrent = 0; $codexSkipped = 0; $codexConflicts = 0
 $allStatuses = @()
-$allStatuses += Sync-CodexToml $SrcCodexConfig "config.toml"
+$allStatuses += (Sync-CodexToml -Source $SrcCodexConfig -Relative "config.toml")
 
 $retiredCodexNames = @("hq.toml", "pl.toml", "qa.toml")
 foreach ($retiredName in $retiredCodexNames) {
@@ -340,7 +340,7 @@ foreach ($retiredName in $retiredCodexNames) {
 if (Test-Path -LiteralPath $SrcCodexAgents) {
     foreach ($src in (Get-ChildItem -LiteralPath $SrcCodexAgents -Filter "*.toml" -File)) {
         if ($retiredCodexNames -contains $src.Name) { continue }
-        $allStatuses += Sync-CodexToml $src.FullName "agents/$($src.Name)"
+        $allStatuses += (Sync-CodexToml -Source $src.FullName -Relative "agents/$($src.Name)")
     }
 }
 $codexCopied += @($allStatuses | Where-Object { $_ -eq "copied" }).Count
