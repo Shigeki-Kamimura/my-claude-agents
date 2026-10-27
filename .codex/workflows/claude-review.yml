@@ -49,7 +49,8 @@ state:
     - run_idと対象worktreeの絶対パス、設定の出典、CLIの版です。
     - 現在のphase、対象範囲、base/head、snapshot_id、参照した要件です。
     - 実装担当と各reviewerのプラットフォーム・モデル設定・実呼び出し証拠です。
-    - l1_5、qa、e2e、l2ごとのsession_id、依頼、実際の応答、承認したsnapshot_idです。
+    - l1_5、qa、e2e、l2ごとの親session_id、子agent_id、初回Agent起動・再開SendMessageの実呼び出し証拠、依頼、実際の応答、承認したsnapshot_idです。
+    - session_idとagent_idは異なる識別子です。phase・run_id・worktreeを組にして保持します。
     - phaseごとの固定した全対象と、累積coverage台帳です。確認済み・未確認の義務とパス、根拠、次sliceを保持します。
     - 全指摘のID、担当、根拠、修正、再確認結果、未確認範囲です。
     - 上村さんへの質問、回答、停止理由、再開先です。
@@ -103,12 +104,15 @@ claude_cli:
   invocation:
     - cr、qa、e、advはCLAUDE.mdの接頭辞です。存在しないslashコマンドを仮定しません。
     - Claudeの主セッションから指定agentへ委譲します。--agentで親の調整役を飛ばしません。
-    - l1_5、qa、e2e、l2の初回はそれぞれ別の新規セッションにします。
-    - 同じphaseの続行には、その応答から保存したsession_idを--resumeへ渡します。
-    - 親とsubagentのplanモードを保ちます。権限を切り替えず、agent-team teammateは使いません。
-    - --continueは使いません。別のレビューや普段の会話を再開しません。
+    - l1_5、qa、e2e、l2の初回だけ、それぞれ独立したClaude親セッションを新規作成し、指定agentをAgentで起動します。異なるphaseでagentを共有しません。
+    - 初回のCLI JSONから親session_idを保存し、Agentの実行証拠・応答またはセッションログから、そのphaseの子agent_idを記録します。agent名だけでは識別できません。
+    - 同じphaseの継続、指摘修正後の再レビュー、後続phaseの修正に伴う再承認は、必ず保存した親session_idを--resumeへ渡し、親からSendMessage(to=保存した子agent_id)で同じ子を再開します。新しいAgentを使いません。
+    - SendMessageはagent teamsを必要としません。CLI実行時に利用可能か確認します。--allowedToolsに表示されないことだけを利用不能の根拠にしません。--tools等によるツール制限を勝手に変更しません。
+    - Claude Code v2.1.304以降を再開計測の前提とします。旧版や子の履歴欠落が疑われる場合、計測を保留してCLIの版を記録します。
+    - 親とsubagentのplanモードを保ちます。権限・モデル・effortを切り替えず、agent-team teammateは使いません。
+    - --continueや--fork-sessionは使いません。別のレビューや普段の会話を再開しません。
     - --bareや権限の回避指定は使いません。必要な指示とagent定義の読み込みを保ちます。
-    - 再開できない場合は、全指摘、累積coverage台帳、現在の根拠を新しい同層セッションへ渡します。
+    - 今回の実験では親または子を再開できない場合、勝手に新規起動せずBLOCKEDで停止します。原因、CLIの版、session_id、agent_id、tool availabilityを報告します。
   prompt_template: |
     {prefix}: {phase}のレビューを実施してください。
     Workflow: codex-claude-review
@@ -130,10 +134,35 @@ claude_cli:
     {review_gates_qa_contract_and_current_phase_contract}
     コードを変更せず、現在のファイルを読み直してください。
     本文の既存判定に加え、末尾にWorkflow Resultを返してください。
+  resume_prompt_template: |
+    Workflow: codex-claude-review
+    {prefix}: {phase}の前回担当を再開し、修正後の再確認をしてください。
+    親session_id: {saved_parent_session_id}
+    前回の子agent_id: {saved_child_agent_id}
+    新しいAgentを作らず、SendMessage(to={saved_child_agent_id})で同じ子へ以下を渡してください。
+    対象worktree: {project_root}
+    今回のsnapshot_idとbase/head: {snapshot_id} / {scope_and_base_head}
+    前回から変わったファイル・変更箇所・依存範囲: {changed_scope_since_prior_review}
+    前回指摘IDと修正・撤回・回答: {finding_delta_and_answers}
+    検証結果の追加・変更: {verification_delta}
+    全対象coverage台帳の未確認義務・更新箇所: {coverage_delta_and_pending}
+    適用規則・要件が更新された場合だけ該当範囲と版: {rules_and_requirements_delta}
+    前回確認済みの規則と証拠を忘れず、新snapshotに対して有効性を確かめてください。
+    修正箇所、関連する呼出元・呼出先、影響のあった規則、未確認義務を再確認してください。
+    変わらない部分のフル読み直しは不要です。ただし必要な根拠が欠けるなら追加で読みます。
+    西口さんの原則、happy/fail両面、4段階承認、🟢を含む全指摘の解消条件は前回と同じです。
+    子の実際の判定とWorkflow Result、SendMessage成功証拠を返してください。
+  prompt_selection:
+    first_invocation: prompt_templateを使い、必須契約と全対象・適用する規則を渡します。
+    same_phase_resume: resume_prompt_templateを使い、前回親・子が保持する完全な契約と台帳を参照し、差分だけを追加します。
+    changed_snapshot: 確認するsnapshot_idを更新し、既存承認はreview_gatesに従って再確認します。文脈の継続を承認の流用と混同しません。
+    context_missing: 必須の台帳や規則が子から失われている場合はCONTINUE_REVIEWまたはBLOCKEDです。省略した契約を推測しません。
   result_handling:
     - 終了コード、JSONのエラー情報、実際のresultとsession_idを確認します。
     - 正常終了、空の指摘一覧、文中のApproveという単語だけでは承認しません。
     - 期待したagentの実呼び出し証拠、判定、対象snapshot、確認範囲を照合します。
+    - 初回はAgentの新規起動と子agent_id、再開時はSendMessageの送信先agent_idが前回と一致することをCLIログで確かめます。同名の新規Agent起動は再開ではありません。
+    - 実行ごとのAPI応答数、子Agent新規起動数、SendMessage再開数、モデル別input/output/cache read/cache write、CLI推定コストを記録します。比較時は親セッションの累計と増分を区別します。
     - 認証失敗、利用上限、必要な権限不足、壊れた応答はBLOCKEDとして記録します。
     - CLIの利用可否を確認できない状態で、実行済みと報告しません。
 
@@ -271,7 +300,7 @@ response_contract:
     open_item_ids: 未解決指摘のID一覧です。局所指摘と別担当のhandoffを区別します。
     questions: 上村さんへの未回答質問です。
     handoffs: 担当、質問、根拠、状態を含む引き継ぎ一覧です。
-    invocation_evidence: 外部review役割、プラットフォーム、実装者とreviewerのモデル設定、実委譲と必要な専門相談の識別子、phase、snapshotです。
+    invocation_evidence: 外部review役割、プラットフォーム、実装者とreviewerのモデル設定、親session_id、実子agent_id、初回Agentまたは再開SendMessageの実行証拠、専門相談の識別子、phase、snapshotです。
   acceptance: decisionがAPPROVEで、phaseの承認条件を満たす場合だけ受理します。項目欠落、本文との矛盾、snapshot不一致は未承認です。
 
 pause_and_resume:
