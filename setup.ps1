@@ -177,6 +177,13 @@ if ((Test-Path $settingsDest) -and (Get-Item $settingsDest).LinkType -ne "Symbol
 }
 
 # --- Codex: AGENTS.md ---
+# フォルダー全体のリンクへコピーすると共有元を変更するため禁止。
+foreach ($dir in @($CodexDir, (Join-Path $CodexDir "agents"))) {
+    $item = Get-Item -LiteralPath $dir -Force -ErrorAction SilentlyContinue
+    if ($null -ne $item -and $item.LinkType -in @("SymbolicLink", "Junction")) {
+        throw "Codex フォルダーがリンクです。共有先への書き込みを避けるため停止します: $dir"
+    }
+}
 New-Item -ItemType Directory -Path $CodexDir -Force | Out-Null
 Add-Exclude ".codex"
 
