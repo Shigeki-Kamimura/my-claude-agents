@@ -39,6 +39,7 @@ Use the contract supplied from `.codex/workflows/claude-review.yml`; it is an ag
 
 - Codex coordinates implementation, fixes, verification, and questions to 上村. Claude performs read-only reviews and returns findings, questions, and judgment; do not stage, commit, push, or merge. Keep the parent CLI and ordinary subagents in plan mode; do not switch permission mode or use agent-team teammates.
 - Preserve explicit prefix routing: `cr:` runs `code-quality-reviewer`, `qa:` runs `test-qa`, `e:` runs `e2e-qa`, and `adv:` runs `adviser`. Do not silently substitute another reviewer or change models.
+- In this experimental review workflow, save the real child agent ID on each phase's first Agent invocation. When the parent CLI session is resumed for the same phase, use `SendMessage` addressed to that exact child ID instead of invoking a fresh Agent. Revalidate the new snapshot and open obligations independently; previous approval does not carry over automatically. If the tool or session is unavailable, return BLOCKED with evidence rather than claiming a resumed review.
 - Each call owns its requested phase. Codex requests `cr -> qa -> e -> adv` in order after each scoped gate passes; review receivers never start the next phase themselves.
 - The authorized loop permits scoped re-reviews. `adv` owns L2 fix verification and final approval in this workflow; normal post-fix `rev` routing applies elsewhere.
 - Keep all findings, including 🟢 notes, until reviewer-confirmed closure. Return every implementation uncertainty for 上村 rather than deciding it silently.
