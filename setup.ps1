@@ -312,12 +312,26 @@ function Sync-CodexToml {
     $temp = Join-Path (Split-Path -Parent $dest) (
         ".codex-toml-" + [guid]::NewGuid().ToString("N") + ".tmp"
     )
+    $linkBackup = $null
     try {
         Copy-Item -LiteralPath $Source -Destination $temp
         if ($null -ne $existing -and $existing.LinkType -eq "SymbolicLink") {
-            Remove-Item -LiteralPath $dest -Force
+            $linkBackup = Join-Path (Split-Path -Parent $dest) (
+                ".codex-old-link-" + [guid]::NewGuid().ToString("N") + ".bak"
+            )
+            Move-Item -LiteralPath $dest -Destination $linkBackup
         }
-        Move-Item -LiteralPath $temp -Destination $dest -Force
+        try {
+            Move-Item -LiteralPath $temp -Destination $dest -Force
+        } catch {
+            if ($null -ne $linkBackup -and (Test-Path -LiteralPath $linkBackup)) {
+                Move-Item -LiteralPath $linkBackup -Destination $dest -Force
+            }
+            throw
+        }
+        if ($null -ne $linkBackup -and (Test-Path -LiteralPath $linkBackup)) {
+            Remove-Item -LiteralPath $linkBackup -Force
+        }
     } finally {
         if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force }
     }
