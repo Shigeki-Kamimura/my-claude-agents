@@ -204,6 +204,45 @@ class SetupChecks:
         self.assertEqual(self.target_config.read_bytes(), self.source_config.read_bytes())
         self.assertFalse(self.target_config.is_symlink())
 
+    def test_tracked_symlinks_are_never_overwritten(self):
+        src_file = self.source / ".claude-company" / "agents" / "example.md"
+        src_file.write_text("managed\n", encoding="utf-8")
+        (self.target / ".claude" / "agents").mkdir(parents=True)
+        foreign = self.root / "foreign.md"
+        foreign.write_text("foreign\n", encoding="utf-8")
+        paths = (
+            self.target / ".claude" / "agents" / "example.md",
+            self.target / ".codex" / "AGENTS.md",
+        )
+        for file in paths:
+            file.symlink_to(foreign)
+        subprocess.run(
+            ["git", "-C", str(self.target), "add", "-f",
+             ".claude/agents/example.md", ".codex/AGENTS.md"],
+            check=True,
+        )
+        self.run_setup()
+        for file in paths:
+            self.assertTrue(file.is_symlink())
+            self.assertEqual(file.resolve(), foreign)
+
+    def test_symlinked_codex_directory_is_rejected(self):
+        shutil.rmtree(self.target / ".codex")
+        shared = self.root / "shared config"
+        shared.mkdir()
+        (shared / "AGENTS.md").write_text("must not change\n", encoding="utf-8")
+        (self.target / ".codex").symlink_to(shared, target_is_directory=True)
+        if self.runner == "bash":
+            command = ["bash", str(self.source / "setup.sh"),
+                       "--profile", "company", str(self.target)]
+        else:
+            command = ["pwsh", "-NoProfile", "-File",
+                       str(self.source / "setup.ps1"),
+                       "-Profile", "company", "-Target", str(self.target)]
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual((shared / "AGENTS.md").read_text(), "must not change\n")
+
     def test_git_tracked_files_are_never_overwritten(self):
         self.target_config.write_text('model = "upstream"\n', encoding="utf-8")
         own = self.target_agents / "hq-coder.toml"
