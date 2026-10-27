@@ -57,6 +57,8 @@ state:
     - phaseごとのreview_pass、初回確認完了の実応答とsnapshot、fix_batch_id、修正・必要検証の完了状態です。
     - 専門担当ごとの実子ID、質問・対象範囲・参照版、結果と未解決事項です。
     - 上村さんへの質問、回答、停止理由、再開先です。
+    - 再確認packetのID、前後snapshot、実際に送った差分・証拠ID一覧と件数、回答出典、欠落項目、受信確認です。
+    - ユーザーの明示的な送信・追加指示・資料アクセス制約と、その適用範囲です。
   lifecycle: 一時ファイルの存在だけを完了証拠にせず、実際の応答と現在の差分を照合します。
   request_provenance: 実際に受けたユーザー依頼を忠実に記録し、新たな権限や対象を捏造しません。
 
@@ -163,6 +165,7 @@ claude_cli:
     下記の契約を指定agentにも渡し、実際の委譲結果を返してください。
     {authority_ownership_findings_questions_and_response_contracts}
     {review_gates_qa_contract_and_current_phase_contract}
+    {recheck_evidence_contract}
     Review pass: FIRST_PASS
     初回は全対象と必要な専門相談を確認し、全指摘と初回確認完了の有無を返してください。
     途中の指摘で実装側へ修正開始を求めず、未確認範囲があれば同じ担当で続けます。
@@ -176,35 +179,68 @@ claude_cli:
     一括修正のID・完了状態・必要検証の状態: {fix_batch_checkpoint}
     FIRST_PASSの継続では編集せず未確認範囲を完了します。
     DELTA_RECHECKは一括修正と必要検証の完了後に限ります。
+    元担当への一括送信packet: {recheck_evidence_packet}
+    送信前点検結果と欠落項目: {packet_completeness_and_gaps}
+    ユーザーの送信・追加指示・原本アクセス制約: {explicit_user_constraints}
     親session_id: {saved_parent_session_id}
     前回の子agent_id: {saved_child_agent_id}
     新しいAgentを作らず、SendMessage(to={saved_child_agent_id})で同じ子へ以下を渡してください。
     対象worktree: {project_root}
+    前回snapshotと今回snapshot: {previous_snapshot_id} / {snapshot_id}
     今回のsnapshot_idとbase/head: {snapshot_id} / {scope_and_base_head}
-    前回から変わったファイル・変更箇所・依存範囲: {changed_scope_since_prior_review}
-    前回指摘IDと修正・撤回・回答: {finding_delta_and_answers}
-    検証結果の追加・変更: {verification_delta}
-    全対象coverage台帳の未確認義務・更新箇所: {coverage_delta_and_pending}
+    packet内の実差分・指摘対応・検証・回答・coverage差分を確認します。未変更台帳の全文を重ねて送りません。
     適用規則・要件が更新された場合だけ該当範囲と版: {rules_and_requirements_delta}
+    一文の依頼だけにせず、実際の差分・証拠・回答をまとめて渡します。明示的な送信制約を優先します。
     前回確認済みの規則と証拠を忘れず、新snapshotに対して有効性を確かめてください。
     修正箇所、関連する呼出元・呼出先、影響のあった規則、未確認義務を再確認してください。
-    変わらない部分のフル読み直しは不要です。ただし必要な根拠が欠けるなら追加で読みます。
+    履歴の既読原本と今回の差分を使い、変わらない資料本文の再送と原本の再読込を繰り返しません。
+    必要な根拠が欠ける場合は、まず不足IDを調整役へ返します。原本の追加読込はユーザーの制約内で必要な箇所だけです。
+    packetのsnapshotと、実際に確認した証拠・回答IDを返してください。欠落や禁止された必須情報を推測して承認しません。
     西口さんの原則、happy/fail両面、4段階承認、🟢を含む全指摘の解消条件は前回と同じです。
     子の実際の判定とWorkflow Result、SendMessage成功証拠を返してください。
   prompt_selection:
     first_invocation: prompt_templateを使い、必須契約と全対象・適用する規則を渡します。
     same_phase_resume: resume_prompt_templateを使い、前回親・子が保持する完全な契約と台帳を参照し、差分だけを追加します。
     changed_snapshot: 確認するsnapshot_idを更新し、既存承認はreview_gatesに従って再確認します。文脈の継続を承認の流用と混同しません。
-    context_missing: 必須の台帳や規則が子から失われている場合はCONTINUE_REVIEWまたはBLOCKEDです。省略した契約を推測しません。
+    context_missing: 必須情報が失われた場合は状態を保持し、調整役が許可内で不足差分を補います。原本の全面再読込や承認で代替せず、未解決はCONTINUE_REVIEWまたはBLOCKEDです。
+    explicit_constraint: 指定一文だけの送信や追加指示禁止があれば、templateの自動追記より優先します。必須証拠を渡せなければ未承認で保留します。
   result_handling:
     - 終了コード、JSONのエラー情報、実際のresultとsession_idを確認します。
     - 正常終了、空の指摘一覧、文中のApproveという単語だけでは承認しません。
     - 期待したagentの実呼び出し証拠、判定、対象snapshot、確認範囲とreview_checkpointを照合します。
     - 初回確認がPARTIALの間や、修正・必須検証が未完了の間は次の修正batch・再承認へ進めません。
+    - 再確認packetの送付内容と子が確認したsnapshot・証拠ID・回答IDを照合します。送信成功だけで証拠の確認完了にしません。
     - 初回はAgentの新規起動と子agent_id、再開時はSendMessageの送信先agent_idが前回と一致することをCLIログで確かめます。同名の新規Agent起動は再開ではありません。
     - 実行ごとのAPI応答数、子Agent新規起動数、SendMessage再開数、モデル別input/output/cache read/cache write、CLI推定コストを記録します。比較時は親セッションの累計と増分を区別します。
     - 認証失敗、利用上限、必要な権限不足、壊れた応答はBLOCKEDとして記録します。
     - CLIの利用可否を確認できない状態で、実行済みと報告しません。
+
+recheck_evidence:
+  applies_to: CR、QA、E2E、ADVの修正確認と単独レビューです。調整役が取得できる情報を自動で集め、同じ担当へまとめて渡します。
+  required_packet:
+    identity: run_id、worktree、phase、元の親session_idと実子agent_id、前後snapshotとbase/head、固定範囲、fix_batch_idです。
+    finding_map: 自層の全指摘ID、元の義務、修正候補と実際の変更箇所、変更前後のhunk、影響した呼出元・呼出先、未解決状態を対応させます。
+    actual_diff: コードとテストに加え、変更した仕様書・要件・規則の差分本文と前後の版を含めます。例外が分かる周辺本文、新規・削除・名前変更も省略しません。
+    verification: 全関連証拠のID、実行コマンドとcase、環境、終了値、実際の結果・assertionまたは失敗、記録の出典、実行時snapshotを含めます。Executed、Supplied、Not executedを分けます。
+    answers: 質問IDごとに上村さんの正確な回答本文と、元のメッセージまたは文書・版を付けます。実装者の仮定やAI合意を本人回答にしません。
+    pending: 未回答、未確認、証拠不足、専門相談の状態を残します。別レイヤのhandoffは実担当を示し、自層の局所指摘と分けます。
+  preflight: |
+    調整役が前回の指摘・質問・coverage・証拠台帳と実差分を照合し、packetを作ります。
+    全関連証拠のID一覧と件数を照合します。件数だけの成功報告や上位数件への省略で置き換えません。
+    ユーザーへ既にある情報を再入力させず、許可された資料・実行記録・会話から取得します。
+    必須値の空欄を「変更なし」や「対象なし」にしません。足りない事実と担当を記録し、状態を保持します。
+    許可内の入手済み情報は一括で渡せます。不足が残る承認は保留し、捏造せず正確な入力依頼を返します。
+    実行後の変更が証拠に影響すれば再実行か未確認を残し、古い結果へ新snapshotを付け替えません。
+  reuse_and_constraints: |
+    再開した親子の履歴には、以前の依頼・資料本文・規則・証拠が残り、再利用される場合があります。
+    履歴削除、分離、処理コストゼロは保証しません。同じ担当の初回既読内容と未変更の版を再利用します。
+    差分本文の送信と、資料原本の再読込・未変更全文の再送は別の行為です。
+    初回に必要な原本確認は維持します。継続では必要な差分を送り、欠落時も許可内の必要箇所だけ補います。
+    初回の要件が変われば変更出典、対象と受入条件、影響範囲を更新し、古い承認で代替しません。
+    ユーザーの明示的な送信制約、指定一文のみ、追加指示禁止、資料アクセス禁止を優先します。
+    原本再読込禁止だけから、許可内の差分送信まで禁止されたと決めません。本文送信禁止を差分で回避もしません。
+    禁止に反する証拠の追加送信や原本取得は行いません。必須証拠を得られなければ未確認とDEFER/BLOCKEDを保ちます。
+  receipt: 同じ担当が確認したsnapshot・証拠ID・回答IDと送付台帳を照合します。SendMessage成功だけで確認完了にせず、欠落分だけ元担当へ補います。
 
 coordination:
   specialist_request: |
