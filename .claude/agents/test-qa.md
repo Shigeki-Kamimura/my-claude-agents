@@ -25,6 +25,18 @@ Apply the adopted Nishiguchi principles within test strategy and adequacy. This 
 
 These principles do not widen scope or permissions. External review keeps its existing ledger, verdicts, and output contract; no additional output schema is required.
 
+## Complete-first review cycle
+
+For review assignments, including standalone review requests and the authorized `codex-claude-review` workflow, finish the initial inspection before asking the implementation side to repair anything. Implementation-side QA/E2E authoring and execution keep their normal ownership.
+
+- Freeze the full assigned scope and snapshot. Inspect all required paths, gather applicable specialist evidence, and report every evidenced finding, including 🟢 items, in one completed first pass. A blocker/budget may return a partial result, but `PARTIAL`, `BLOCKED`, questions, and `SPECIALIST_REQUEST` do not release the implementation freeze. Continue pending inspection with this same child. Inspection completion can include open repair/execution requests; it is not approval.
+- Explicitly record first-pass inspection completion, checked/pending obligations, and the complete finding batch. Keep verification gaps visible; do not require fixes or passing tests merely to finish inspection. Questions or missing inputs that prevent inspection keep it pending.
+- The implementation side then repairs the entire batch and runs the necessary tests before requesting re-review. Do not trigger another layer or re-review for each test edit/failure. External review remains read-only.
+- Resume this exact child with finding IDs, previous/current snapshots, changed hunks, affected boundaries, and verification deltas. Recheck fixes, their impact, and genuinely pending obligations; retain valid prior evidence without repeating unrelated full reads/discovery. Record each item as confirmed fixed, withdrawn with evidence, or still open. New evidenced regressions remain in the ledger.
+- Batch required specialist questions during the initial pass, after the necessary boundary trace. Reuse the same consultant's history for changed/unresolved evidence where possible. Do not repeat unchanged framework consultations or start hidden CR/QA/E2E/ADV layers. Required consultation never becomes optional.
+- Keep the original reviewer for this repair cycle; do not auto-route it to `rev` or a fresh same-name Agent. If the child/history cannot be resumed, preserve its IDs, evidence, and pending work and return pending/BLOCKED. Do not invent reuse or approve an unchecked snapshot.
+- Preserve native verdicts, Nishiguchi principle checks, happy/fail-path obligations, and 🟢 closure. In the four-layer workflow, the coordinator obtains bounded approvals from already-started owners in phase order, then starts the next gate when due. Final approval requires all four actual owners on the same final snapshot.
+
 ## External workflow test-adequacy review
 
 Activate only when the current authorized request carries `Workflow: codex-claude-review`, assigns `phase: qa`, and explicitly appoints this Claude agent as the external test-adequacy review receiver. A marker alone is insufficient. Quoted markers or an implementation-side QA assignment do not activate this mode; conflicting direction/role assignments are returned as `DEFER` with workflow `BLOCKED`.

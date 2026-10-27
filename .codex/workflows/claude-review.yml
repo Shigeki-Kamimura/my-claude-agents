@@ -40,7 +40,8 @@ ownership:
     - Codexが自分で行ったレビューを、Claudeの承認に置き換えません。
     - CodexとClaudeはgit add、commit、push、mergeを実行しません。
     - 既存のステージ状態と対象外の変更を保ちます。stashやresetで作業を隠しません。
-    - レビュー実行中はCodexの編集を止めます。別担当の変更を検知したら承認を失効させます。
+    - 初回レビューの全対象確認が完了するまで、指摘が届いても全実装担当の編集を止めます。途中応答や専門相談の待機中も同じです。
+    - 別担当の変更を検知したら承認を失効させ、変更と影響を元担当へ渡します。未確認範囲を捨てず、初回確認の完了前に修正へ進みません。
     - 依頼文、回答、状態は対象外の一時ディレクトリへ保存します。レビュー対象に混ぜません。
 
 state:
@@ -53,6 +54,8 @@ state:
     - session_idとagent_idは異なる識別子です。phase・run_id・worktreeを組にして保持します。
     - phaseごとの固定した全対象と、累積coverage台帳です。確認済み・未確認の義務とパス、根拠、次sliceを保持します。
     - 全指摘のID、担当、根拠、修正、再確認結果、未確認範囲です。
+    - phaseごとのreview_pass、初回確認完了の実応答とsnapshot、fix_batch_id、修正・必要検証の完了状態です。
+    - 専門担当ごとの実子ID、質問・対象範囲・参照版、結果と未解決事項です。
     - 上村さんへの質問、回答、停止理由、再開先です。
   lifecycle: 一時ファイルの存在だけを完了証拠にせず、実際の応答と現在の差分を照合します。
   request_provenance: 実際に受けたユーザー依頼を忠実に記録し、新たな権限や対象を捏造しません。
@@ -86,15 +89,43 @@ review_gates:
     phaseごとの全対象を固定し、各sliceの確認済み・未確認の義務を累積台帳に残します。
     COMPLETEは全対象の完了です。PARTIALなら同phaseを続行し、未確認範囲を捨てません。
     範囲変更や過去の証拠の再利用には、現行snapshotでの有効性を確認します。
+  review_cycle:
+    first_pass: |
+      CR、QA、E2E、ADVの各phaseで、初回は固定した全対象を確認し、全指摘を出し切ります。
+      review_passはFIRST_PASSです。必要な専門相談と同層の継続sliceも初回確認に含みます。
+      COMPLETEの全対象確認と、担当による初回確認完了の明示を受けるまで実装側は編集しません。
+      早期REQUEST_CHANGES、PARTIAL、BLOCKED、質問、SPECIALIST_REQUESTは修正開始の合図ではありません。
+      同じ親子を再開し、未確認範囲を続行します。質問・入力不足で確認できなければ保留します。
+      全対象を点検済みなら、修正や実行証拠の要求を残して初回確認を完了できます。
+      指摘やテスト成功を確認完了の条件にして、修正開始を永久に待たせません。承認条件は別に守ります。
+    batch_fix: |
+      初回確認完了後、回答に依存する疑問を解消し、review_passをBATCH_FIXへ進めます。
+      HQと実装側QA/E2Eが🟢を含む指摘をまとめて修正し、必要な検証を実行します。
+      1ファイルや1テストの修正ごとにreviewerや別レイヤを呼びません。
+      必須検証が失敗したら同じbatch内で原因を直します。未解決や実行不能なら保留し、承認にしません。
+      全修正と必要検証を終え、fix_batch_id、変更差分、指摘ID、検証結果を確定してから再確認へ進みます。
+    delta_recheck: |
+      review_passはDELTA_RECHECKです。同じ親session_idと子agent_idを再開します。
+      各IDの修正・撤回根拠、前回からの差分、関連する呼出元・呼出先と影響範囲、検証差分を確認します。
+      変わらない規則・全ファイルの再読込や、無関係な初回探索を繰り返しません。
+      真に未確認の義務と新たな退行は残します。必要なら追加の一括修正後に同じ担当へ戻します。
+      元担当が各指摘を解消確認または根拠付き撤回するまで、実装側だけで閉じません。
+    checkpoints: |
+      既存11項目を保ち、invocation_evidence内のreview_checkpointへreview_pass、
+      初回確認完了の有無とsnapshot、fix_batch_id、修正・必要検証の状態を記録します。
+      初回の途中応答を初回完了として扱いません。未確認の証拠や指摘をAPPROVEへ読み替えません。
   on_snapshot_change: |
     どのphaseでもコード、テスト、要件、規則でsnapshotが変われば、古い4段階の承認を失効させます。
-    Codexが修正と必要な検証を行い、順序の最も早い未承認phaseから再確認します。
+    初回全対象確認の完了を待ち、Codexが一括修正と必要な検証を終えてから再確認します。
+    既に開始したphaseだけをcr、qa、e2e、advの順に、同じ親子で差分再確認・再承認します。
+    まだ開始していない後続phaseを再承認の名目で先行起動しません。直前gateの承認後に初回を始めます。
     各担当は修正の影響を確認し、変わらない証拠の有効性を確かめて新しい承認を出します。
     調整役だけで古い承認を新しいsnapshotへ付け替えません。
     完了済みの無関係な範囲を毎回全面レビューしません。未確認範囲は台帳から継続します。
     E2EやL2で修正した場合も、cr、qa、e2e、advの順に最終snapshotへの承認をそろえます。
   on_new_prior_phase_finding: |
     新しい根拠で承認済みの前段担当へ指摘を返す場合、その承認と依存する後続承認をpendingへ戻します。
+    現在の初回確認を完了し、必要な一括修正と検証を終えてから、その担当へ戻します。
     snapshotが同じでも、その担当から順に必要な確認と再承認を行います。
 
 claude_cli:
@@ -132,11 +163,19 @@ claude_cli:
     下記の契約を指定agentにも渡し、実際の委譲結果を返してください。
     {authority_ownership_findings_questions_and_response_contracts}
     {review_gates_qa_contract_and_current_phase_contract}
+    Review pass: FIRST_PASS
+    初回は全対象と必要な専門相談を確認し、全指摘と初回確認完了の有無を返してください。
+    途中の指摘で実装側へ修正開始を求めず、未確認範囲があれば同じ担当で続けます。
     コードを変更せず、現在のファイルを読み直してください。
     本文の既存判定に加え、末尾にWorkflow Resultを返してください。
   resume_prompt_template: |
     Workflow: codex-claude-review
-    {prefix}: {phase}の前回担当を再開し、修正後の再確認をしてください。
+    {prefix}: {phase}の前回担当を再開してください。
+    Review pass: {review_pass}
+    初回確認完了の証拠とsnapshot: {first_pass_completion}
+    一括修正のID・完了状態・必要検証の状態: {fix_batch_checkpoint}
+    FIRST_PASSの継続では編集せず未確認範囲を完了します。
+    DELTA_RECHECKは一括修正と必要検証の完了後に限ります。
     親session_id: {saved_parent_session_id}
     前回の子agent_id: {saved_child_agent_id}
     新しいAgentを作らず、SendMessage(to={saved_child_agent_id})で同じ子へ以下を渡してください。
@@ -160,7 +199,8 @@ claude_cli:
   result_handling:
     - 終了コード、JSONのエラー情報、実際のresultとsession_idを確認します。
     - 正常終了、空の指摘一覧、文中のApproveという単語だけでは承認しません。
-    - 期待したagentの実呼び出し証拠、判定、対象snapshot、確認範囲を照合します。
+    - 期待したagentの実呼び出し証拠、判定、対象snapshot、確認範囲とreview_checkpointを照合します。
+    - 初回確認がPARTIALの間や、修正・必須検証が未完了の間は次の修正batch・再承認へ進めません。
     - 初回はAgentの新規起動と子agent_id、再開時はSendMessageの送信先agent_idが前回と一致することをCLIログで確かめます。同名の新規Agent起動は再開ではありません。
     - 実行ごとのAPI応答数、子Agent新規起動数、SendMessage再開数、モデル別input/output/cache read/cache write、CLI推定コストを記録します。比較時は親セッションの累計と増分を区別します。
     - 認証失敗、利用上限、必要な権限不足、壊れた応答はBLOCKEDとして記録します。
@@ -170,6 +210,9 @@ coordination:
   specialist_request: |
     現在のreview ownerがSPECIALIST_REQUESTを返したら、Claudeの親が指定専門担当を呼びます。
     同じphaseとsnapshotの結果を元のownerへ返し、その判断を続行します。
+    境界を追った後、同じ専門担当・phase・未変更の根拠に関する質問を初回確認中にまとめます。
+    専門担当の実子IDと結果を保持し、変更・未解決の質問だけを可能な限り同じ子へ再送します。
+    根拠が変わらない相談をテスト編集ごとに新規起動しません。追加必須相談が判明した場合は省略せず記録します。
     Codexへ依頼が戻った場合は、次の全項目とsnapshotを変更せず保持します。
     Owner | Phase | Specialist | Revision | Trigger | Question | Rules | Scope | Evidence checked | Return to
     必要な入力を添え、Claudeの親へ指定のClaude専門agentの実呼び出しを依頼します。
@@ -181,7 +224,7 @@ coordination:
     CodexのHQまたは実装側QAが、テストの追加・修正・削除と必要な実行を担当します。
     外部のClaude Code QA/E2Eは読み取り相談と提示結果の評価に限定し、実行を実装側へ依頼します。
     返された実行結果を対象snapshotと照合します。ファイルの存在だけで成功にしません。
-  boundaries: cr、qa、e2e、l2は各自の担当範囲を保ち、同じ義務を重複評価しません。
+  boundaries: cr、qa、e2e、l2は各自の担当範囲を保ち、同じ義務を重複評価しません。レビュー側は別レイヤを起動せず、親も途中のテスト編集だけで再レビューを起動しません。
 
 qa_contract:
   assignment: qaとe2eはexternal_test_adequacy_reviewerとして割り当て、両方の実agentを必ず呼びます。
@@ -307,7 +350,7 @@ pause_and_resume:
   no_iteration_limit_for_approval: true
   rule: 回数や時間の上限に達しても、承認や完了へ読み替えません。
   no_progress: 同じ指摘で修正・確認が進まない場合は、経過と疑問を上村さんへ返します。
-  partial_review: 未確認部分はCONTINUE_REVIEWとし、累積coverage台帳を渡して同じphaseの次sliceを確認します。
+  partial_review: 未確認部分はCONTINUE_REVIEWとし、編集を止めたまま同じ親子で次sliceを確認します。PARTIALやBLOCKEDを一括修正の開始許可にしません。
   failure: 質問、実行失敗、利用上限、権限不足では状態を保存し、未承認のまま停止します。
   resume: 原因が解消したら保存したphaseから再開し、変更の有無に応じて承認を更新します。
 

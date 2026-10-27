@@ -49,6 +49,19 @@ Load the active project's `.codex/workflows/codex-review.yml` first; otherwise t
 - `adviser` owns L2 re-review and final approval for this marker. Any phase's snapshot-changing fix requires renewed approvals in `cr -> qa -> e -> adv` order. All four approvals must cover the same final snapshot.
 - Neither side stages, commits, pushes, or merges. Claude returns the final uncommitted changes to 上村 for code confirmation and the commit. Preserve existing model/effort settings; runtime remains `NOT_RUN` until actual traces are observed.
 
+### Review completion and batched fixes
+
+For review assignments to CR, QA, E2E, and ADV, including standalone requests, follow this cycle. It does not change implementation-side QA/E2E authoring or an explicitly requested `rev:` route.
+
+1. Freeze the requested scope and snapshot. The first pass inspects the whole assigned scope, gathers required specialist evidence, and reports all evidenced findings, including 🟢 items. Keep the implementation unchanged until the owner explicitly completes inspection. An early blocker, `PARTIAL`, `BLOCKED`, a question, or `SPECIALIST_REQUEST` does not release this freeze; continue pending inspection with the same owner. Do not require a passing test or fixed finding to finish inspection; record missing execution as a repair/verification obligation, never as approval.
+2. After inspection is complete and dependent questions are answered, repair the complete finding batch and run the necessary tests. Keep all edits and test repairs in this batch. Do not request review after each file, test edit, or failed command. A failed required test stays with the implementation owner until resolved or explicitly blocked.
+3. Once the batch and required verification are ready, resume the original reviewer. Supply the previous/current snapshots, changed hunks, affected callers/callees, finding-ID changes, and verification delta. Check these changes and their impact, retain still-valid evidence, and close every finding individually. Do not repeat unrelated full-file/rule reads or first-pass discovery. Continue any genuinely unchecked obligation and retain any newly evidenced regression.
+4. A later fix is another complete batch before re-review. In the explicit four-layer workflow, renew only already-started owners in `cr -> qa -> e -> adv` order for the final snapshot, then start the next unstarted gate when due. Never launch an extra layer for each intermediate test edit. All four independent gates, happy/fail checks, all-item closure, and evidence requirements still apply.
+
+For Claude review, retain each phase's parent session and exact child ID; use parent `--resume` and `SendMessage(to=agent_id)` for continuation and re-review. Do not replace the owner with a fresh same-name Agent or `rev` automatically. For a standalone review, resume its original child through the available permitted continuation tool. If continuation or required history is unavailable, preserve the evidence and return pending/BLOCKED; do not claim reuse or approval. The explicitly separate `claude-codex-review` fresh-exec transport remains unchanged; its complete finding/coverage handoff is required instead of pretending to resume a Claude child.
+
+Batch specialist questions during the first pass after the necessary boundary trace, once per specialist, phase, and unchanged evidence set. Preserve specialist IDs/results; use the same consultant for a changed or unresolved question where continuation is available. Reopen only the affected evidence, not every React/Nest/QA/E2E task. Missing mandatory consultation stays pending; batching never waives it or authorizes another review layer.
+
 ### Independent QA and E2E gates
 
 Both workflows require the exact phase order `l1_5 -> qa -> e2e -> l2`, routed as `cr: -> qa: -> e: -> adv:` on the platform opposite the implementer. Invoke both `test-qa` and `e2e-qa` even when no test file changed; derive obligations from changed responsibilities and requirements. Do not replace either gate with the implementation-side QA's self-check.
@@ -68,7 +81,7 @@ Both workflows require the exact phase order `l1_5 -> qa -> e2e -> l2`, routed a
 
 The cumulative coverage ledger retains the fixed full phase scope, checked evidence, pending obligations/paths, and next slice for every fresh round. `COMPLETE` means the whole phase scope is covered; after a snapshot change, invalidate affected checks and revalidate evidence before carrying it forward.
 
-These two explicit workflows are the only exceptions to the default no-chain and post-fix `rev` routing below. Existing project authority, governance, specialist handshakes, model choices, and review-layer boundaries still apply.
+These two explicit workflows are the only exceptions to the default no-chain rule below. The complete-first cycle retains the original reviewer for ongoing repair confirmation; an explicit `rev:` request still routes to `reviewer`. Existing project authority, governance, specialist handshakes, model choices, and review-layer boundaries still apply.
 
 ## Available Agents
 
@@ -151,7 +164,7 @@ Rules:
 - browser/API E2E design or verification -> e2e-qa
 - L1.5 local code-quality review -> code-quality-reviewer
 - first-pass L2+ boundary review -> adviser
-- post-fix convergence -> reviewer
+- explicitly requested post-fix `rev:` convergence -> reviewer; ongoing repair confirmation -> original review owner
 - `sol-escalation` is not a normal first route
 - do not silently inline work owned by another agent
 - do not automatically chain review agents unless the user explicitly asks for a chained run
@@ -296,7 +309,7 @@ Recommended manual sequences:
 - Normal PR: `rp -> cr -> q -> adv`
 - E2E change present: `rp -> cr -> q -> e -> adv`
 - High-risk design/API/auth/DB change: `rp -> adv`, then focused `cr/q/e` as needed
-- After fixes from any layer: `rev`, except for the Explicit Codex-Claude Review Workflows.
+- After fixes within an ongoing review cycle: resume the original owner for bounded confirmation. An explicit `rev:` request starts `reviewer` convergence.
 
 These are manual sequences, not automatic chains.
 Each agent stops after its own layer unless the user explicitly asks otherwise.

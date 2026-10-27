@@ -41,7 +41,7 @@ Use the contract supplied from `.codex/workflows/claude-review.yml`; it is an ag
 - Preserve explicit prefix routing: `cr:` runs `code-quality-reviewer`, `qa:` runs `test-qa`, `e:` runs `e2e-qa`, and `adv:` runs `adviser`. Do not silently substitute another reviewer or change models.
 - In this experimental review workflow, save the real child agent ID on each phase's first Agent invocation. When the parent CLI session is resumed for the same phase, use `SendMessage` addressed to that exact child ID instead of invoking a fresh Agent. Revalidate the new snapshot and open obligations independently; previous approval does not carry over automatically. If the tool or session is unavailable, return BLOCKED with evidence rather than claiming a resumed review.
 - Each call owns its requested phase. Codex requests `cr -> qa -> e -> adv` in order after each scoped gate passes; review receivers never start the next phase themselves.
-- The authorized loop permits scoped re-reviews. `adv` owns L2 fix verification and final approval in this workflow; normal post-fix `rev` routing applies elsewhere.
+- The authorized loop permits scoped re-reviews. `adv` owns L2 fix verification and final approval in this workflow; an explicit `rev:` request still starts separate `reviewer` convergence. Ongoing standalone review cycles retain their original owner.
 - Keep all findings, including 🟢 notes, until reviewer-confirmed closure. Return every implementation uncertainty for 上村 rather than deciding it silently.
 - Preserve `SPECIALIST_REQUEST` and governance obligations. Obtain required consultation through an available permitted tool or return the request to Codex; missing consultation is not approval.
 - Return the supplied `Workflow Result` fields with the native verdict, current snapshot, coverage, open findings, questions, handoffs, and actual invocation evidence.
@@ -60,6 +60,19 @@ Load the active project's `.codex/workflows/codex-review.yml` first; otherwise t
 - Repeat fixes and same-layer re-review until all findings, including 🟢 notes, are reviewer-confirmed closed. Relay all implementation uncertainties to 上村; unanswered questions or missing evidence keep the workflow pending.
 - Codex `adviser` owns its L2 re-review. A snapshot-changing fix in any phase requires current Codex approvals in `cr -> qa -> e -> adv` order. Stop only when all four cover the same latest snapshot and all required obligations are closed.
 - Leave changes uncommitted for 上村's code confirmation and commit. Runtime remains `NOT_RUN` until actual CLI/delegation traces are observed.
+
+### Review completion and batched fixes
+
+For review assignments to CR, QA, E2E, and ADV, including standalone requests, follow this cycle. It does not change implementation-side QA/E2E authoring or an explicitly requested `rev:` route.
+
+1. Freeze the requested scope and snapshot. The first pass inspects the whole assigned scope, gathers required specialist evidence, and reports all evidenced findings, including 🟢 items. Keep the implementation unchanged until the owner explicitly completes inspection. An early blocker, `PARTIAL`, `BLOCKED`, a question, or `SPECIALIST_REQUEST` does not release this freeze; continue pending inspection with the same owner. Do not require a passing test or fixed finding to finish inspection; record missing execution as a repair/verification obligation, never as approval.
+2. After inspection is complete and dependent questions are answered, repair the complete finding batch and run the necessary tests. Keep all edits and test repairs in this batch. Do not request review after each file, test edit, or failed command. A failed required test stays with the implementation owner until resolved or explicitly blocked.
+3. Once the batch and required verification are ready, resume the original reviewer. Supply the previous/current snapshots, changed hunks, affected callers/callees, finding-ID changes, and verification delta. Check these changes and their impact, retain still-valid evidence, and close every finding individually. Do not repeat unrelated full-file/rule reads or first-pass discovery. Continue any genuinely unchecked obligation and retain any newly evidenced regression.
+4. A later fix is another complete batch before re-review. In the explicit four-layer workflow, renew only already-started owners in `cr -> qa -> e -> adv` order for the final snapshot, then start the next unstarted gate when due. Never launch an extra layer for each intermediate test edit. All four independent gates, happy/fail checks, all-item closure, and evidence requirements still apply.
+
+For Claude review, retain each phase's parent session and exact child ID; use parent `--resume` and `SendMessage(to=agent_id)` for continuation and re-review. Do not replace the owner with a fresh same-name Agent or `rev` automatically. For a standalone review, resume its original child through the available permitted continuation tool. If continuation or required history is unavailable, preserve the evidence and return pending/BLOCKED; do not claim reuse or approval. The explicitly separate `claude-codex-review` fresh-exec transport remains unchanged; its complete finding/coverage handoff is required instead of pretending to resume a Claude child.
+
+Batch specialist questions during the first pass after the necessary boundary trace, once per specialist, phase, and unchanged evidence set. Preserve specialist IDs/results; use the same consultant for a changed or unresolved question where continuation is available. Reopen only the affected evidence, not every React/Nest/QA/E2E task. Missing mandatory consultation stays pending; batching never waives it or authorizes another review layer.
 
 ### Independent QA and E2E gates
 
@@ -80,7 +93,7 @@ Both workflows require the exact phase order `l1_5 -> qa -> e2e -> l2`, routed a
 
 The cumulative coverage ledger retains the fixed full phase scope, checked evidence, pending obligations/paths, and next slice for every fresh round. `COMPLETE` means the whole phase scope is covered; after a snapshot change, invalidate affected checks and revalidate evidence before carrying it forward.
 
-These two explicit workflows are the only exceptions to the default no-chain and convergence-owner rules below. Only the implementation-side coordinator starts subsequent layers; the review receiver does not implement fixes or reverse the workflow.
+These two explicit workflows are the only exceptions to the default no-chain rule below. The complete-first cycle retains the original reviewer for ongoing repair confirmation; an explicit `rev:` request still routes to `reviewer`. Only the implementation-side coordinator starts subsequent layers; the review receiver does not implement fixes or reverse the workflow.
 
 ---
 
@@ -332,7 +345,7 @@ Standard flows:
 - Normal PR: `rp -> cr -> q -> adv`
 - E2E changes: `rp -> cr -> q -> e -> adv`
 - High-risk API/auth/data/design change: `rp -> adv`, then focused specialists as needed
-- Re-review after fixes: `rev`, except for the Explicit Codex-Claude Review Workflows.
+- Re-review within an ongoing repair cycle: resume the original owner. An explicit `rev:` request starts separate `reviewer` convergence.
 - Prior plan/review available: pass it as evidence to the relevant agent; do not restart every layer
 
 Layer split:
