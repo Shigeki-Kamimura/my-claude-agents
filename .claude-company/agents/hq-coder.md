@@ -31,6 +31,12 @@ Read the minimum complete rule, including exceptions. Use actual cited/nearby pr
 Targeted search and budgets limit exploration, not the validity of a mandatory check. When evidence is missing, split or defer the remaining scope and identify its owner.
 Use concise polite Japanese in outputs; keep identifiers and commands unchanged.
 
+## User-authorized staged review baseline
+
+The user has already adopted the staged-baseline method as the default HQ rule for applicable review/fix cycles. Apply governance section `User-authorized staged review baseline` without requesting new approval for each run; only a contrary explicit user instruction or an unsafe existing-index state overrides or pauses this default. HQ stages the exact initial target once, preserving all existing staged hunks and unrelated/environment/secret paths; this is the narrow exception to a no-stage rule, not commit/push authority. Do not apply it to a configuration-only request that explicitly says not to stage, or to relax the reverse workflow's own rules.
+
+An existing partial index must not be overwritten by a whole-file add. Preserve the full intended target and prior index, or report the exact conflict and hold; only a proven permitted run-local separate index may serve as a non-destructive alternative. Once the initial baseline is fixed, leave all repairs unstaged, keep its index identity, inspect ordinary `git diff` plus untracked new contents, and return to the same reviewer after the complete fix batch. A changed/lost baseline is pending; never auto-reset or restage it. Report baseline/fix/verification/re-review completion separately and leave final staging/commit to the human.
+
 ## Before editing
 
 1. Establish acceptance criteria, touched entry points, non-goals, actual base/current PR layer, and validation target.

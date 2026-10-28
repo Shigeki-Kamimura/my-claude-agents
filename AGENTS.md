@@ -14,18 +14,9 @@ Select direction only from the current explicit request or its single active `Wo
 
 ### Codex implementation, Claude review
 
-An explicit request such as `Claude codeにレビューしてもらって修正入れようか` authorizes the `codex-claude-review` workflow and its scoped fix/re-review loops. A standalone `cr:` request does not.
+Only an explicit chained-review request activates `codex-claude-review`; standalone `cr:`, `qa:`, `e:` and `adv:` keep their own layer. Read the project's `.codex/workflows/claude-review.yml`, or `workflows/claude-review.yml` beside the resolved `.codex/AGENTS.md`; keep the review project's cwd. Missing configured sources remain pending, without changing project links/settings.
 
-Load the active project's `.codex/workflows/claude-review.yml` first. If absent, resolve the active project's `.codex/AGENTS.md` with `realpath`/`readlink` and load `workflows/claude-review.yml` beside that resolved file. Keep the working directory at the target project; never switch to the configuration repository to review its diff. Record the resolved YAML absolute path and `workflow_id` at workflow start. If neither file exists, report the setup gap. Do not invent a workflow, review base, or approval.
-
-The YAML is an instruction contract for the coordinator, not a native Codex/Claude workflow schema. Send the full applicable contract on each phase's first call. Resume the exact parent CLI session and child ID for subsequent calls; send only snapshot, finding, coverage, verification, and rule deltas. Retain the prior full contract and request missing context rather than guessing it. The reviewer need not read an inaccessible external configuration path.
-
-- The Codex coordinator delegates implementation/fixes to `hq-coder` and necessary verification to QA/E2E owners. It does not implement or replace Claude's judgment itself.
-- Explicitly pass every owner: ask 上村 about all implementation uncertainties; resolve all findings including 🟢 notes; never stage, commit, push, or merge.
-- Run Claude `cr:` L1.5, `qa:` test adequacy, `e:` E2E adequacy, and `adv:` L2 in that order. Each gate includes its scoped fix/re-review loop and uses the YAML's coverage, finding-ledger, and current-snapshot approval conditions.
-- In this workflow, each owner confirms its fixes; `adv` owns L2 re-review and final `APPROVE` without replacement by `rev`. A fix in any phase that changes the snapshot requires renewed `cr -> qa -> e -> adv` approvals.
-- Relay unresolved questions to 上村 and resume after answers. Missing evidence, unavailable tools/models, and interrupted reviews remain pending.
-- Leave the final changes uncommitted for 上村's code check. 上村 alone performs the commit.
+The workflow and governance sections `Autonomous Claude review`, `User-authorized staged review baseline`, and `Evidence reuse and concise reporting` are the operational source of truth. Send only the short phase request and actual user constraints/answers; Claude obtains its own diff and source. Use the configured Sonnet coordinator and the actual phase owner, complete the whole first pass before batch fixes, and resume the same parent/child for delta confirmation. Required consultation, all 🔴–🟢 findings, and current-snapshot approval remain mandatory. Native Claude full access follows the workflow; OS/Codex/managed controls and user limits retain precedence.
 
 ### Claude implementation, Codex review
 
@@ -41,56 +32,17 @@ Load the active project's `.codex/workflows/codex-review.yml` first; otherwise t
 - `adviser` owns L2 re-review and final approval for this marker. Any phase's snapshot-changing fix requires renewed approvals in `cr -> qa -> e -> adv` order. All four approvals must cover the same final snapshot.
 - Neither side stages, commits, pushes, or merges. Claude returns the final uncommitted changes to 上村 for code confirmation and the commit. Preserve existing model/effort settings; runtime remains `NOT_RUN` until actual traces are observed.
 
-### Review completion and batched fixes
+### Autonomous Claude review
 
-For review assignments to CR, QA, E2E, and ADV, including standalone requests, follow this cycle. It does not change implementation-side QA/E2E authoring or an explicitly requested `rev:` route.
+Read the applicable governance sections on the first review; on the same-owner continuation reuse unchanged rules and evidence under `Rule loading across continuations`. A request such as `adv: このブランチの差分をL2レビューしてください。` or `再レビューしてください。` needs no contract/diff dump. Claude inspects the actual requested base and source, completes the full initial scope, and returns every finding before Codex/HQ fixes the batch. CR/ADV inspect with Git/read/search without executing application/test/build code; QA/E2E decide necessary scoped verification. No source/test edits belong to a review request.
 
-1. Freeze the requested scope and snapshot. The first pass inspects the whole assigned scope, gathers required specialist evidence, and reports all evidenced findings, including 🟢 items. Keep the implementation unchanged until the owner explicitly completes inspection. An early blocker, `PARTIAL`, `BLOCKED`, a question, or `SPECIALIST_REQUEST` does not release this freeze; continue pending inspection with the same owner. Do not require a passing test or fixed finding to finish inspection; record missing execution as a repair/verification obligation, never as approval.
-2. After inspection is complete and dependent questions are answered, repair the complete finding batch and run the necessary tests. Keep all edits and test repairs in this batch. Do not request review after each file, test edit, or failed command. A failed required test stays with the implementation owner until resolved or explicitly blocked.
-3. Once the batch and required verification are ready, resume the original reviewer. Supply the previous/current snapshots, changed hunks, affected callers/callees, finding-ID changes, and verification delta. Check these changes and their impact, retain still-valid evidence, and close every finding individually. Do not repeat unrelated full-file/rule reads or first-pass discovery. Continue any genuinely unchecked obligation and retain any newly evidenced regression.
-4. A later fix is another complete batch before re-review. In the explicit four-layer workflow, renew only already-started owners in `cr -> qa -> e -> adv` order for the final snapshot, then start the next unstarted gate when due. Never launch an extra layer for each intermediate test edit. All four independent gates, happy/fail checks, all-item closure, and evidence requirements still apply.
-
-For Claude review, retain each phase's parent session and exact child ID; use parent `--resume` and `SendMessage(to=agent_id)` for continuation and re-review. Do not replace the owner with a fresh same-name Agent or `rev` automatically. For a standalone review, resume its original child through the available permitted continuation tool. If continuation or required history is unavailable, preserve the evidence and return pending/BLOCKED; do not claim reuse or approval. The explicitly separate `claude-codex-review` fresh-exec transport remains unchanged; its complete finding/coverage handoff is required instead of pretending to resume a Claude child.
-
-Batch specialist questions during the first pass after the necessary boundary trace, once per specialist, phase, and unchanged evidence set. Preserve specialist IDs/results; use the same consultant for a changed or unresolved question where continuation is available. Reopen only the affected evidence, not every React/Nest/QA/E2E task. Missing mandatory consultation stays pending; batching never waives it or authorizes another review layer.
-
-### Automatic evidence handoff for re-review
-
-For CR/QA/E2E/ADV re-review, including standalone requests, the coordinator collects the following packet without asking the user to repeat available facts. After the complete fix batch and necessary verification, send it together to the original owner. A one-line re-review instruction, a filename list, a test count, or a fix summary alone is insufficient.
-
-- Identity: run/worktree/phase, original parent and exact child ID, previous and current snapshot/base/head, fixed scope, and fix-batch ID.
-- Findings and actual changes: map every phase-owned finding ID to its original obligation, repair location, actual before/after hunks, affected callers/callees, and remaining status. Include changed specification/requirement/rule sections with previous/current versions and enough surrounding text to preserve exceptions. Do not silently omit document changes or new/deleted/renamed files.
-- Verification: include every relevant receipt's ID, exact command/cases, execution environment, exit/result, observed assertions or failure, source artifact, and execution snapshot; distinguish Executed, Supplied, and Not executed. Check the complete relevant evidence manifest, not a count-only or top-N summary. If later edits affect a receipt, obtain new evidence or retain its gap rather than relabeling it current.
-- Answers and pending work: map each question ID to the user's exact answer and source message/document/version. Distinguish the user's answer from an implementer assumption or AI agreement. Retain unanswered questions, unchecked obligations, missing evidence, and specialist status. Keep other layers' open handoffs with their actual owners; do not charge them as this owner's local findings or silently close them.
-
-Before dispatch, compare the packet with the prior finding/question/coverage/evidence ledgers and the actual delta. Record its identity, evidence IDs/count, and missing items. Send permitted available evidence in one batch; an empty required field is missing evidence, not unchanged/none. If facts remain unavailable, retain state, return the exact input gap to its owner, and withhold approval. Do not invent a packet, source, user answer, test success, or current snapshot. On return, match the actual recipient and acknowledged snapshot/evidence/questions against what was sent; a successful SendMessage alone proves neither receipt inspection nor approval. Ask the same owner only for a precise unresolved gap, not another full review.
-
-Resumed parent/child history may retain and reuse earlier prompts, rules, document text, and evidence; do not promise its deletion, isolation, or zero processing cost. With the same owner and unchanged source versions, reuse the initial complete rule/document reading. Sending the changed source excerpt in the packet is different from asking the reviewer to reopen the original documents or resending their full unchanged contents. Request a bounded original read only when necessary evidence is unavailable, ambiguous, or materially changed and the user's constraints permit it. Initial mandatory source reading is preserved; changed requirements need explicit traceable scope/acceptance updates and affected-evidence revalidation, never assumed continuation under old approval.
-
-Explicit user restrictions on transmission, exact prompt text, additional instructions, or document access take precedence. Record and honor their actual scope: a ban on reopening an original document does not itself ban an otherwise permitted diff excerpt; a literal-only message or ban on sending source content does prohibit adding that packet content. Never append extra evidence/instructions or reopen a source contrary to that restriction. Preserve permitted history and state; if required evidence cannot be supplied or checked within the restriction, return DEFER/BLOCKED and the missing obligation. Do not claim unread evidence was checked. This packet rule does not change the separate fresh-exec transport or full-ledger requirements of `claude-codex-review`.
+HQ's already authorized staged-baseline default is defined in governance. Preserve existing staged hunks, freeze only the safe initial target, and leave fixes unstaged; lost or conflicting baselines stay pending. This does not authorize staging these configuration edits or relax the reverse workflow.
 
 ### Independent QA and E2E gates
 
-Both workflows require the exact phase order `l1_5 -> qa -> e2e -> l2`, routed as `cr: -> qa: -> e: -> adv:` on the platform opposite the implementer. Invoke both `test-qa` and `e2e-qa` even when no test file changed; derive obligations from changed responsibilities and requirements. Do not replace either gate with the implementation-side QA's self-check.
+For an explicitly authorized four-layer workflow, follow its full contract in `cr -> qa -> e -> adv` order; standalone requests do not start that chain. Assign `external_test_adequacy_reviewer` to the real QA/E2E owners even when no test changed. QA owns local unit/service/direct-controller contracts; E2E owns browser/API/HTTP/module boundaries. Each checks happy/fail paths for missing and excessive tests with sourced obligations, and preserves required guarantees when consolidating tests.
 
-- Explicitly assign `review_role: external_test_adequacy_reviewer` for received `qa` and `e2e` calls, with the active workflow marker, phase, and actual user request. This read-only review role does not apply to implementation-side QA authoring/execution or standalone agent use.
-- Record the implementer's and reviewers' platform/model settings and actual delegation evidence in the existing `invocation_evidence` field. Keep model/effort settings unchanged. A same-implementer-model substitution, missing invocation, or invented trace is not independent approval.
-- `test-qa` owns unit/service/direct-controller contracts and its scoped integration checks. `e2e-qa` owns browser flows, API/HTTP, and module-boundary checks. Classify by the boundary exercised; do not duplicate the same obligation across the two.
-- Inspect both missing and excessive tests. Findings require the obligation or unnecessary behavior, concrete evidence, impact, and the smallest justified action. Excess means evidenced meaningless duplication, brittle dependence on implementation details, out-of-scope cases, or ineffective assertions; counts, line totals, and coverage percentages alone do not justify deletion. Preserve distinct required responsibilities.
-- QA/E2E must check happy paths and fail paths separately for missing and excessive tests: expected success/state changes and applicable input rejection, authorization denial, or dependency failures within the assigned responsibility. These examples do not expand scope. APPROVE requires both sides complete; for a side with no applicable obligation, the actual reviewer records the not-applicable reason in the coverage ledger. Happy path success cannot replace an unchecked fail path. Deletion/consolidation must preserve required verification on both sides.
-- All findings including 🟢 notes remain open until the owning reviewer confirms the fix or withdraws a disproved finding. Retain every issue and pending obligation beyond presentation limits. The implementation side owns test creation, changes, removal, and execution; external QA evaluates current-revision evidence and requests missing work.
-- Only the actually invoked reviewer may conclude that no test obligation applies, after inspecting the change and giving a concrete reason. No changed tests, absent test files, unavailable authentication/tools, or missing execution evidence cannot silently become approval.
-- QA/E2E native verdicts are `APPROVE / REQUEST_CHANGES / DEFER`. A clean scoped result can be a short `APPROVE` plus the eleven-field `Workflow Result`; do not invent findings or require an unnecessary checklist. `COMPLETE` covers the cumulative full phase scope; `PARTIAL` continues the same phase.
-- Each gate may approve only with its own findings, questions, and required evidence closed. Explicit, evidence-backed handoffs to later owners remain in the ledger without blocking an otherwise complete earlier scope. A reviewer cannot move its own unresolved obligation to another owner just to approve. `L1.5_APPROVE_WITH_NOTES` is accepted only for CR-classified later `qa/e2e/l2` handoffs, with no local notes left.
-- Any snapshot change invalidates old approvals from all four phases. Restart at the earliest unapproved phase; recheck affected evidence and revalidate unchanged evidence without repeating unrelated full reviews. Each reviewer must explicitly renew its approval for the current snapshot; the coordinator cannot relabel an old approval.
-- New evidence reopening a previously approved earlier owner makes that approval and dependent later judgments pending even without a snapshot change. Return to that owner and then continue in phase order.
-- A `SPECIALIST_REQUEST` returns to the same phase and original owner after actual read-only consultation. QA/E2E must not start a hidden L2 review. Final handoff requires all four current-snapshot approvals, no open findings/questions/handoffs, and uncommitted changes for 上村's confirmation and commit.
-
-The cumulative coverage ledger retains the fixed full phase scope, checked evidence, pending obligations/paths, and next slice for every fresh round. `COMPLETE` means the whole phase scope is covered; after a snapshot change, invalidate affected checks and revalidate evidence before carrying it forward.
-
-These two explicit workflows are the only exceptions to the default no-chain rule below. The complete-first cycle retains the original reviewer for ongoing repair confirmation; an explicit `rev:` request still routes to `reviewer`. Existing project authority, governance, specialist handshakes, model choices, and review-layer boundaries still apply.
-
----
+Keep every finding through 🟢 Low, question, handoff and mandatory evidence gap until its owner confirms closure or withdraws it with evidence. Missing evidence never becomes approval. Repairs require the same owners to renew their conclusions for one final snapshot in phase order, reusing valid unchanged evidence rather than repeating full discovery. Preserve actual invocation/model evidence and the workflow's eleven result fields. An explicit `rev:` still routes to `reviewer`. The reverse read-only transport retains its own fresh-round and complete-ledger requirements.
 
 ## Mission
 
@@ -128,7 +80,7 @@ Target review budget:
 - `adv:` 30k-60k tokens
 - `rev:` 10k-25k tokens
 
-If a scoped review is likely to exceed its target, reduce scope before reading more files and state what was left for another layer.
+These are planning targets, not quotas or permission to drop checks. If a slice exceeds its target, retain the full requested scope and pending obligations, then continue with the same owner; do not create another layer or approve partial coverage.
 
 ---
 
@@ -140,13 +92,15 @@ Default strategy:
 - hq-coder -> Sonnet / high
 - review-planner -> Sonnet / medium
 - code-quality-reviewer -> Sonnet / high
-- adviser -> Opus / high
+- adviser -> Opus 5.5 (`claude-opus-5-5`) / high
 - reviewer -> Sonnet / high
 - test-qa -> Sonnet / high
 - e2e-qa -> Sonnet / medium
 - sec-arch / data-platform -> Sonnet / high
 - framework specialists -> Sonnet / high
 - opus-escalation -> Opus / high
+
+Use project defaults `model: sonnet` / `effortLevel: medium` for coordination; explicit user model choices take precedence. Dedicated agents keep their own frontmatter model/effort. Do not pass an Agent-call `model` or `effort` override that replaces these role settings, especially Adviser’s fixed Opus 5.5. Record the actual model when available; an overridden/unavailable required L2 model is pending, never silently substituted.
 
 Budget rule:
 - Sonnet remains the default for planning, implementation, L1.5, QA, specialists, and normal convergence review.
@@ -166,7 +120,7 @@ Prior-work reuse:
 
 ## L2+ Model Policy
 
-- `adv:` / `a:` and a planner route to `adviser` use Opus / high from the first pass.
+- `adv:` / `a:` and a planner route to `adviser` use Opus 5.5 (`claude-opus-5-5`) / high from the first pass.
 - This allocation changes the model, not the entry rules, review scope, or file budget.
 - `cr:`, normal `rev:`, QA, and specialist models remain unchanged.
 - Outside the Explicit Codex-Claude Review Workflows, do not add automatic review chains or repeat passes. Never add a Sonnet prerequisite.
