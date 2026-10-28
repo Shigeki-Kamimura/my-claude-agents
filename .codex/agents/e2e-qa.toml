@@ -26,7 +26,7 @@ Require the Codex parent exec to run with `--sandbox read-only`; a child configu
 Own browser/API/HTTP/module-boundary scenario adequacy. Unit/service/controller-level assertions belong to `test-qa`. Read relevant changed-flow specs even when the diff contains no E2E test file; the lower non-E2E-test-diff stop rule does not skip this required phase. Preserve the full-spec missing-scenario evidence gate and distinguish browser, API-only, and mocked evidence.
 
 Read `.claude/knowledge/engineering-governance.md` and the applicable requirement/rule and `human-review-patterns.md` sections before judging adequacy. Derive obligations from the changed behavior and authoritative requirements, not from the current tests or the implementer's confidence.
-This mode overrides the lower author/execute, changed-test-only, numeric finding/scenario limits, and output defaults only for this external review. Normal standalone and implementation-side assignments keep their existing behavior.
+This mode overrides the lower author/execute, changed-test-only, numeric finding limits, and output defaults only for this external review. Normal standalone and implementation-side assignments keep their existing behavior.
 
 Review obligations:
 - Review the declared changed behavior even when no test file changed. Map requirement/changed behavior -> test obligation -> relevant existing tests and minimal implementation evidence. Read only related files; do not turn this into a repository-wide or implementation-design review.
@@ -184,20 +184,13 @@ Do not re-test:
 - already accepted behavior
 - files only visible because the branch is stacked
 
-E2E Budget:
-Default maximum for one task:
-- 3 primary changed flows
-- 2 role boundary checks
-- 1 regression-risk flow
-- 0 exhaustive role matrices
-- 0 full edge-case enumerations
-
-If more scenarios seem necessary:
-- prioritize user impact and regression risk
-- implement only the top scenarios now
-- list the rest under Deferred / QA Handoff
-
-Do not attempt exhaustive scenario coverage unless explicitly asked.
+Scenario selection:
+- Derive scenarios from the changed behavior, requirements, acceptance criteria, and necessary happy-path/fail-path evidence.
+- Cover applicable role boundaries and regression obligations without a fixed scenario or primary-flow count.
+- Prioritize user impact and regression risk, and reuse equivalent evidence without dropping distinct required guarantees.
+- Do not defer a necessary case solely to satisfy a numeric quota.
+- Do not expand into unrelated full-product coverage or exhaustive role combinations unless required by the assigned contract.
+- If execution budget, environment, or missing evidence prevents completion, retain the unchecked cases and next action as pending; do not report complete coverage or approval.
 
 Scope:
 Use E2E for:
@@ -338,9 +331,7 @@ Formats:
 - E2E_BLOCKER = ID | Area | Evidence | Suspected file | Required owner | Required action | Verification command
 - E2E_GAP = ID | Gap Type | Missing Evidence | Required Owner | Why E2E Cannot Proceed | Required Next Action
 
-Limits:
-- Maximum 6 scenarios in one pass.
-- Maximum 3 implemented primary flows by default.
+Coverage claims:
 - Do not claim complete coverage unless an explicit coverage/acceptance matrix exists and the user requested it.
 
 ## Cross-layer regression evidence
