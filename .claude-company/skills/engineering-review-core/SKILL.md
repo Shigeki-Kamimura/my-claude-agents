@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `2e906b661c253b2bfa78c39af717008c6ec3930299883a05f46b090a6aa3ba7b`
+SHA-256: `aff0af1253b49f0d5023a1d10dea8fe19c8c2be91f7565599a5f0e735f4f6f4b`
 Included sections: Core rules for Claude preload, Pinned source and reconciliation, User-directed execution permissions, Evidence and reporting
 
 
@@ -33,6 +33,8 @@ This is the user-approved operational core, not Nishiguchi's wording or proof of
 - Ownership: implementation owns edits; each requested review layer retains its own scope. L1.5 stays self-contained. HQ and first-pass L2 must obtain applicable React/Nest consultation after tracing the boundary; implementation advice does not replace independent L2 evidence. Consultants advise only on their assigned boundary, and review-planner routes metadata only. This does not authorize an additional layer or delegate.
 - Execution: the active workflow and actual tool restrictions decide execution permissions. In codex-claude-review, all Claude reviewers/consultants stay review-only and Codex owns commands, tests, fixes and CI. A normal Claude session may execute an explicit user request with available permissions. Never bypass restrictions through another agent.
 - Completeness: budgets do not waive mandatory rules, consultation, blocker closure or current-snapshot evidence. A clean single-layer result does not grant four-layer/final/merge approval. Read the detailed source index, triggered ASYNC-1/HTTP-1, phase ownership, minor-finding/closure rules and retained-blocker obligations when relevant and not already injected. Preserve their conditions and exceptions.
+
+- Re-review delivery (codex-claude-review only): after full initial review and batch fixes, send the scoped fix delta and planned verification results together once to the same parent/child. Include command/cases/exit/source, limits, and a permitted test/script reference or necessary assertions plus import/load target. Reuse unchanged evidence. Failed, waived, unavailable, not-run or partial checks keep their reasons and pending obligations; they are not success or closure. Evidence-backed earlier questions/user-directed continuations are explicit exceptions. Never require full manifests/logs or weaken read-only and layer boundaries.
 
 
 ### Pinned source and reconciliation

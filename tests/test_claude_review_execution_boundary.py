@@ -54,6 +54,55 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                     self.assertIn("Codex", owner)
                     self.assertTrue("Never" in owner or "forbidden" in owner)
 
+    def test_both_resume_templates_deliver_fix_and_verification_together(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        for name, end in (("single_layer", "authority"), ("claude_cli", "review_entry")):
+            with self.subTest(template=name):
+                block = workflow.split("\n" + name + ":\n", 1)[1].split("\n" + end + ":\n", 1)[0]
+                initial = block.split("  prompt_template: |\n", 1)[1].split("  resume_prompt_template: |\n", 1)[0]
+                resume = block.split("  resume_prompt_template: |\n", 1)[1]
+                self.assertNotIn("{fix_and_verification_evidence}", initial)
+                self.assertIn("{fix_and_verification_evidence}", resume)
+                self.assertIn("{new_answers_or_constraints}", resume)
+                self.assertIn("{rereview_exception}", resume)
+                if name == "single_layer":
+                    self.assertIn("Mode: single-layer {phase}", resume)
+
+    def test_batched_delivery_keeps_verifier_scope_and_incomplete_states(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        cycle = workflow.split("\nreview_cycle:\n", 1)[1].split("\nconsultation:\n", 1)[0]
+        values = dict(re.findall(r"(?m)^  ([a-z_]+): (.+)$", cycle))
+        for field in ("fix", "rereview_inputs", "verification_evidence", "rereview_exceptions"):
+            self.assertIn(field, values)
+        for scope in ("staged", "unstaged", "untracked", "source", "終了コード"):
+            self.assertIn(scope, values["rereview_inputs"])
+        for obligation in ("assertion", "Read", "読み込んだ対象", "Codexの提示証拠"):
+            self.assertIn(obligation, values["verification_evidence"])
+        self.assertIn("失敗を含む", values["fix"])
+        self.assertIn("全テスト成功を一律の再依頼条件にはしません", values["fix"])
+        for state in ("NOT_RUN", "FAILED", "PARTIAL"):
+            self.assertIn(state, values["rereview_exceptions"])
+        self.assertIn("追加質問", values["rereview_exceptions"])
+        self.assertIn("単層", values["rereview_exceptions"])
+
+    def test_batched_delivery_is_scoped_and_reaches_both_preloads(self):
+        for profile in (".claude", ".claude-company"):
+            with self.subTest(profile=profile):
+                governance = read(f"{profile}/knowledge/engineering-governance.md")
+                batch = governance.split("### Batched re-review evidence\n", 1)[1].split("\n### ", 1)[0]
+                self.assertIn("For `codex-claude-review` only", batch)
+                self.assertIn("not that every test passed", batch)
+                self.assertIn("necessary assertions and import/load target", batch)
+                self.assertIn("NOT_RUN / FAILED / PARTIAL", batch)
+                core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
+                self.assertIn("Re-review delivery (codex-claude-review only)", core)
+                self.assertIn("they are not success or closure", core)
+        cases = read("tests/agent-review-contract-cases.yml")
+        for case in ("batched-rereview-default", "batched-verifier-readable",
+                     "batched-rereview-failed-verification", "batched-rereview-early-question",
+                     "batched-rereview-waived-or-interrupted"):
+            self.assertEqual(cases.count("  - id: " + case + "\n"), 1)
+
     def test_reverse_workflow_still_has_its_own_owner(self):
         reverse = read(".codex/workflows/codex-review.yml")
         self.assertIn("claude-codex-review", reverse)

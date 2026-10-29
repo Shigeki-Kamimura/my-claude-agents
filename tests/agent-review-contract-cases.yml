@@ -235,3 +235,23 @@ cases:
     phase: convergence
     input: revへ引き継ぐ既存の指摘に、🟢Lowと🟢Infoが含まれます。
     expected: convergenceのreviewerが追跡するのは、🔴🟡と🟢Lowです。Infoは指摘ではないため、引き継ぎも追跡もしません。
+  - id: batched-rereview-default
+    phase: L2
+    input: Codex側で初回指摘の一括修正と予定した検証が終わりました。
+    expected: 修正差分と実行結果を対象sourceと共にまとめて元の同じ親子へ渡します。不要な修正先行・結果後送に分割せず、他層を開始しません。
+  - id: batched-verifier-readable
+    phase: L2
+    input: PASSのケース名だけが提示され、verifierは除外されたreports内にあります。
+    expected: 読取り権限を広げず、必要なtest/scriptの狭い参照またはassertionと読み込み対象の抜粋を求めます。結果を成功や閉鎖へ読み替えません。
+  - id: batched-rereview-failed-verification
+    phase: L2
+    input: 予定した検証は終了しましたが、一部が失敗しました。
+    expected: 差分と失敗を含む実結果をまとめて同じ担当へ渡せます。全テスト成功を一律の再依頼条件にせず、FAILEDの原因と未了義務を保持します。
+  - id: batched-rereview-early-question
+    phase: L2
+    input: 検証の完了前に、修正方針を左右するレビュー判断が必要です。
+    expected: 根拠のある例外として理由と未了義務を示し、同じ担当へ先に質問できます。通常の一括提供とは区別し、未実行を成功にしません。
+  - id: batched-rereview-waived-or-interrupted
+    phase: L2
+    input: 利用者が型検査を不要と指示し、別の検証は環境不備で途中停止しました。
+    expected: NOT_RUNとPARTIALの理由・対象・未了義務を差分と共に渡します。利用者指示だけで具体的欠陥を免除せず、他層の承認やhandoff閉鎖を推測しません。

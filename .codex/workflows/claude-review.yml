@@ -44,6 +44,8 @@ single_layer:
     前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
     規則の原文が変わった場合だけ出典を更新: {changed_rule_source_identity}
     新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
+    修正差分と予定した検証結果をまとめて（対象source・狭い参照先・限界を含む）: {fix_and_verification_evidence}
+    通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
   rereview: 同じ親子を再開して同phaseだけを再確認します。
   scope_priority: 単層のときは、qa_contract.assignmentの両agent必須とreview_gates.orderより優先し、該当phaseのみ実行します。単層のqa/e2eでも、その実agentへexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。単層のcr/advがqa/e2e/l2へ割り当てたhandoffは単層では閉じず、未了の義務として報告します。
   approval: 単層の承認は、その層と確認した現snapshotにだけ有効です。四層承認、引渡し可、最終承認を意味しません。
@@ -114,6 +116,8 @@ claude_cli:
     前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
     規則の原文が変わった場合だけ出典を更新: {changed_rule_source_identity}
     新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
+    修正差分と予定した検証結果をまとめて（対象source・狭い参照先・限界を含む）: {fix_and_verification_evidence}
+    通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
   invocation:
   - 各phaseの初回は独立した実担当を起動し、親session_idと実child agent_idを保持します。
   - 同phaseは親を--resumeし、親からSendMessageで元の実childを再開します。同名の新規起動を再開にしません。
@@ -136,9 +140,11 @@ execution:
   qa_e2e: QA/E2EもRead/Glob/Grepでテストケースと既存実行証拠の過不足をレビューするだけです。happy/fail両面を評価しますが、テスト/Playwright/型チェック/CIの実行や再実行、テスト生成・修正は一切しません。検証が必要ならCodexに正確な要求を返し、Codex実行結果をSuppliedとして対象snapshotと照合します。
 review_cycle:
   initial: 全対象と必須相談を初回で確認し、🔴🟡と🟢Lowの全指摘と未確認を出します。🟢Lowは1回のレポートで重要度の高いものから最大5件です。それを超える軽微な所見と、指摘とするほどでない所見は🟢Infoとして、1行ずつ簡潔に書くか省略します。途中終了は同じ担当で続けます。
-  fix: 初回レビュー完了後にCodexが全指摘を一括修正し、必要なテストを行います。ファイル/テスト編集ごとに再レビューを起動しません。
-  rereview_inputs: 同じ担当が直接取得できない新しいtest command/case/結果と対象source、正確な利用者回答と出典、変更制約だけを一度添えます。既読の不変資料や全logは再送せず、governanceのRule loading across continuationsに従います。前回読んだgovernanceのhash(12桁以上)は任意で添えます。
+  fix: 初回レビュー完了後にCodexが全指摘を一括修正し、必要な予定済み検証を行います。その結果（失敗を含む）がそろってから、修正差分と検証結果を一度に元の同じ親子へ渡します。ファイル/テスト編集ごとの再起動、修正だけの先行依頼、結果だけの不要な後送を避けます。全テスト成功を一律の再依頼条件にはしません。
+  rereview_inputs: 対象の修正差分（staged/unstaged/untrackedの区別、新規内容、実source identityを含む）、正確な利用者回答と出典・制約、実コマンド・ケース・終了コード・検証対象source、結果と限界を一緒に渡します。既知の未変更範囲は再利用し、既読の不変資料や全logは再送しません。短い依頼と狭い参照先または必要な抜粋で満たせます。巨大manifest、全差分・全テスト本文の転送、毎回のhash照合は必須にしません。
   rereview: 短く再依頼し、元の子が前回確認したsource/指摘と現在の実差分・影響範囲を比較します。無関係な全面再探索を繰り返しません。
+  verification_evidence: 検証に使ったtest/scriptの狭い参照先、または判断に必要なassertionと読み込み対象を、再依頼時にClaudeの許可されたRead範囲で同時参照できるようにします。ケース名やPASS表示だけで検証内容を証明せず、verifierが実際に読み込んだ対象と検証sourceの対応を示します。除外されたreports全体の許可や無関係なログ公開は行わず、必要箇所だけ参照可能にします。Claudeは実行せず、Codexの提示証拠として評価します。
+  rereview_exceptions: 利用者が検証不要と明示した場合、検証不能・失敗・未実行・部分中断は、NOT_RUN/FAILED/PARTIAL等の実状態・理由と未了義務を保持します。成功や閉鎖に読み替えません。レビュー判断が先に必要な追加質問、利用者の明示指示など根拠のある例外は、通常の一括提供と区別して理由と残りを示し、必要な同じ担当へ先に確認できます。単層のhandoffや他層の独立承認を代替しません。
   rereview_cap: 再レビューは前回指摘の解消確認と、修正が導入した問題を中心にします。担当レビュアー(cr/qa/e2e/adviser。convergence専用のagentであるreviewerではありません)は、再レビューの各指摘に出力欄Origin(PRIOR_FINDING、FIX_INDUCED、NEW_UNRELATED)を付けます。分類は担当レビュアーだけが行い、Codexは推測も変更もしません。Originの定義は、cr(code-quality-reviewer)、qa(test-qa)、e2e(e2e-qa)、adviserの各agent定義にあります。Originがない指摘には上限を適用せず、通常どおり修正します。Origin NEW_UNRELATEDの🟢Lowは、層(phase)ごとに、四層昇格や新しい初回、単層の進行をまたいで通算1回だけ追加で受けて修正します。通算1回のカウンタは、Codexの調整状態として、phase(l1_5、qa、e2e、l2)ごとに1つずつ、Codexの親sessionが持つ指摘台帳のphase別項目に保持します。担当レビュアーのWorkflow Resultには持たせません。それ以降のNEW_UNRELATEDの🟢は自動修正せず一覧にして、そのphaseのCodexの調整状態をNEEDS_USER_INPUTとします。担当レビュアーのWorkflow ResultはREQUEST_CHANGESとopen IDのままで、Codexは書き換えません。上村さんの判断まで閉じず、承認しません。新規の🔴🟡は上限の対象外です。先送りではなく、上限到達時の判断依頼です。上村さんが対応しないと明示した場合は、新しい状態を作らず、その出典付きの指示を根拠に、担当レビュアーが取り下げを確認してreviewer_withdrawnとします。
   closure: 修正者の申告だけで閉じません。元担当の解消確認か根拠付き撤回まで、🟢Lowを含め全IDを保持します。🟢InfoはIDを持たず、保持も閉鎖確認も不要です。
   unknown: 比較する元内容、仕様、必須証拠が未確認なら確認不能/非承認です。推測で解消・実行成功にしません。
