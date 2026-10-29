@@ -64,7 +64,8 @@ ownership:
     qa: test-qa
     e2e: e2e-qa
     l2: adviser
-  no_edits: Claudeにはレビューを依頼します。source/test編集・stage・commit・push・mergeを依頼しません。
+  review_only: Claudeの親とcr・qa・e2e・adv、相談先の全agentは、ソース/要件/既存結果の読取り、証拠評価、指摘、質問、不足証拠の要求だけを行います。Claude自身と相談先は型チェック・lint・format・build・unit/integration/E2E/Playwright・CI/CDの実行/再実行/操作、アプリやサーバーの起動、依存導入、migration、スクリプト実行、source/test/fixture編集、stage/commit/push/mergeを行いません。
+  codex_execution_owner: Codexのみがコードとテストの作成/修正、必要な検証コマンドの選定と実行、CIの再実行・ログ取得、環境準備、差分とsnapshot証拠の取得、HTMLログ生成を担当します。Claudeが検証不足を見つけたら実行せず、必要なコマンド/ケース/期待結果/根拠をCodexに返します。Codexは実際の実行コマンド・終了コード・対象source snapshot・CI run識別子を返し、Claudeがレビューします。
 claude_cli:
   cwd: 必ずレビュー対象projectを保ちます。
   argv:
@@ -77,11 +78,19 @@ claude_cli:
   - --effort
   - medium
   - --permission-mode
-  - bypassPermissions
+  - dontAsk
+  - --tools
+  - Read,Glob,Grep,Agent
+  - --disallowedTools
+  - Bash
+  - Edit
+  - Write
+  - NotebookEdit
+  - mcp__*
   model_policy: 親の調整はSonnet/medium、各実agentは自身のmodel/effortです。adviserはclaude-opus-5-5/high、他の既定担当はSonnetです。Agent呼出のmodel/effort上書きで役割設定を変えず、明示された利用者指定を優先します。必要なL2モデルが利用不能なら承認を保留します。
-  permission_basis: 利用者の明示したClaude full accessです。CLI 2.1.311のhelpでbypassPermissionsを確認しました。
+  permission_basis: 利用者の最新指示に従いレビュー専用です。--toolsで読取りとAgent委譲だけを残し、--disallowedToolsでBash/編集/MCPを明示的に拒否します。dontAskで未許可の操作を拒否します。既存settingsのallowや子agentが制限を緩めたと扱いません。
   limits: OS/Codex/managed設定と実際の利用者制約は守ります。上位制限を迂回せず、止まる場合は確認不能として報告します。
-  tools: plan、固定--tools/allowlist、独自のshell禁止を追加しません。利用可能な通常ツールを使います。
+  tools: 初回と--resumeの全回で同じ--tools/--disallowedTools/--permission-modeを指定します。Claude親・子・専門担当はRead/Glob/Grep/Agentでレビューします。Git差分、型チェック、CI等のコマンドはCodex側で実行してから証拠を渡します。起動側でこの制限を適用できない場合はBLOCKEDとし、権限を広げません。
   prompt_template: |
     {prefix}: {review_request}
     Workflow: codex-claude-review
@@ -97,18 +106,19 @@ claude_cli:
   - 親/子の再開や元の比較対象を利用できなければ、状態を保持し確認不能として報告します。
   - 上記model_policyを適用し、再開時も同じ親/子と役割modelを維持します。実際の委譲結果を使い、CLI成功だけを承認にしません。
   - qa/e2eの実担当へexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。短い親依頼から設定を読み、親が実委譲時に伝えます。
+  - 初回/--resumeのいずれもレビュー専用CLI制限とCodex実行責務を保持し、子agentと専門担当にも明示します。Claudeのコマンド実行・編集・CI操作を実際に検出した場合は承認不可として記録し、Codexが対処します。
 review_entry:
-  autonomy: Claudeがproject/shared規則、Git metadata/実差分、関連する元コード・要件を自分で確認します。Codexの事前コピーや長い契約全文を必須にしません。
+  autonomy: Codexが確定したbase/HEAD、staged・unstaged・untrackedとrenameを含むGit差分・必要な元版の証拠を取得します。Claudeはその証拠をSuppliedとして扱い、Read/Glob/Grepで現ソース、要件、テスト、関連境界を独立に確認します。実装者の結論を根拠にチェックを省かず、不足があればCodexへ特定の証拠を要求します。
   scope: 明示base/除外を優先します。狭い指定がなければstaged・unstaged・untrackedを含め、index/worktreeの打消しや新規/削除/renameを落としません。
-  base: 実PRやproject規則から実際のbaseを調べ、main等を推測しません。不明なbranch範囲は承認しません。
+  base: Codexが実PRやproject規則から実baseを取得して出典とともに渡します。Claudeはproject規則と照合し、main等を推測しません。不明なbranch範囲は承認しません。
   identity: 担当がbase/HEADと確認した差分・untrackedの内容など、実際のworking sourceを識別できる情報を保持します。HEADだけで未コミット変更を同一と扱いません。
-  comparison_basis: 利用者が許可したstaged-baseline方式ではHQが安全に固定した初回indexを使います。Claudeは実baseに対するstaged初回内容と、以後の通常git diff・untracked内容を自分で比較します。その他の場合は従来どおり復元可能な前回sourceを保持します。元内容や基準が失われたら確認不能です。
-  no_packaging_gate: Codex製diff artifact、manifest、packet、繰り返すhash/access照合を前提にしません。実際に根拠を取得できれば通常のレビューを進めます。
+  comparison_basis: 利用者が許可したstaged-baseline方式ではCodex/HQが安全に固定した初回indexを使います。Codexは実baseに対する初回index差分と修正後のunstaged/untrackedを別々に取得し、元版・snapshot情報を渡します。ClaudeはRead等で現版を独立確認し、差分と過去の指摘を比較します。元内容や基準が失われたら確認不能です。
+  no_packaging_gate: コマンド権限を持たないClaudeへCodexが必要なGit差分とsnapshotを一度渡すことは必須です。一方、レビューごとの巨大なmanifestや全文packet、未変更資料の再送や毎回のhash照合は行いません。必要な根拠だけ追加取得します。
   fallback: Git/規則/元内容/認証/環境が取得不能なら正確な不足を返します。必要な部分だけ補い、同じ担当で続けます。任意の包装がないだけでは停止しません。
-  git_inspection: CR/ADVのGit差分取得では--no-ext-diff/--no-textconv等を使い、差分表示からrepository codeを実行しません。元の実codeを閲覧し、入力制約を守ります。
+  git_inspection: Codexは--no-ext-diff/--no-textconv等でGit差分を安全に取得し、snapshotと出典を提示します。Claude親子はBash/gitコマンドを実行せず、Read/Glob/Grepで元の実コードを閲覧します。
 execution:
-  cr_adv: Git/read/search等の証拠確認は可能です。アプリ/サーバー/テスト/lint/typecheck/build/migrationやrepository scriptは実行しません。相談相手へ代理実行もさせません。
-  qa_e2e: 自分の責務と実環境から必要な検証を判断・実行できます。CR/ADVの実行禁止を拡張しません。実command/case/結果と対象sourceを記録し、未実行・提示結果と区別します。
+  cr_adv: CR/ADVはRead/Glob/Grepでレビューします。型チェック、lint、build、テスト、CI/CD、アプリ/サーバー起動、スクリプト実行は一切行いません。Claudeの親や専門相談先にも代理実行させません。Codexの実行記録と元コードを評価します。
+  qa_e2e: QA/E2EもRead/Glob/Grepでテストケースと既存実行証拠の過不足をレビューするだけです。happy/fail両面を評価しますが、テスト/Playwright/型チェック/CIの実行や再実行、テスト生成・修正は一切しません。検証が必要ならCodexに正確な要求を返し、Codex実行結果をSuppliedとして対象snapshotと照合します。
 review_cycle:
   initial: 全対象と必須相談を初回で確認し、🔴から🟢まで全指摘と未確認を出します。途中終了は同じ担当で続けます。
   fix: 初回レビュー完了後にCodexが全指摘を一括修正し、必要なテストを行います。ファイル/テスト編集ごとに再レビューを起動しません。
@@ -141,7 +151,7 @@ qa_contract:
   - 対象なしは実agentが変更内容から根拠付きで判断します。ファイルなしだけで承認しません。
   - 実装側の自己点検、既存の同名QA出力、未実行のテストを実行証拠に置き換えません。
   ownership:
-  - Claude QA/E2Eはレビューと必要な検証を担当します。source/testの作成・修正・削除はCodexへ返します。
+  - Claude QA/E2Eはテストの不足・過剰とCodex実行証拠の妥当性だけをレビューします。テスト実行・再実行、Playwright/CI操作、source/test/fixtureの作成・修正・削除はCodexのみが行います。
   - 各担当は自分の指摘を確認し、他層の未解決と区別します。必要な根拠が欠ければ承認しません。
   verdicts:
     APPROVE: 担当する全範囲の正常系・異常系の過不足確認を完了し、不足・過剰の指摘、質問、必要な証拠待ちがゼロです。適用なしは根拠を台帳に残します。

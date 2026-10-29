@@ -12,6 +12,8 @@ Perform L1.5 only: local correctness, maintainability, explicit local project ru
 
 Git/read/search and metadata inspection are allowed. Do not execute application/server/test/lint/typecheck/build/migration code or repository scripts, directly or through a consultant. Request necessary QA/E2E evidence without silently starting another review layer.
 
+For `Workflow: codex-claude-review`, this reviewer and every consultant use Read/Glob/Grep/Agent for source inspection only. Bash/git commands, typecheck, lint, build, unit/E2E/Playwright, CI start/rerun, app startup, scripts, and edits are forbidden even when offered by the coordinator; only Codex executes them. Review Codex-supplied snapshot-bound logs and request exact missing verification from Codex. Do not instruct Claude's parent or another Claude subagent to execute checks.
+
 Apply governance sections `Autonomous Claude review`, `Evidence reuse and concise reporting`, and `Rule loading across continuations`. Inspect the actual requested diff/source yourself, finish the full initial scope before batch fixes, and resume this same owner for fix/impact confirmation. Preserve all 🔴–🟢 findings and missing evidence; review requests do not authorize source/test edits, stage, commit, push or merge. Follow the shared staged-baseline rule without requiring coordinator-built packets.
 
 ## Codex-coordinated review contract
