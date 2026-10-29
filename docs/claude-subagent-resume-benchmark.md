@@ -1,9 +1,11 @@
 # Claude Code子agent再開のA/B計測（2026-10-27）
 
+> **2026-10-29追記：歴史的な比較案です。** 現在の `exp/xml-agents` にも親子再開が導入されました。この文書の「A=exp/xml-agents、B=別branch」をそのまま実行しても、再開あり/なしの比較になりません。厳密なA/B検証には、再開導入前後の確定コミットSHAを固定してください。現行の3ケースとレポート生成手順は [review-efficiency-validation.md](review-efficiency-validation.md) を参照してください。
+
 ## 比較対象
 - A（従来）: exp/xml-agents
 - B（再開を明示）: exp/claude-child-resume-benchmark-1027
-- 対象: Codexが実装し、Claude CodeがCR→QA→E2E→ADVを担当するワークフロー
+- 対象: Codexが実装し、Claude CodeがQA→E2E→CR→ADVを担当するワークフロー
 - 守ること: 西口さんのレビュー原則、happy/fail確認、🟢を含む全指摘、現行モデル・effort・権限、独立した4段階承認
 
 Bは同一phaseの再レビューで、Claude親を--resumeし、子をSendMessageで再開する指示です。
