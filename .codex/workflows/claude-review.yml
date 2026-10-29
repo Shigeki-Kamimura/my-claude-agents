@@ -235,7 +235,7 @@ handoff:
   conditions:
   - 最終source snapshotへの四層承認と、全指摘・質問・handoff・必須相談・必要な検証の完了です。単層モードでは、その層の完了のみで、四層の引渡し可を意味しません(single_layer参照)。
   - 変更は未コミットです。許可された初回基準のindexは固定し、修正は未stage、新規はuntrackedとし、対象外と既存stageを保全します。承認は現在working sourceに対応し、最終stage/commitは人間が行います。
-  audit_records: 実際の相談・結果・重要な未解決は保持します。明示された全会話/HTML保存は完全な別成果物とし、短い最終本文と区別します。承認後、CodexはLLMを使わない決定的なスクリプトtools/render_review_record.pyでHTMLを作ります。対象projectにtoolsはないため、.codex/AGENTS.mdのリンク先を解決したリポジトリの同ファイルを使います(未検証)。秘密の伏せ処理は完全でなく、共有前に利用者が確認します。保存先は、project固有の定めがあればそれに従い、なければ対象project直下の.codex/review-records/です(setupがgit管理から除外する.codex配下。提案の既定で、上村さんの確認待ちです)。
+  audit_records: 実際の相談・判定・未解決を原本と識別子付きで保持します。利用者が全会話/HTMLを要求した場合、承認・非承認を問わず対象セッションの終了後にCodexはtools/render_review_record.pyでCodex/Claudeの実JSONLからHTMLを決定的に生成します。対象projectにtoolsがなければ解決済みの設定元リポジトリのtoolsを使用します。共有用は--redact-personal --omit-thinkingを付け、出力後も人が業務情報・認証情報を目視確認します。効率はtools/review_efficiency_report.pyとtools/summarize_claude_session.pyで別途測定します。出力先はリポジトリ外の$HOME/review-audit/を既定とし、プロジェクト側で明示された除外済み.codex/review-records/を使う場合はsetup.shが.git/info/excludeへ.codexを登録済みであることを確認します。.gitignoreに依存せず、原本が無ければ欠落を報告して成功としません。これらのスクリプトは実レビューや子agentの起動証拠を代用しません。
   commit_owner: 上村さん本人です。
 staged_baseline:
   authorization: この初回stage方式は、利用者が承認済みのHQ既定ルールです。対象のreview/修正サイクルでは毎回の再承認を求めず、HQが正確な初回対象だけをstageします。別の明示指示を優先し、既存indexを安全に保全できなければ保留します。一律stage禁止への対象内の例外であり、今回の設定修正をstageしない指示、上位権限、逆方向、commit/push禁止は変更しません。
