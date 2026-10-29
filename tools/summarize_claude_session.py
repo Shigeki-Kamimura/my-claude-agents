@@ -208,7 +208,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("session_jsonl", type=Path, help="親セッションの .jsonl ファイル")
     parser.add_argument("--ledger-row", action="store_true", help="JSONの代わりに台帳用のMarkdown表1行を標準出力へ出す(ファイルは書き換えません)")
-    for name, help_text in (
+    ledger_options = (
         ("date", "日付(省略時は今日)"),
         ("workflow", "例: codex-claude-review / claude-codex-review / standalone cr"),
         ("repo-branch", "リポジトリとブランチ"),
@@ -219,9 +219,15 @@ def main():
         ("findings", "指摘件数(例: 0/1/2)"),
         ("verdict", "最終判定"),
         ("note", "備考(snapshotの変化、差分だけの再確認、計測方法)"),
-    ):
+    )
+    for name, help_text in ledger_options:
         parser.add_argument(f"--{name}", default="", help=help_text + "(--ledger-row用)")
     args = parser.parse_args()
+    if not args.ledger_row:
+        # JSON出力では台帳用の値を使わないため、黙って無視せず指定の誤りとして知らせる
+        ignored = [f"--{name}" for name, _ in ledger_options if getattr(args, name.replace("-", "_"))]
+        if ignored:
+            parser.error(f"{', '.join(ignored)} は --ledger-row と一緒に指定してください")
     summary = summarize(args.session_jsonl)
     if args.ledger_row:
         print(ledger_row(summary, args))

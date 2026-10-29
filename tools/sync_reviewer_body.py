@@ -45,9 +45,20 @@ class SyncError(Exception):
     """検証または同期の失敗を表します。"""
 
 
+def read_bytes(path: Path) -> bytes:
+    """読めない場合は、どのファイルかを示す SyncError にします。"""
+    try:
+        return path.read_bytes()
+    except OSError as exc:
+        raise SyncError(f"読めません: {path.relative_to(ROOT)}: {exc}") from exc
+
+
 def read_text(path: Path) -> str:
     """改行を変換せずに読みます。"""
-    return path.read_bytes().decode("utf-8")
+    try:
+        return read_bytes(path).decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise SyncError(f"UTF-8として読めません: {path.relative_to(ROOT)}: {exc}") from exc
 
 
 def split_md(text: str):
@@ -107,7 +118,7 @@ def normalized(text: str) -> str:
 def analyze():
     """3ファイルを読み、検証結果と同期後の内容を返します(書き込まない)。"""
     canon_text = read_text(CANONICAL)
-    canon_head, canon_body = split_md(canon_text)
+    _, canon_body = split_md(canon_text)
     toml_text = read_text(CODEX)
     toml_head, toml_body, toml_tail = split_toml(toml_text)
     canon_common, canon_blocks = common_and_blocks(normalized(canon_body), "reviewer.md")
@@ -151,8 +162,11 @@ def build_synced(info) -> str:
 
 def check() -> int:
     problems = []
-    if MIRROR.read_bytes() != CANONICAL.read_bytes():
-        problems.append(f"{MIRROR.relative_to(ROOT)} が基準とバイト単位で一致しません")
+    try:
+        if read_bytes(MIRROR) != read_bytes(CANONICAL):
+            problems.append(f"{MIRROR.relative_to(ROOT)} が基準とバイト単位で一致しません")
+    except SyncError as exc:
+        problems.append(str(exc))
     try:
         info = analyze()
     except SyncError as exc:
@@ -183,8 +197,8 @@ def plan():
     info = analyze()
     new_toml = build_synced(info).encode("utf-8")
     targets = [
-        (MIRROR, MIRROR.read_bytes(), CANONICAL.read_bytes()),
-        (CODEX, CODEX.read_bytes(), new_toml),
+        (MIRROR, read_bytes(MIRROR), read_bytes(CANONICAL)),
+        (CODEX, read_bytes(CODEX), new_toml),
     ]
     return targets
 
@@ -246,8 +260,14 @@ def write() -> int:
             raise SyncError("書き込み後のtomlのnameがreviewerではありません")
     except (OSError, SyncError, tomllib.TOMLDecodeError) as exc:
         print(f"書き込みに失敗したため元の内容に復元します: {exc}")
+        not_restored = []
         for path, old in reversed(done):
-            atomic_write(path, old)
+            try:
+                atomic_write(path, old)
+            except OSError as restore_exc:
+                not_restored.append(f"{path.relative_to(ROOT)}({restore_exc})")
+        if not_restored:
+            print("復元に失敗しました。元に戻っていないファイル: " + ", ".join(not_restored))
         return 1
     for path, old in done:
         print(f"更新: {path.relative_to(ROOT)}")

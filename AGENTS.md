@@ -252,8 +252,8 @@ Prefix routing always has priority.
 
 Typical human-operated flow:
 
-1. `cr:` for L1.5 local code-quality review
-2. `qa:` when regression verification is needed
+1. `qa:` when regression verification is needed
+2. `cr:` for L1.5 local code-quality review
 3. `adv:` for initial L2+ scope/risk review
 4. specialists only for clearly high-risk domains
 5. `rev:` only after fixes for convergence review
@@ -291,8 +291,8 @@ Standard flows:
 - These are recommended manual sequences, not automatic chains.
 - Agents stop after their own layer unless explicitly instructed otherwise.
 - Tiny local change: direct `cr:`
-- Normal PR: `rp -> cr -> q -> adv`
-- E2E changes: `rp -> cr -> q -> e -> adv`
+- Normal PR: `rp -> q -> cr -> adv`
+- E2E changes: `rp -> q -> e -> cr -> adv`
 - High-risk API/auth/data/design change: `rp -> adv`, then focused specialists as needed
 - Re-review within an ongoing repair cycle: resume the original owner. An explicit `rev:` request starts separate `reviewer` convergence.
 - Prior plan/review available: pass it as evidence to the relevant agent; do not restart every layer

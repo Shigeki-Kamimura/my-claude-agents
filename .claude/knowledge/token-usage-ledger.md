@@ -15,7 +15,7 @@ governance のようにエージェントの初回読み込みに混ざると、
    ```bash
    python3 -I -B tools/summarize_claude_session.py <親セッション.jsonl> --ledger-row \
      --workflow "codex-claude-review" --repo-branch "<repo>@<branch>" --snapshot "<短いSHA>+作業ツリー" \
-     --round "初回" --layers "cr,qa,e,adv" --layer-models "cr/qa/e:sonnet, adv:opus" \
+     --round "初回" --layers "qa,e2e,cr,adv" --layer-models "qa/e2e/cr:sonnet, adv:opus" \
      --findings "0/1/2" --verdict "REQUEST_CHANGES" --note "計測方法など" \
      >> .claude/knowledge/token-usage-ledger.md
    ```

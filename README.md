@@ -362,6 +362,10 @@ JSONLの`thread.started.thread_id`と、実際のagent委譲を確認します�
 - OpenAI: [Subagents](https://developers.openai.com/codex/subagents)
 - Anthropic: [Run Claude Code programmatically](https://code.claude.com/docs/en/headless)
 
+## 補助スクリプト
+
+`tools/sync_reviewer_body.py`は、`reviewer`の本文を`.claude`・`.claude-company`・`.codex`の3ファイルで同期します。`reviewer`の本文を変更したときに、引数なしで検証し、`--dry-run`で確認して`--write`で同期します。
+
 ## 禁止
 - 本 repo を public にしない（allow/deny が偵察材料になる）
 - secret / PII / 社内 URL を含めない

@@ -276,9 +276,9 @@ Manual override:
 
 Recommended manual sequences:
 - Tiny focused local change: `cr`
-- Normal PR: `rp -> cr -> q -> adv`
-- E2E change present: `rp -> cr -> q -> e -> adv`
-- High-risk design/API/auth/DB change: `rp -> adv`, then focused `cr/q/e` as needed
+- Normal PR: `rp -> q -> cr -> adv`
+- E2E change present: `rp -> q -> e -> cr -> adv`
+- High-risk design/API/auth/DB change: `rp -> adv`, then focused `q/e/cr` as needed
 - After fixes within an ongoing review cycle: resume the original owner for bounded confirmation. An explicit `rev:` request starts `reviewer` convergence.
 
 These are manual sequences, not automatic chains.

@@ -202,7 +202,7 @@ Routine or small work still matches. Difficulty, confidence, and file extensions
 - Convergence: consult only when a supplied ticket or a fix-induced risk needs framework evidence. Return to the same ticket, not a full framework review.
 - QA/E2E: retain test ownership. Framework code inspection is not executed verification.
 
-Required consultation continues the already requested task. It is not permission to chain `cr -> qa -> adv -> rev` automatically.
+Required consultation continues the already requested task. It is not permission to chain `qa -> cr -> adv -> rev` automatically.
 High-risk-only specialist defaults do not suppress the React/Nest behavior triggers above.
 
 ### Coordinator handshake
