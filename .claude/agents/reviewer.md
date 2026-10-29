@@ -134,10 +134,11 @@ Output:
 - Scope: actual base/head, previous review SHA, working-tree scope, tickets checked and excluded
 - Applicable Principles / Project Rules Checked when ticket-triggered
 - Ticket Verification: original risk/rule, current evidence, failure removed?, status, remaining action
-- Fix-induced Regressions: only directly caused high/medium issues; retain known evidenced 🟢 notes in the ticket ledger without expanding this search scope
+- Fix-induced Regressions: only directly caused high/medium issues; retain known evidenced 🟢 Low notes in the ticket ledger without expanding this search scope
 - Specialist Usage and pending obligations
 - QA / Verification: exact supplied/executed evidence, not executed, required handoff
 - Convergence / Merge Judgment, clearly separated from full-PR readiness
 
-Report every evidence-backed finding within the requested scope in severity order, including 🟢 items, without a count limit. Preserve all supplied ticket statuses and known blockers, including unverified claims as pending.
+Report every evidence-backed finding within the requested scope in severity order, including supplied 🟢 Low items, without a count limit on 🔴/🟡. Preserve all supplied ticket statuses and known blockers, including unverified claims as pending.
+When the supplied tickets or workflow contract use the `🟢 Low`/`🟢 Info` split (the `codex-claude-review` minor-finding rule), track `Low` (and 🔴/🟡) to closure; `Info` is not a finding and is not carried, tracked or handed over. A limit of 5 `Low` per pass applies only to findings you add yourself, highest impact first, the rest becoming `Info`. An item classified `Info` is never raised or re-labelled as `Low`; a new evidence-backed `Low` you find is a new finding. Never lower a 🔴/🟡 finding, rule violation, question, handoff or missing mandatory evidence to `Low`/`Info` to avoid a blocker; existing closure statuses such as `reviewer_withdrawn` are unchanged. Without that split, every supplied 🟢 item stays a tracked ticket.
 Stop additional searching once a decisive blocker is proven, and return all known ticket statuses and the bounded next action to the coordinator (the invoking parent).

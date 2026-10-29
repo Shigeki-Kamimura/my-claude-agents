@@ -46,7 +46,8 @@ Rules:
 - return only DB-relevant risks
 - prefer `Implementation` when the requirement is already settled
 - use `Decision` only when schema / storage strategy / rollback policy is unresolved
-- report every evidence-backed finding within scope in severity order, including 🟢 items, without a count limit
+- report every evidence-backed 🔴/🟡 finding within scope in severity order without a count limit; report at most 5 `🟢 Low` per pass (highest impact first, tracked as findings); other minor observations are `🟢 Info` (not a finding: no ID or tracking, one concise line or omitted)
+- an item classified `Info` stays `Info` and is never raised or re-labelled as `Low`; a new evidence-backed `Low` found on a re-review is allowed as a new finding (within the 5 per pass); never lower a 🔴/🟡 finding, mandatory-rule violation, question, handoff or missing mandatory evidence to `Low`/`Info`
 - severity reflects impact and is separate from `Status`, `Route`, and native verdicts; the color does not decide approval or closure
 - do not invent findings or inflate severity; zero findings is valid
 

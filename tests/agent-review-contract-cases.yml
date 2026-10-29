@@ -38,7 +38,7 @@ cases:
   - id: four-blockers
     phase: L2
     input: 独立した既知の重大問題が4件ある修正前差分をレビューします。
-    expected: 件数上限なく全指摘を🔴🟡🟢で分類します。未了の範囲は未確認として残します。
+    expected: 🔴🟡は件数上限なく全指摘を分類します(🟢はLow最大5件とInfoに分けます)。未了の範囲は未確認として残します。
   - id: budget-exhausted
     phase: L1.5
     input: 読み取り上限を超える重要な変更を含む差分です。
@@ -101,8 +101,8 @@ cases:
     expected: 列挙は定義のない指定のため、どちらのモードにも決めず、上村さんへ1つ質問します。
   - id: rereview-cap
     phase: L1.5
-    input: 再レビューで、前回指摘と無関係な新規の🟢が2回続けて出ました。
-    expected: 担当レビュアー(cr/qa/e2e/adviser)が出力欄OriginでNEW_UNRELATEDと分類した🟢を、層ごとに通算1回だけ追加で受けて修正します。カウンタはCodexの調整状態としてphaseごとに保持します。2回目以降は自動修正せず一覧にして、そのphaseのCodexの調整状態をNEEDS_USER_INPUTとします。担当レビュアーのWorkflow ResultはREQUEST_CHANGESとopen IDのままで、Codexは書き換えません。上村さんの判断まで承認しません。新規の🔴🟡は上限の対象外です。
+    input: 再レビューで、前回指摘と無関係な新規の🟢Lowが2回続けて出ました。
+    expected: 担当レビュアー(cr/qa/e2e/adviser)が出力欄OriginでNEW_UNRELATEDと分類した🟢Lowを、層ごとに通算1回だけ追加で受けて修正します。カウンタはCodexの調整状態としてphaseごとに保持します。2回目以降は自動修正せず一覧にして、そのphaseのCodexの調整状態をNEEDS_USER_INPUTとします。担当レビュアーのWorkflow ResultはREQUEST_CHANGESとopen IDのままで、Codexは書き換えません。上村さんの判断まで承認しません。新規の🔴🟡は上限の対象外です。
   - id: fix-report
     phase: L1.5
     input: Codexが指摘を修正しました。
@@ -113,7 +113,7 @@ cases:
     expected: LLMを使わず、tools/render_review_record.pyでログから決定的に作ります。秘密の伏せ処理は完全でなく、共有前に利用者が確認します。
   - id: rereview-cap-declined
     phase: L1.5
-    input: 上限に達した新規の🟢について、上村さんが対応しないと明示しました。
+    input: 上限に達した新規の🟢Lowについて、上村さんが対応しないと明示しました。
     expected: 新しい状態を作りません。上村さんの出典付きの指示を根拠に、担当レビュアーが取り下げを確認してreviewer_withdrawnとします。
   - id: single-layer-resume
     phase: L2
@@ -161,7 +161,7 @@ cases:
     expected: decisionがAPPROVEでも未承認として扱い、四層承認にもしません。同じ担当に不足の補完を求めます。
   - id: rereview-origin-missing
     phase: L1.5
-    input: 再レビューの🟢にOriginの分類欄がありません。
+    input: 再レビューの🟢LowにOriginの分類欄がありません。
     expected: Codexは推測で分類せず、上限を適用しません。通常の指摘として修正します。
   - id: four-layer-range-expressions
     phase: L2
@@ -199,4 +199,39 @@ cases:
     phase: L2
     input: 実行権限の広い旧Claude子agentが承認後に修正され、同じ子を再開したい状態です。
     expected: 子の初回ツール構成が広いため--resumeしません。Codexはレビュー専用の新規親子を起動し、旧指摘はSupplied証拠とします。以前の承認を転用せず、起動不能ならBLOCKEDです。
-
+  - id: minor-info-not-tracked
+    phase: L1.5
+    input: 担当レビュアーが、指摘とするほどでない軽微な所見を🟢Infoとして1行書きました。
+    expected: Infoは指摘ではありません。IDを振らず、台帳・open_item_idsに入れず、追跡も修正も再レビューも不要です。承認を妨げません。省略しても構いません。
+  - id: minor-low-max-five
+    phase: L1.5
+    input: 1回のレポートに、軽微な指摘が8件あります。
+    expected: 重要度の高いものから最大5件を🟢Lowにし、残りの重要度の低い3件は🟢Infoにします。
+  - id: minor-info-not-promoted
+    phase: L2
+    input: 初回で🟢Infoと分類した所見があります。再レビューの時点で、🟢Lowは5件に満たず、枠が空いています。
+    expected: Infoは🟢Lowへ格上げも付け替えもしません。再レビューでも、5件の枠を埋めるためでも、Lowが5件に満たないことを理由にしても同じです。必須規則の違反、🔴🟡、質問、handoff、必須証拠の欠落は、最初からInfoにしません。
+  - id: minor-new-low-on-rereview-accepted
+    phase: L2
+    input: 初回で🟢Infoと分類した所見があります。再レビューで、別の新しい根拠付きの軽微な問題が見つかりました。
+    expected: 新しい問題は、根拠付きの🟢Lowとして新しい指摘に出せます。その回の最大5件に含まれ、claude-review.ymlの再レビューの上限規則(Origin、NEW_UNRELATED)の対象です。先の🟢Infoは🟢Lowに格上げも付け替えもしません。
+  - id: minor-reverse-direction-low-info
+    phase: L2
+    input: 逆方向(claude-codex-review)で、Codexの担当レビュアーが軽微な所見を返します。
+    expected: 逆方向も、🟢Lowは指摘として最大5件まで追跡して閉鎖し、🟢Infoは指摘ではなく、ID・追跡・修正・再レビューが不要です。Infoを🟢Lowへ格上げせず、🔴🟡、質問、handoff、必須証拠の欠落をLow/Infoへ下げません。
+  - id: minor-specialist-low-info
+    phase: L2
+    input: sec-arch、data-platform、req-plが軽微な所見を返します。
+    expected: 🔴🟡は件数上限なく報告します。🟢Lowは1回に最大5件、残りは🟢Infoで、指摘ではありません。Infoは🟢Lowへ格上げせず、🔴🟡、質問、handoff、必須証拠の欠落をLow/Infoへ下げません。
+  - id: minor-low-tracked-until-closed
+    phase: L1.5
+    input: 🟢Lowが1件残ったまま、Codexが修正を完了したと申告しました。
+    expected: fix_candidateです。担当レビュアーが解消を確認するか、根拠付きで撤回するまで、IDを保持して承認しません。reviewer_withdrawnなどの閉じ方は変わりません。
+  - id: minor-no-downgrade
+    phase: L2
+    input: 担当レビュアーが、未解決の質問や必須証拠の欠落を、🟢Infoに下げて承認しようとしました。
+    expected: 🔴🟡の指摘、質問、handoff、必須証拠の欠落、必須規則の違反を、Low/Infoに下げても承認の条件は満たされません。承認しません。
+  - id: minor-convergence-low-only
+    phase: convergence
+    input: revへ引き継ぐ既存の指摘に、🟢Lowと🟢Infoが含まれます。
+    expected: convergenceのreviewerが追跡するのは、🔴🟡と🟢Lowです。Infoは指摘ではないため、引き継ぎも追跡もしません。

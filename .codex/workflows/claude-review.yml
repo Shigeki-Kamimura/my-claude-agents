@@ -1,4 +1,7 @@
 # CodexとClaudeの自律レビューを調整する指示契約です。実行エンジンではありません。
+# このレビュー専用CLI制限はCodexからのレビュー委譲に適用します。
+# ユーザーが通常のClaudeへ直接指示するCI・テスト実行は対象外です。
+# 既存の制限付きセッションの権限は拡張しません。
 schema_version: 1
 workflow_id: codex-claude-review
 runtime_validation: NOT_RUN
@@ -58,7 +61,7 @@ authority:
   - 単独cr/qa/e/advは他レイヤを自動起動しません。
 ownership:
   coordinator: Codexです。Claudeの初回レビューが完了するまで横やりの調査依頼や実装修正を挟みません。
-  implementation: CodexのHQが🟢を含む全指摘をまとめて修正します。
+  implementation: CodexのHQが🔴🟡と🟢Lowの全指摘をまとめて修正します。🟢Infoは指摘ではなく、修正対象にしません。
   reviewers:
     l1_5: code-quality-reviewer
     qa: test-qa
@@ -127,12 +130,12 @@ execution:
   cr_adv: CR/ADVはRead/Glob/Grepでレビューします。型チェック、lint、build、テスト、CI/CD、アプリ/サーバー起動、スクリプト実行は一切行いません。Claudeの親や専門相談先にも代理実行させません。Codexの実行記録と元コードを評価します。
   qa_e2e: QA/E2EもRead/Glob/Grepでテストケースと既存実行証拠の過不足をレビューするだけです。happy/fail両面を評価しますが、テスト/Playwright/型チェック/CIの実行や再実行、テスト生成・修正は一切しません。検証が必要ならCodexに正確な要求を返し、Codex実行結果をSuppliedとして対象snapshotと照合します。
 review_cycle:
-  initial: 全対象と必須相談を初回で確認し、🔴から🟢まで全指摘と未確認を出します。途中終了は同じ担当で続けます。
+  initial: 全対象と必須相談を初回で確認し、🔴🟡と🟢Lowの全指摘と未確認を出します。🟢Lowは1回のレポートで重要度の高いものから最大5件です。それを超える軽微な所見と、指摘とするほどでない所見は🟢Infoとして、1行ずつ簡潔に書くか省略します。途中終了は同じ担当で続けます。
   fix: 初回レビュー完了後にCodexが全指摘を一括修正し、必要なテストを行います。ファイル/テスト編集ごとに再レビューを起動しません。
   rereview_inputs: 同じ担当が直接取得できない新しいtest command/case/結果と対象source、正確な利用者回答と出典、変更制約だけを一度添えます。既読の不変資料や全logは再送せず、governanceのRule loading across continuationsに従います。前回読んだgovernanceのhash(12桁以上)は任意で添えます。
   rereview: 短く再依頼し、元の子が前回確認したsource/指摘と現在の実差分・影響範囲を比較します。無関係な全面再探索を繰り返しません。
-  rereview_cap: 再レビューは前回指摘の解消確認と、修正が導入した問題を中心にします。担当レビュアー(cr/qa/e2e/adviser。convergence専用のagentであるreviewerではありません)は、再レビューの各指摘に出力欄Origin(PRIOR_FINDING、FIX_INDUCED、NEW_UNRELATED)を付けます。分類は担当レビュアーだけが行い、Codexは推測も変更もしません。Originの定義は、cr(code-quality-reviewer)、qa(test-qa)、e2e(e2e-qa)、adviserの各agent定義にあります。Originがない指摘には上限を適用せず、通常どおり修正します。Origin NEW_UNRELATEDの🟢は、層(phase)ごとに、四層昇格や新しい初回、単層の進行をまたいで通算1回だけ追加で受けて修正します。通算1回のカウンタは、Codexの調整状態として、phase(l1_5、qa、e2e、l2)ごとに1つずつ、Codexの親sessionが持つ指摘台帳のphase別項目に保持します。担当レビュアーのWorkflow Resultには持たせません。それ以降のNEW_UNRELATEDの🟢は自動修正せず一覧にして、そのphaseのCodexの調整状態をNEEDS_USER_INPUTとします。担当レビュアーのWorkflow ResultはREQUEST_CHANGESとopen IDのままで、Codexは書き換えません。上村さんの判断まで閉じず、承認しません。新規の🔴🟡は上限の対象外です。先送りではなく、上限到達時の判断依頼です。上村さんが対応しないと明示した場合は、新しい状態を作らず、その出典付きの指示を根拠に、担当レビュアーが取り下げを確認してreviewer_withdrawnとします。
-  closure: 修正者の申告だけで閉じません。元担当の解消確認か根拠付き撤回まで、🟢を含め全IDを保持します。
+  rereview_cap: 再レビューは前回指摘の解消確認と、修正が導入した問題を中心にします。担当レビュアー(cr/qa/e2e/adviser。convergence専用のagentであるreviewerではありません)は、再レビューの各指摘に出力欄Origin(PRIOR_FINDING、FIX_INDUCED、NEW_UNRELATED)を付けます。分類は担当レビュアーだけが行い、Codexは推測も変更もしません。Originの定義は、cr(code-quality-reviewer)、qa(test-qa)、e2e(e2e-qa)、adviserの各agent定義にあります。Originがない指摘には上限を適用せず、通常どおり修正します。Origin NEW_UNRELATEDの🟢Lowは、層(phase)ごとに、四層昇格や新しい初回、単層の進行をまたいで通算1回だけ追加で受けて修正します。通算1回のカウンタは、Codexの調整状態として、phase(l1_5、qa、e2e、l2)ごとに1つずつ、Codexの親sessionが持つ指摘台帳のphase別項目に保持します。担当レビュアーのWorkflow Resultには持たせません。それ以降のNEW_UNRELATEDの🟢は自動修正せず一覧にして、そのphaseのCodexの調整状態をNEEDS_USER_INPUTとします。担当レビュアーのWorkflow ResultはREQUEST_CHANGESとopen IDのままで、Codexは書き換えません。上村さんの判断まで閉じず、承認しません。新規の🔴🟡は上限の対象外です。先送りではなく、上限到達時の判断依頼です。上村さんが対応しないと明示した場合は、新しい状態を作らず、その出典付きの指示を根拠に、担当レビュアーが取り下げを確認してreviewer_withdrawnとします。
+  closure: 修正者の申告だけで閉じません。元担当の解消確認か根拠付き撤回まで、🟢Lowを含め全IDを保持します。🟢InfoはIDを持たず、保持も閉鎖確認も不要です。
   unknown: 比較する元内容、仕様、必須証拠が未確認なら確認不能/非承認です。推測で解消・実行成功にしません。
 consultation:
   required: L2の該当React/Nest境界は初回に必要な独立相談を行います。実装時の相談を流用せず、単層のadvでも省略しません。
@@ -162,7 +165,7 @@ qa_contract:
   - 各担当は自分の指摘を確認し、他層の未解決と区別します。必要な根拠が欠ければ承認しません。
   verdicts:
     APPROVE: 担当する全範囲の正常系・異常系の過不足確認を完了し、不足・過剰の指摘、質問、必要な証拠待ちがゼロです。適用なしは根拠を台帳に残します。
-    REQUEST_CHANGES: 根拠のある不足・過剰の指摘が残っています。🟢も対象です。
+    REQUEST_CHANGES: 根拠のある不足・過剰の指摘が残っています。🟢Lowも対象です。
     DEFER: 必要な証拠、委譲、別モデルの確認、環境の確認が不足しています。
   clean_output: 指摘がなければ短いAPPROVEと必須のWorkflow Resultで足ります。問題を作りません。
 review_gates:
@@ -177,26 +180,28 @@ review_gates:
     実装担当と外部reviewerのプラットフォーム、モデル設定と実呼び出しを記録します。
     上記model_policyに従います。同じ実装モデルへの置換や架空のtraceは不可です。
     別モデルでの実呼び出しを確認できなければ、承認を保留します。
-  approval: 各層の全対象と必要な証拠を確認し、自層の🟢を含む指摘・質問がゼロの場合のみ承認します。
+  approval: 各層の全対象と必要な証拠を確認し、自層の🟢Lowを含む指摘・質問がゼロの場合のみ承認します。
   handoffs: 別担当のhandoffは担当・根拠を保持し、自層の未確認を付け替えて承認しません。最終引渡しでは全handoffも解消します。
   snapshot_change: source/テスト/要件/規則の変更で旧四承認は失効します。一括修正後、既存担当がqa→e2e→cr→advの順で修正差分と未変更証拠の現版での有効性を確認し、同じ最終source snapshotへ自分の承認を更新します。Codexが旧承認を付け替えません。まだ開始していない層を先行起動せず、通常の順序で独立確認します。各層は、snapshot変更後も承認の更新を必ず行います。影響しない義務の判定は各層の担当が行い、修正が呼び出し元・共有helper・テスト対象のコードに直接または呼び出し経路を通じて届く義務は再確認します。再利用は、前回の証拠が現版でも有効と自層が確認した場合に限り、「証拠再利用：<ID>, <前回Checked/Executedしたsnapshot_id>, <影響しないと判断した根拠(変更したパス・シンボルと当該義務の対応)>」と1行で記録します。テスト変更はqaとe2eの全義務、要件・仕様・規則の変更はその出典を根拠にする全層の全義務を再確認し、判定した層と根拠を記録します。
   coverage: COMPLETEは累積した当該phaseの全対象・必須確認の完了です。今回sliceだけや未確認の証拠を含めて承認せず、PARTIALは元の同じ担当が続けます。
   native_approval:
-    l1_5: L1.5_APPROVEを受理します。L1.5_APPROVE_WITH_NOTESはCR自身が根拠付きでqa/e2e/l2へ分類したhandoffだけの場合です。局所の🟢や未確認を付け替えません。
+    l1_5: L1.5_APPROVEを受理します。L1.5_APPROVE_WITH_NOTESはCR自身が根拠付きでqa/e2e/l2へ分類したhandoffだけの場合です。局所の🟢Lowや未確認を付け替えません。
     qa_e2e: native APPROVE、全対象COMPLETE、happy/fail両面の不足・過剰確認と必要証拠が完了していることが必要です。適用なしは実担当が根拠を残します。
     l2: native APPROVE、全対象COMPLETE、必要な独立相談・検証証拠と自層の全指摘・質問の解消が必要です。最終引渡しでは全層の未解決handoffもゼロです。
   new_prior_finding: snapshotが同じでも、新しい根拠で前段の指摘が再開したら、その担当と依存する後段の承認をpendingへ戻し、同じ担当で必要範囲を再確認します。
 findings:
-  scope: 🟢を含め、依頼範囲で提示された改善・修正指摘をすべて対応対象にします。
+  scope: 🟢Lowを含め、依頼範囲で提示された改善・修正指摘をすべて対応対象にします。
   rules:
   - 各指摘にIDと担当を付け、修正前後と再確認結果を対応させます。
   - Codexの修正完了はfix_candidateです。担当レビュアーが確認するまで閉じません。
   - fix_candidateごとに、ID、修正前後の要点、変更ファイルを上村さんへ返します。
-  - 無関係な新規🟢の上限は、review_cycle.rereview_capに従います。
+  - 無関係な新規🟢Lowの上限は、review_cycle.rereview_capに従います。
   - 軽微、任意、DEFER、Follow-upという分類だけでは先送りしません。
   - 誤検知は根拠を示し、担当レビュアーが撤回した記録を残します。
   - Codex単独で却下、取り下げ、対応不要、解消済みにしません。
   - 良い点の紹介や状態表示の🟢は、修正指摘として数えません。
+  - 軽微な所見は🟢Lowと🟢Infoに分けます。🟢Lowは指摘で、IDを付けて閉鎖まで追跡し、1層・1回のレポートで重要度の高いものから最大5件です。🟢Infoは指摘ではなく、ID・追跡・修正・再レビューが不要で、1行ずつ簡潔に書くか省略できます。5件を超える軽微な所見は重要度の低いものを🟢Infoにし、一度🟢Infoと分類した所見は、再レビューでも、🟢Lowが5件に満たなくても、🟢Lowへ格上げも付け替えもしません。再レビューで新たに見つけた根拠付きの🟢Lowは、新しい指摘として出せます(その回の最大5件に含まれ、再レビューの上限規則の対象です)。🟢Lowになるのは、新たな根拠付きで🟢Lowと分類した所見だけです。
+  - 🔴🟡の指摘、質問、handoff、必須証拠の欠落、必須規則の違反を、🟢Low/Infoへ下げたり省いたりして承認条件を避けません。分類を下げても承認の条件は満たされません。reviewer_confirmed_fixedとreviewer_withdrawnの閉じ方は変わりません。
   - 範囲外の変更や根拠のない好みを自動実装せず、判断に迷えば上村さんへ質問します。
   - 表示件数や読取予算を理由に指摘を捨てません。未確認部分は同層で続行します。
   closed_statuses:
@@ -223,7 +228,7 @@ response_contract:
     native_verdict: 既存判定を記載します。qa/e2eはAPPROVE、REQUEST_CHANGES、DEFERです。
     coverage: 当該phaseの全対象に対するCOMPLETE、PARTIAL、BLOCKEDです。今回sliceだけで判定しません。
     decision: APPROVE、REQUEST_CHANGES、NEEDS_USER_INPUT、BLOCKED、CONTINUE_REVIEWのいずれかです。
-    open_item_ids: 未解決指摘のID一覧です。局所指摘と別担当のhandoffを区別します。
+    open_item_ids: 未解決指摘のID一覧です。局所指摘と別担当のhandoffを区別します。🟢InfoはIDを持たないため含めません。
     questions: 上村さんへの未回答質問です。
     handoffs: 担当、質問、根拠、状態を含む引き継ぎ一覧です。
     invocation_evidence: 外部review役割、プラットフォーム、実装者とreviewerのモデル設定、親session_id、実子agent_id、初回Agentまたは再開SendMessageの実行証拠、専門相談の識別子、phase、snapshotです。

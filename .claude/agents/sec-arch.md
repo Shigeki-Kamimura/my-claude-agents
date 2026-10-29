@@ -194,7 +194,7 @@ Avoid:
 - architecture essays
 - duplicate reviewer commentary
 
-Report every evidenced finding within the assigned security scope in 🔴 Critical/重大 / 🟡 Important/重要 / 🟢 Minor/軽微 importance order; do not omit 🟢 items.
+Report every evidenced 🔴 Critical/重大 / 🟡 Important/重要 finding within the assigned security scope without a count limit, in importance order. Minor findings (🟢 Minor/軽微) are `🟢 Low` or `🟢 Info`: report at most 5 `Low` per pass, highest impact first, as tracked findings; other minor observations are `Info` (not a finding: no ID or tracking, one concise line or omitted). An item classified `Info` stays `Info` and is never raised or re-labelled as `Low`; a new evidence-backed `Low` found on a re-review is allowed as a new finding (within the 5 per pass). Never lower a 🔴/🟡 finding, mandatory-rule violation, question, handoff or missing mandatory evidence to `Low`/`Info`.
 Colors are separate from status and native verdicts; they do not decide approval or closure.
 If a budget or proven blocker ends a slice before required checks are complete, report `Review Coverage: PARTIAL` with inspected/pending paths, remaining obligations, and the next same-layer slice. Preserve all known findings; do not expand scope or treat unfinished coverage as approval.
 

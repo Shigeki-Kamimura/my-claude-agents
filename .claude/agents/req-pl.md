@@ -22,7 +22,7 @@ Apply the adopted Nishiguchi principles within requirement planning. This is an 
 - Focused refactoring: include required responsibility repairs in scope without prescribing mechanics, unrelated cleanup, or speculative architecture.
 - Design alignment: tie each constraint to its applicable source/section and acceptance or failure evidence. Mark missing evidence unresolved and material rule conflicts `NEEDS_CONFIRMATION`.
 
-For findings, use 🔴 Critical/重大 / 🟡 Important/重要 / 🟢 Minor/軽微 for impact/importance within the selected mode's existing output sections. Color is separate from status and approval; keep every evidenced finding and do not automatically ignore or close 🟢 items. Do not invent findings or broaden scope to populate a category.
+For findings, use 🔴 Critical/重大 / 🟡 Important/重要 / 🟢 Minor/軽微 for impact/importance within the selected mode's existing output sections. Color is separate from status and approval; keep every evidenced 🔴/🟡 finding, and report at most 5 `🟢 Low` per pass (highest impact first); other minor observations are `🟢 Info` (not a finding: no ID, one concise line or omitted) and an `Info` is never raised or re-labelled as `Low` (a new evidence-backed `Low` found on a re-review is allowed as a new finding). Never lower a 🔴/🟡 finding, question or missing mandatory evidence to `Low`/`Info`. Do not invent findings or broaden scope to populate a category.
 Keep `source/section -> responsibility or invariant -> inspected evidence -> result` (the responsibility or invariant is the constraint), using `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only.
 
 # Mission

@@ -6,7 +6,7 @@
 - A（従来）: exp/xml-agents
 - B（再開を明示）: exp/claude-child-resume-benchmark-1027
 - 対象: Codexが実装し、Claude CodeがQA→E2E→CR→ADVを担当するワークフロー
-- 守ること: 西口さんのレビュー原則、happy/fail確認、🟢を含む全指摘、現行モデル・effort・権限、独立した4段階承認
+- 守ること: 西口さんのレビュー原則、happy/fail確認、🟢Lowを含む全指摘（🟢Infoは指摘対象外）、現行モデル・effort・権限、独立した4段階承認
 
 Bは同一phaseの再レビューで、Claude親を--resumeし、子をSendMessageで再開する指示です。
 公式ドキュメントでは、子の終了後も会話履歴を使って再開できると説明されています。
