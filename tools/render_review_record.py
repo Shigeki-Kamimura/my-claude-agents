@@ -11,8 +11,8 @@ LLMは使いません。入力のログを読み、時系列のHTMLを書き出�
   - 汎用: {"timestamp": ..., "role": ..., "text": ...} の各行
 未知の形式の行は推測せず、件数として表示します。Codex形式は実ログの構造でのみ確認しており、実運用は未検証です。
 
-伏せる対象は認証情報だけです(Authorizationの値、トークン、APIキー、パスワード、秘密鍵、URL内の資格情報)。
-個人情報、業務データ、認証情報でない設定値や散文は伏せません。一致した値は [REDACTED] に置換します。完全ではありません。共有する前に、必ず目視で確認してください。
+既定では認証情報のみを伏せます。--redact-personalを付けると、URL、メールアドレス、ホームパス、IPv4アドレスも置換します。
+ただし個人情報・社内の業務データ全般の匿名化は保証されません。共有前に、必ず目視で確認してください。
 既知の制限(伏せ漏れ):
   - キー名に token / secret / password / api_key / private_key / credential / authorization を含まない値
   - 区切りが = か : でない指定(例: --password abc)
@@ -31,7 +31,7 @@ LLMは使いません。入力のログを読み、時系列のHTMLを書き出�
 出力先の親フォルダーがなければ作成します。.codex 配下が git 管理から除外されるのは、setup を実行した対象プロジェクトだけです。
 
 使い方:
-  python3 -I -B tools/render_review_record.py --out record.html [--ledger ledger.json] [--no-subagents] [--omit-thinking] LOG.jsonl [LOG.jsonl ...]
+  python3 -I -B tools/render_review_record.py --out "$HOME/review-records/record.html" [--ledger ledger.json] [--no-subagents] [--omit-thinking] [--redact-personal] LOG.jsonl [LOG.jsonl ...]
 台帳(任意)は、{"id","severity","summary","before","after","files","status"} を持つオブジェクトのJSON配列です。
 """
 
@@ -41,6 +41,7 @@ import json
 import os
 import re
 import sys
+import subprocess
 import tempfile
 from collections import Counter
 from pathlib import Path
@@ -128,11 +129,21 @@ def _authorization(match):
     return match.group(1) + "[REDACTED]"
 
 
+PERSONAL_REDACTIONS = (
+    ("email", re.compile(r"(?i)(?<![\w.+-])[\w.+-]{1,120}@[\w.-]{1,180}\.[a-z]{2,24}"), "[EMAIL_REDACTED]"),
+    ("url", re.compile(r"(?i)\bhttps?://[^\s<>\"']{1,2048}"), "[URL_REDACTED]"),
+    ("home_path", re.compile(r"(?i)(?<!\w)/(?:home|Users)/[^/\\\s\"']{1,200}"), "/[HOME_REDACTED]"),
+    ("windows_user", re.compile(r"(?i)[A-Z]:[\\/](?:Users|Documents and Settings)[\\/][^\\/\s\"']{1,200}"), "[HOME_REDACTED]"),
+    ("ipv4", re.compile(r"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w.])"), "[IP_REDACTED]"),
+)
+
+
 class Redactor:
     """秘密情報をパターンで置換し、置換した件数を数えます。"""
 
-    def __init__(self):
+    def __init__(self, personal: bool = False):
         self.counts = Counter()
+        self.personal = personal
 
     def _substitute(self, name, pattern, replacement, text):
         changed = 0
@@ -155,7 +166,11 @@ class Redactor:
             self.counts["private_key"] += n
         for name, pattern, replacement in REDACTIONS:
             text = self._substitute(name, pattern, _authorization if name == "authorization" else replacement, text)
-        return self._substitute("assignment", ASSIGNMENT, _assignment, text)
+        text = self._substitute("assignment", ASSIGNMENT, _assignment, text)
+        if self.personal:
+            for name, pattern, replacement in PERSONAL_REDACTIONS:
+                text = self._substitute(name, pattern, replacement, text)
+        return text
 
 
 def text_of(value) -> str:
@@ -404,6 +419,40 @@ def build(sources, ledger_rows, redact) -> str:
     return "".join(parts)
 
 
+def ensure_safe_output(path: Path) -> None:
+    """Git管理対象内の未除外ファイルへのログ保存を禁止します。"""
+    parent = path.resolve().parent
+    while not parent.exists() and parent != parent.parent:
+        parent = parent.parent
+    probe = subprocess.run(["git", "-C", str(parent), "rev-parse", "--show-toplevel"],
+                           capture_output=True, text=True, check=False)
+    if probe.returncode != 0:
+        return
+    root = Path(probe.stdout.strip()).resolve()
+    try:
+        rel = str(path.resolve().relative_to(root))
+    except ValueError:
+        return
+    # .gitignoreは変更も参照もしません。setup.shの .git/info/exclude を使います。
+    info = subprocess.run(["git", "-C", str(root), "rev-parse", "--git-path", "info/exclude"],
+                          capture_output=True, text=True, check=False)
+    if info.returncode != 0:
+        raise ValueError("Gitの除外設定を確認できません")
+    exclude = Path(info.stdout.strip())
+    if not exclude.is_absolute():
+        exclude = root / exclude
+    try:
+        entries = {line.strip().rstrip("/") for line in exclude.read_text(encoding="utf-8").splitlines()
+                   if line.strip() and not line.lstrip().startswith("#")}
+    except OSError:
+        entries = set()
+    allowed = rel.startswith(".codex/review-records/") and bool({".codex", ".codex/review-records"} & entries)
+    tracked = subprocess.run(["git", "-C", str(root), "ls-files", "--error-unmatch", "--", rel],
+                             capture_output=True, check=False)
+    if tracked.returncode == 0 or not allowed:
+        raise ValueError("Git内のHTML保存先は .git/info/exclude で除外した .codex/review-records/ のみ許可します。その他はリポジトリ外へ保存してください")
+
+
 def write_atomic(path: Path, data: bytes) -> None:
     """同じフォルダーの一時ファイルへ書いて置き換えます。途中で失敗しても出力先を壊しません。"""
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
@@ -411,6 +460,7 @@ def write_atomic(path: Path, data: bytes) -> None:
         with os.fdopen(fd, "wb") as stream:
             stream.write(data)
         os.replace(tmp, path)
+        os.chmod(path, 0o600)
     except BaseException:
         if os.path.exists(tmp):
             os.unlink(tmp)
@@ -424,6 +474,7 @@ def main(argv=None) -> int:
     parser.add_argument("--ledger", type=Path, help="指摘と修正の台帳(JSON配列、任意)")
     parser.add_argument("--no-subagents", action="store_true", help="Claudeの子agentの記録を含めない")
     parser.add_argument("--omit-thinking", action="store_true", help="Claudeのthinkingブロックを含めない(既定は折りたたんで含める)")
+    parser.add_argument("--redact-personal", action="store_true", help="メール、URL、ホームパス、IPv4も伏せる(完全な匿名化は保証されません)")
     args = parser.parse_args(argv)
 
     for path in [*args.logs, *([args.ledger] if args.ledger else [])]:
@@ -455,12 +506,13 @@ def main(argv=None) -> int:
             print(f"台帳を読めません: {exc}", file=sys.stderr)
             return 2
     try:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
-        print(f"出力先のフォルダーを作成できません: {exc}", file=sys.stderr)
+        ensure_safe_output(args.out)
+        args.out.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    except (OSError, ValueError) as exc:
+        print(f"安全な出力先を確保できません: {exc}", file=sys.stderr)
         return 2
 
-    redact = Redactor()
+    redact = Redactor(personal=args.redact_personal)
     document = build(sources, ledger_rows, redact)
     try:
         # 孤立サロゲートなど符号化できない文字は?に置き換え、出力が空にならないようにします
