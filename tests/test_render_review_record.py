@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import stat
+import subprocess
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'tools' / 'render_review_record.py'
 spec = importlib.util.spec_from_file_location('render_review_record', SCRIPT)
@@ -169,6 +171,103 @@ class CommandLineTests(unittest.TestCase):
         self.assertEqual(0, code, err)
         self.assertNotIn('LEDGERSECRET', out.read_text(encoding='utf-8'))
 
+
+
+class PrivacyAndStructuredLogTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def render(self, log, destination, *options):
+        out = io.StringIO()
+        err = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            status = rrr.main(['--out', str(destination), *options, str(log)])
+        return status, out.getvalue(), err.getvalue()
+
+    def test_optional_personal_redaction(self):
+        sample = ('alice@example.com https://intranet.example.test/private?q=123 '
+                  '/home/alice/secret C:\\Users\\bob\\account.txt 192.168.1.4')
+        text = rrr.Redactor(personal=True)(sample)
+        for expected_hidden in ('alice@example.com', 'intranet.example.test',
+                                '/home/alice', 'Users\\bob', '192.168.1.4'):
+            self.assertNotIn(expected_hidden, text)
+        self.assertIn('[EMAIL_REDACTED]', text)
+        self.assertIn('[URL_REDACTED]', text)
+
+    def test_default_keeps_non_secret_text(self):
+        self.assertIn('alice@example.com', rrr.Redactor()('alice@example.com'))
+
+    def test_codex_transcript_fixture_is_rendered(self):
+        # 実Codex CLIログではなく、既知のJSONL項目から作る再現用フィクスチャです。
+        log = self.root / 'codex.jsonl'
+        records = [
+            {'type': 'session_meta', 'timestamp': '2026-10-29T03:01:00Z',
+             'payload': {'id': 'fixture', 'cli_version': 'fixture', 'cwd': '/home/test/project'}},
+            {'type': 'event_msg', 'timestamp': '2026-10-29T03:01:01Z',
+             'payload': {'type': 'agent_message', 'message': 'review finding'}},
+            {'type': 'response_item', 'timestamp': '2026-10-29T03:01:01Z',
+             'payload': {'type': 'message', 'role': 'assistant',
+                         'content': [{'type': 'output_text', 'text': 'review finding'}]}},
+            {'type': 'response_item', 'timestamp': '2026-10-29T03:01:02Z',
+             'payload': {'type': 'function_call', 'name': 'spawn_agent',
+                         'arguments': '{"agent_type":"code-quality-reviewer"}'}},
+            {'type': 'response_item', 'timestamp': '2026-10-29T03:01:03Z',
+             'payload': {'type': 'function_call_output', 'output': 'Agent finished'}}
+        ]
+        log.write_text('\n'.join(json.dumps(r) for r in records) + '\n', encoding='utf-8')
+        src = rrr.read_source('fixture', log, omit_thinking=True)
+        self.assertEqual(1, src.skipped['event_msgの重複(省略)'])
+        self.assertEqual(0, src.unreadable)
+        self.assertEqual(0, src.unrecognized)
+        dest = self.root / 'record.html'
+        status, _, err = self.render(log, dest, '--omit-thinking', '--redact-personal')
+        self.assertEqual(0, status, err)
+        result = dest.read_text(encoding='utf-8')
+        self.assertIn('review finding', result)
+        self.assertIn('spawn_agent', result)
+        self.assertIn('Agent finished', result)
+        self.assertNotIn('/home/test/project', result)
+
+    def test_claude_parent_child_fixture(self):
+        parent = self.root / 'parent.jsonl'
+        child = self.root / 'parent' / 'subagents' / 'agent-123.jsonl'
+        child.parent.mkdir(parents=True)
+        parent.write_text(json.dumps({'type': 'assistant', 'timestamp': '2026-10-29T00:00:01Z',
+            'message': {'content': [{'type': 'text', 'text': 'parent review'}]}}) + '\n', encoding='utf-8')
+        child.write_text(json.dumps({'type': 'assistant', 'timestamp': '2026-10-29T00:00:02Z',
+            'message': {'content': [{'type': 'text', 'text': 'child consultation'}]}}) + '\n', encoding='utf-8')
+        child.with_suffix('.meta.json').write_text(json.dumps({'agentType': 'nestjs-backend'}), encoding='utf-8')
+        out = self.root / 'record.html'
+        status, _, err = self.render(parent, out)
+        self.assertEqual(0, status, err)
+        rendered = out.read_text(encoding='utf-8')
+        for word in ('parent review', 'child consultation', 'nestjs-backend'):
+            self.assertIn(word, rendered)
+
+    def test_private_permissions_and_git_exclusion_guard(self):
+        log = self.root / 'test.jsonl'
+        log.write_text(json.dumps({'role': 'user', 'text': 'safe'}) + '\n', encoding='utf-8')
+        out = self.root / 'private' / 'record.html'
+        code, _, err = self.render(log, out)
+        self.assertEqual(0, code, err)
+        self.assertEqual(0o600, stat.S_IMODE(out.stat().st_mode))
+        repo = self.root / 'repo'
+        repo.mkdir()
+        subprocess.run(['git', 'init', '-q', str(repo)], check=True)
+        bad = repo / 'record.html'
+        code, _, err = self.render(log, bad)
+        self.assertEqual(2, code)
+        self.assertIn('安全な出力先', err)
+        self.assertFalse(bad.exists())
+        info_exclude = repo / '.git' / 'info' / 'exclude'
+        info_exclude.write_text(info_exclude.read_text(encoding='utf-8') + '\n.codex\n', encoding='utf-8')
+        allowed = repo / '.codex' / 'review-records' / 'record.html'
+        code, _, err = self.render(log, allowed)
+        self.assertEqual(0, code, err)
+        self.assertFalse((repo / '.gitignore').exists())
+        self.assertEqual(0o600, stat.S_IMODE(allowed.stat().st_mode))
 
 if __name__ == '__main__':
     unittest.main()
