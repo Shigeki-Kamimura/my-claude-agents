@@ -23,7 +23,7 @@ Company-wide adoption is not confirmed. This document is an operational interpre
 
 ## Principle application
 
-Every implementing/reviewing owner independently reads this contract and the applicable sections of `human-review-patterns.md` on first entry, even when invoked directly. Same-owner continuations follow `Rule loading across continuations` below.
+Every implementing/reviewing owner independently reads the applicable contract and `human-review-patterns.md` sections on first entry, even when invoked directly. Claude section delivery may use `Preloaded rule delivery` below. Same-owner continuations follow `Rule loading across continuations` below.
 Planning, routing and consulting roles apply the source index and triggered supplements within their assigned responsibility. Bounded escalation roles reuse unchanged supplied rule evidence and read only missing or changed relevant sections; this does not restart a complete rule/review pass.
 Read the minimum complete relevant project rule, including exceptions. Use the explicit task/project source first, then discover actual local rule paths; an example path is not a universal source.
 
@@ -38,6 +38,27 @@ Read the minimum complete relevant project rule, including exceptions. Use the e
 Use `source/section -> responsibility or invariant -> inspected evidence -> result` for triggered principles.
 Results are `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED`, scoped to inspected evidence.
 An explicitly mandatory rule violation does not need an invented runtime crash to be blocking. An optional preference does not become mandatory because an AI repeats it.
+
+### Preloaded rule delivery
+
+Claude subagents may satisfy first-entry reading for exact sections delivered by the generated `engineering-review-core`, `engineering-react-rules`, and `engineering-nest-rules` skills. This is a user-approved delivery rule, not a new quotation from Nishiguchi. Each owner must actually receive the skill text in its own context and retain its included section names and source SHA-256 as `Rules loaded` evidence. A frontmatter declaration alone is not delivery evidence or whole-document reading.
+
+The coordinator checks source identity against the active project's current rules and supplies permitted digest/metadata evidence; SHA-256 here is not a Git blob hash. Missing, changed, unverified or conflicting sources require targeted original reading, including exceptions, or an exact evidence request. Claude reviewers do not run shell/hash commands for this check. Project-local configured sources take precedence; never replace a project-specific document with a shared summary without checking its identity. Existing read-at-entry instructions remain mandatory for applicable sections not actually injected. Codex agents without these Claude preloads retain their normal reading requirements.
+
+Reuse unchanged, verified injected sections on the same-owner continuation. Read only missing/changed relevant sections and project design rules; preloading does not expand routing/planning/consultation scope, permissions, or approval authority. Missing mandatory evidence stays pending. Regenerate both profiles with `python3 -I -B tools/sync_engineering_preloads.py --write` after a source change and check without `--write` before publishing. Existing deployments need setup again to link new skill directories, followed by a fresh Claude session. Do not infer runtime compliance or token savings from static configuration checks.
+
+### Core rules for Claude preload
+
+This is the user-approved operational core, not Nishiguchi's wording or proof of company-wide adoption. Preserve the pinned source and the separate human-review reference. Explicit project rules and platform/user controls retain their precedence. Do not invent quotations or export one project's conventions to another project.
+
+- Responsibility: identify the actual owner/layer and a concrete mixed responsibility before requesting a boundary change. Reuse existing validated concepts, but do not merge contracts merely because their fields match.
+- Exceptions: catch for recovery, error translation, cleanup or meaningful context. Preserve unexpected failures and their cause. Do not remove every catch or accept an empty catch.
+- Types: validate untrusted boundaries and narrow types. An annotation/cast is not runtime validation; a justified framework assertion is not automatically a defect. Check the actual producer and nearest guard before asserting reachability.
+- Scope/design: make the smallest design-correct change, including required boundary repair. Read applicable project rules and their exceptions. A sourced mandatory violation needs no invented crash; an optional preference is not a blocker.
+- Evidence: separate reachable defects, mandatory-rule violations, verification gaps and optional observations. Record inspected revision/source and the obligation behind the expected behavior. Missing evidence never becomes approval; retain supplied unresolved findings and handoffs until the owning reviewer confirms closure or withdraws with evidence. Never use Info classification to close an unresolved mandatory obligation.
+- Ownership: implementation owns edits; each requested review layer retains its own scope. L1.5 stays self-contained. HQ and first-pass L2 must obtain applicable React/Nest consultation after tracing the boundary; implementation advice does not replace independent L2 evidence. Consultants advise only on their assigned boundary, and review-planner routes metadata only. This does not authorize an additional layer or delegate.
+- Execution: the active workflow and actual tool restrictions decide execution permissions. In codex-claude-review, all Claude reviewers/consultants stay review-only and Codex owns commands, tests, fixes and CI. A normal Claude session may execute an explicit user request with available permissions. Never bypass restrictions through another agent.
+- Completeness: budgets do not waive mandatory rules, consultation, blocker closure or current-snapshot evidence. A clean single-layer result does not grant four-layer/final/merge approval. Read the detailed source index, triggered ASYNC-1/HTTP-1, phase ownership, minor-finding/closure rules and retained-blocker obligations when relevant and not already injected. Preserve their conditions and exceptions.
 
 ## Source coverage and role scope
 

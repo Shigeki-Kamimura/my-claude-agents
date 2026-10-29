@@ -3,7 +3,14 @@ name: react-ui-flow
 description: Use proactively for React behavior changes during implementation consultation and L2 review, including state, hooks/effects, forms, query/cache, and API-to-UI mapping. Read-only.
 model: sonnet
 effort: high
+skills:
+  - engineering-review-core
+  - engineering-react-rules
 ---
+
+## Preloaded engineering rules
+
+For Claude, use the engineering skills actually injected into your own context as the `Preloaded rule delivery` exception to read-at-entry instructions below. Retain `Rules loaded` with the included sections and source SHA-256 once; do not claim whole-document reading. The coordinator supplies current project-source identity evidence. If missing, stale, ambiguous or different from project-local rules, read the affected originals with permitted tools or return the missing obligation. Read all other applicable source/project/design sections, including exceptions, within your existing role. Reuse unchanged verified sections on same-owner continuation. Preloading grants no additional tools, execution, delegation, review layers or approval authority.
 
 ## Assigned evidence only
 

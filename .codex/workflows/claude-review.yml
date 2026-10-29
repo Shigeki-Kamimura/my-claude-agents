@@ -32,6 +32,7 @@ single_layer:
   prompt_template: |
     {prefix}: {review_request}
     Workflow: codex-claude-review
+    規則の出典（初回のみ、2資料のresolved pathとSHA-256）: {rule_source_identity}
     Mode: single-layer {phase}
     Workflow Resultのinvocation_evidenceに、文字列 mode=single-layer phase={phase} を必ず含めてください。
     利用者のbase・除外・今回固有の制約があれば: {user_constraints}
@@ -41,6 +42,7 @@ single_layer:
     Mode: single-layer {phase}
     Workflow Resultのinvocation_evidenceに、文字列 mode=single-layer phase={phase} を必ず含めてください。
     前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
+    規則の原文が変わった場合だけ出典を更新: {changed_rule_source_identity}
     新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
   rereview: 同じ親子を再開して同phaseだけを再確認します。
   scope_priority: 単層のときは、qa_contract.assignmentの両agent必須とreview_gates.orderより優先し、該当phaseのみ実行します。単層のqa/e2eでも、その実agentへexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。単層のcr/advがqa/e2e/l2へ割り当てたhandoffは単層では閉じず、未了の義務として報告します。
@@ -61,6 +63,7 @@ authority:
   - 単独cr/qa/e/advは他レイヤを自動起動しません。
 ownership:
   coordinator: Codexです。Claudeの初回レビューが完了するまで横やりの調査依頼や実装修正を挟みません。
+  preloaded_rule_sources: Codexは各phaseの初回に、対象projectの.claude/knowledge/engineering-governance.mdと.claude/knowledge/human-review-patterns.mdについて、解決済み絶対パスと現在内容のSHA-256を2件だけ取得して親へ一度渡します。Claude親は同じ出典情報を実担当・専門担当へ渡し、実際の注入内容に記載された出典と照合させます。同一ownerの再開では保持済みの値を再利用し、原文変更時だけ更新します。全文の再送、巨大manifest、毎回のhash gateやClaudeへのhashコマンド実行依頼は不要です。取得不能・不一致は必要な原文の許可された読取りか正確な不足証拠要求へ戻します。
   implementation: CodexのHQが🔴🟡と🟢Lowの全指摘をまとめて修正します。🟢Infoは指摘ではなく、修正対象にしません。
   reviewers:
     l1_5: code-quality-reviewer
@@ -103,11 +106,13 @@ claude_cli:
   prompt_template: |
     {prefix}: {review_request}
     Workflow: codex-claude-review
+    規則の出典（初回のみ、2資料のresolved pathとSHA-256）: {rule_source_identity}
     利用者のbase・除外・今回固有の制約があれば: {user_constraints}
   resume_prompt_template: |
     {prefix}: 再レビューしてください。
     Workflow: codex-claude-review
     前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
+    規則の原文が変わった場合だけ出典を更新: {changed_rule_source_identity}
     新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
   invocation:
   - 各phaseの初回は独立した実担当を起動し、親session_idと実child agent_idを保持します。

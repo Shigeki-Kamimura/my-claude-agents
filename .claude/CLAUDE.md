@@ -10,7 +10,7 @@ Project instructions override only explicit fields.
 
 ## Engineering Governance Gate
 
-On first implementation/review entry, read `.claude/knowledge/engineering-governance.md`; same-owner continuations follow its `Rule loading across continuations` section.
+On first implementation/review entry, read `.claude/knowledge/engineering-governance.md`; Claude children may satisfy injected sections under its `Preloaded rule delivery` exception. Same-owner continuations follow its `Rule loading across continuations` section.
 It is the shared operational contract for the adopted Nishiguchi principles, independent review, and mandatory React/Nest consultation.
 Use governance sections `Pinned source and reconciliation`, `Source coverage and role scope`, and the triggered `User-approved technical supplements` within each assigned role. Pass the applicable section/supplement IDs to delegated owners, including direct specialist and bounded escalation tasks; preserve their existing scope and consultation rules.
 Preserve the original/human-review principles; do not treat new operational rules as Nishiguchi quotations or confirmed company policy.

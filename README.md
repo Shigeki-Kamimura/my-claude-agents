@@ -400,6 +400,20 @@ python3 -I -B "$AGENTS/tools/summarize_claude_session.py" \
 
 合成ログによるテストと実際のCodex/Claude起動テストは別です。`docs/review-efficiency-validation.md` の手順で両方を確認してください。
 
+## サブエージェントへの規則の事前読込
+
+Claudeの全担当は、`skills`指定で`engineering-review-core`を起動時に読み込みます。ReactとNestには、それぞれの担当範囲の追加スキルも渡します。ガバナンスと人のレビュー方針から節単位で原文を抽出し、禁止事項・条件・例外を保持します。設計書は変更に関係する部分を別途確認します。
+
+正本は`.claude/knowledge/`の2資料です。`.claude-company/knowledge/`との一致を確認し、`tools/sync_engineering_preloads.py --write`で両profileのスキルを生成します。通常の実行は変更せず、出典の変更や生成物の欠落を検出します。生成物には原文のSHA-256と収録節を記録します。
+
+CodexからClaudeへのレビューでは、各phase初回に2資料の解決済み絶対パスとSHA-256だけを一度渡し、Claude親から各担当へ引き継ぎます。同じ担当の再開では保持済みの値を使い、原文変更時だけ更新します。
+
+初回の`Rules loaded`には、実際に渡されたスキル・収録節・版を残します。原文の全文読了とは区別します。担当が持たない節、原文と版が合わない場合、判断が曖昧な場合は、許可された読取り手段で必要な原文と例外を確認します。レビュー専用Claudeへ確認用のBash実行を求めません。
+
+既存の導入先では、新しいスキルを見つけるため、利用中profileの`setup.sh`または`setup.ps1`を再実行し、新しいClaudeセッションを始めます。定義の更新だけで、既存セッションや個別リンクへ新規ディレクトリが追加されたとは扱いません。導入先の既存実ファイルは従来どおり保護します。構成テストの成功は、実際の方針順守やトークン削減の証明ではありません。
+
+公式仕様: [Claude Code — Preload skills into subagents](https://code.claude.com/docs/en/sub-agents#preload-skills-into-subagents)
+
 ## 補助スクリプト
 
 `tools/sync_reviewer_body.py`は、`reviewer`の本文を`.claude`・`.claude-company`・`.codex`の3ファイルで同期します。`reviewer`の本文を変更したときに、引数なしで検証し、`--dry-run`で確認して`--write`で同期します。
