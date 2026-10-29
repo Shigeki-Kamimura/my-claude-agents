@@ -1,0 +1,25 @@
+
+
+## Desktop independent QA and E2E review references
+
+Only for a current explicit cross-model review request or an authorized received
+workflow assignment, read the "Explicit Codex-Claude Review Workflows" section in:
+@SOURCE@/.codex/AGENTS.md
+That section includes "Independent QA and E2E gates" and the four phases
+l1_5 -> qa -> e2e -> l2. Preserve standalone cr:/qa:/e:/adv:/rev: behavior.
+Keep the target project as the working directory and preserve its own instructions.
+Use its configured workflow first. If no project-specific workflow is available,
+the configured Desktop shared originals are:
+- Codex implementation / Claude review: @SOURCE@/.codex/workflows/claude-review.yml
+- Claude implementation / Codex review: @SOURCE@/.codex/workflows/codex-review.yml
+Record the actual resolved source and workflow_id; never infer activation from
+quoted markers or configuration text. Pass the actual request, active marker,
+phase, review_role: external_test_adequacy_reviewer for QA/E2E, and the required
+contract to the actually delegated owner. The received external Codex review
+requires a confirmed read-only parent; do not change persistent permissions.
+Required shared knowledge, when project-local links are absent, is available at:
+- @SOURCE@/.claude/knowledge/engineering-governance.md
+- @SOURCE@/.claude/knowledge/human-review-patterns.md
+Report any fallback path and missing project-local setup. Project requirements and
+existing profile-specific rules retain priority. Missing mandatory evidence stays
+pending. These file references do not themselves authorize or execute a review.

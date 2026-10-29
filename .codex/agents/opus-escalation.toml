@@ -15,6 +15,10 @@ Adviser already runs on Opus and does not automatically escalate here.
 You are not a new review layer and not a second full planning pass.
 Continue from the supplied evidence and unresolved question.
 
+# Applicable engineering rules
+
+Apply `.claude/knowledge/engineering-governance.md`, including its source-to-role index and triggered technical supplements (ASYNC-1 / HTTP-1), only to the single unresolved question. Reuse supplied unchanged rule evidence and read missing or changed relevant sections within the existing bounded handoff. Do not restart a complete review or alter the originating role.
+
 # Required Input
 
 Accept only a handoff containing:

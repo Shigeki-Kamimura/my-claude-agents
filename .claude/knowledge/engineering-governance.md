@@ -13,9 +13,18 @@ Company-wide adoption is not confirmed. This document is an operational interpre
 - Within these engineering instructions, source-backed principles and contracts take priority over convenience, token targets, sample/file budgets, and duplicate-output reduction.
 - Project conventions are scoped. Suspense, ORM exception helpers, audit formats, and API conventions require an applicable project source; do not export one project's choices to every repository.
 
+### Pinned source and reconciliation
+
+- Source: Nishiguchi, [Coding Guidelines](https://github.com/Shigeki-Kamimura/coding-guidelines), README.md.
+- Reference revision: [`4f2f34ea149a52869a551acbcf17580da357e96f`](https://github.com/Shigeki-Kamimura/coding-guidelines/blob/4f2f34ea149a52869a551acbcf17580da357e96f/README.md). Checked: 2026-10-29 (Asia/Tokyo).
+- Reconciliation covers the chapter inventory and related sections, especially §§1, 5.2–5.3, 6.4–6.5, 9–10 and 16. This is not a complete review of all sixteen chapters or proof of every agent's compliance.
+- The five-principle table below is an operational summary, not the complete source. Responsibility separation maps to §§2, 4 and 5.2; meaningful exceptions to §§6.5, 9 and 10; type safety to §§6.4–6.5; focused changes to §§1, 5.2–5.3. Project design-document checks are an adopted operating rule, not a separate chapter attributed to the author.
+- Preserve the source unchanged. Keep the user-approved technical supplements below separate from the source and from project-specific contracts. A later source revision requires targeted reconciliation before changing the adopted interpretation; do not silently track a moving branch.
+
 ## Principle application
 
 Every implementing/reviewing owner independently reads this contract and the applicable sections of `human-review-patterns.md` on first entry, even when invoked directly. Same-owner continuations follow `Rule loading across continuations` below.
+Planning, routing and consulting roles apply the source index and triggered supplements within their assigned responsibility. Bounded escalation roles reuse unchanged supplied rule evidence and read only missing or changed relevant sections; this does not restart a complete rule/review pass.
 Read the minimum complete relevant project rule, including exceptions. Use the explicit task/project source first, then discover actual local rule paths; an example path is not a universal source.
 
 | Adopted principle | Implementation obligation | Review obligation |
@@ -29,6 +38,64 @@ Read the minimum complete relevant project rule, including exceptions. Use the e
 Use `source/section -> responsibility or invariant -> inspected evidence -> result` for triggered principles.
 Results are `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED`, scoped to inspected evidence.
 An explicitly mandatory rule violation does not need an invented runtime crash to be blocking. An optional preference does not become mandatory because an AI repeats it.
+
+## Source coverage and role scope
+
+Use this index when the assigned change triggers a topic. Read the complete relevant source section, including exceptions, with the applicable project rules. Chapter names and line starts refer to the pinned README above; this index is not a claim that each chapter has been fully audited.
+The listed roles identify responsibility, not a new review chain or permission to invoke every role. Keep existing consultation triggers and the selected layer's scope. `review-planner` uses metadata to route only; escalation roles resolve only their supplied question. Reuse unchanged readings under `Rule loading across continuations`.
+
+| Source chapter (README line start) | Trigger in the assigned change | Responsible owner within existing scope |
+| --- | --- | --- |
+| §1 コードの量と本質 (L48) | Added concepts, deletion, or scope growth | `req-pl`, `hq-coder`, selected CR/ADV owner |
+| §2 概念を実装する (L144) | Domain concepts, states, or model boundaries | `req-pl`, `hq-coder`, selected CR/ADV owner |
+| §3 命名（名前警察） (L424) | A name misrepresents the responsibility or contract | `hq-coder`, selected CR/ADV owner; no naming-only blocker without an applicable rule |
+| §4 責務と疎結合 (L514) | Controller, service, component, or dependency ownership | `hq-coder`, matching framework consultant, selected CR/ADV owner |
+| §5 再利用と資産化（装備を充実させる） (L1096) | Reuse, abstraction, or refactoring | `hq-coder`, selected CR/ADV owner |
+| §6 ロジックの書き方 (L1237) | Branches, invariants, types, or input validation | `hq-coder`, matching framework consultant, assigned QA/CR owner |
+| §7 副作用と不変性 (L1505) | Mutation, shared state, or external effects | `hq-coder`, matching framework/data consultant, selected reviewer |
+| §8 パフォーマンス（計算量） (L1699) | Changed work size, queries, batches, or concurrency limits | `hq-coder`, matching framework/data consultant, selected reviewer |
+| §9 非同期・並行処理 (L1816) | Promises, cancellation, partial failure, or concurrent effects | `hq-coder`, matching framework/data consultant, assigned reviewer/QA/E2E owner; apply supplement ASYNC-1 |
+| §10 エラーハンドリング (L1912) | Catch, error translation, HTTP errors, or user recovery | `hq-coder`, matching framework consultant, assigned reviewer/QA/E2E owner; apply supplement HTTP-1 when authentication/authorization is involved |
+| §11 セキュリティ (L2013) | Untrusted input, identity, authorization, secrets, or PII | `hq-coder`, `sec-arch`, matching framework consultant, assigned reviewer/QA/E2E owner |
+| §12 ログと可観測性 (L2102) | Logs, causes, correlation, or sensitive diagnostic data | `hq-coder`, `sec-arch`/`data-platform` when their boundary is affected, selected reviewer |
+| §13 スケールアウトを前提に書く (L2122) | Process-local state, multiple instances, or distributed work | `hq-coder`, `data-platform`, matching backend consultant, selected reviewer |
+| §14 トランザクションと整合性 (L2147) | Dependent writes, commit timing, or partial persistence | `hq-coder`, `data-platform`, matching backend consultant, assigned reviewer/QA/E2E owner |
+| §15 冪等性（リトライ・重複に耐える） (L2182) | Retry, duplicate requests, jobs, or external delivery | `hq-coder`, `data-platform`, matching framework consultant, assigned reviewer/QA/E2E owner |
+| §16 チェックリスト (L2218) | Final check of the topics actually changed | Current assigned owner only; retain unchecked obligations without claiming complete source compliance |
+
+## User-approved technical supplements
+
+These supplements were adopted by the user on 2026-10-29. They clarify application of the pinned examples; they are not quotations from Nishiguchi or edits to the original guideline. Apply only the supplement triggered by the assigned boundary, including direct agent invocation. Preserve explicit project contracts and report material conflicts.
+
+### ASYNC-1: Promise aggregation does not cancel work
+
+- Trigger: interpreting or changing `Promise.all` failure behavior, especially when started operations can write data or cause external effects.
+- `Promise.all` rejects its result when an input rejects; it does not itself cancel the other started operations or roll back their effects. Do not infer that work stopped or that no write succeeded from the aggregate rejection.
+- Follow the actual contract for continued work, partial success, cancellation, cleanup and retry/idempotency. `Promise.allSettled` waits for outcomes; it does not provide cancellation, rollback or atomicity. Require a cancellation/transaction design only when the affected contract needs it, not for every parallel read.
+- Source context: [guideline §9.3](https://github.com/Shigeki-Kamimura/coding-guidelines/blob/4f2f34ea149a52869a551acbcf17580da357e96f/README.md#L1854-L1865). Technical basis: [MDN, Promise.all](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all), [ECMAScript, PerformPromiseAll](https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromiseall).
+
+### HTTP-1: Distinguish authentication and forbidden access
+
+- Trigger: interpreting or changing HTTP 401/403 handling, error translation, login recovery, or permission guidance.
+- A 403 alone does not prove an expired session or that logging in again will resolve the failure. Normally give the applicable permission guidance; determine reauthentication from the actual API/authentication contract and verified error details. Do not create an automatic login/retry loop with unchanged credentials.
+- Distinguish 401 (missing valid authentication credentials for the target resource) from 403 (the server understands the request but refuses it). Some APIs document different mappings. Inspect that producer contract before changing its consumer; do not relabel every 403 or prohibit documented recovery using new credentials.
+- Preserve unexpected failures and their cause. A status or catch boundary does not establish an unobserved cause.
+- Source context: [guideline §10.1](https://github.com/Shigeki-Kamimura/coding-guidelines/blob/4f2f34ea149a52869a551acbcf17580da357e96f/README.md#L1968-L2009). Technical basis: Fielding, Nottingham and Reschke, [RFC 9110 §15.5.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.2) and [§15.5.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.4), 2022.
+
+### Calibration examples
+
+Use these examples when evaluating whether agents apply the adopted rules correctly, not as a new test/review gate for each task. Compare the agent's judgment and evidence with the expected decision; record the agent, rule revision and actual result when run. Static configuration checks do not count as agent execution. Include both missed defects and unsupported findings; more findings is not a success metric.
+
+| Case | Expected decision and evidence | Unsupported judgment to avoid |
+| --- | --- | --- |
+| Two types have the same fields but different contracts and reasons to change | Keep the contracts separate unless actual shared responsibility is established (§5.2) | Demand a shared type based only on matching shape |
+| Existing types/helpers represent the same validated contract | Reuse the nearby definition or give a contract-based reason not to (§5) | Create a duplicate concept without checking existing ownership |
+| A catch recovers, maps a verified error, adds useful context, or cleanup is required | Preserve that responsibility and unexpected-error propagation (§10) | Remove every catch or lose cleanup because catch is considered undesirable |
+| External JSON is assigned a TypeScript type without runtime validation | Identify the unvalidated boundary; check the actual validator and reachable input (§6.4–6.5) | Treat an annotation/cast as validation, or demand repeated validation of an already validated internal value |
+| One parallel write fails while another started operation can still succeed | Check continued effects and the real partial-success/retry contract (ASYNC-1) | Claim aggregate rejection cancelled or rolled back the writes |
+| Independent parallel reads may continue after one failure, and the contract permits this | Accept the documented outcome (ASYNC-1) | Demand cancellation, transactions, or `allSettled` solely because `Promise.all` appears |
+| An API returns 403 for an authenticated user without permission | Preserve permission guidance and check the API contract (HTTP-1) | Force logout/login or retry indefinitely with unchanged credentials |
+| An API explicitly maps a recoverable invalid session to 403 | Follow the documented, bounded reauthentication flow after verifying that contract (HTTP-1) | Ban all reauthentication for 403 or assume the same mapping for other APIs |
 
 ## User-approved AI operational improvements
 

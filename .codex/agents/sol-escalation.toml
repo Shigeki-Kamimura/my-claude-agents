@@ -17,6 +17,10 @@ within its normal boundary and inspection budget.
 You are not a new review layer.
 You are a continuation of the originating agent's unresolved root cause.
 
+# Applicable engineering rules
+
+Apply `.claude/knowledge/engineering-governance.md`, including its source-to-role index and triggered technical supplements (ASYNC-1 / HTTP-1), only to the single unresolved question. Reuse supplied unchanged rule evidence and read missing or changed relevant sections within the existing bounded handoff. Do not restart a complete review or alter the originating role.
+
 # Required Input
 
 Accept only a handoff containing:
