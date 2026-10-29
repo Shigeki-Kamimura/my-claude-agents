@@ -248,10 +248,22 @@ def safe_output(path: Path) -> None:
         rel = str(path.resolve().relative_to(root))
     except ValueError:
         return
-    ignored = subprocess.run(["git", "-C", str(root), "check-ignore", "-q", "--no-index", "--", rel], check=False)
+    # .gitignoreには頼りません。setup.sh が設定した .git/info/exclude だけを確認します。
+    info = subprocess.run(["git", "-C", str(root), "rev-parse", "--git-path", "info/exclude"], capture_output=True, text=True, check=False)
+    if info.returncode != 0:
+        raise ValueError("Gitの除外設定を確認できません")
+    exclude = Path(info.stdout.strip())
+    if not exclude.is_absolute():
+        exclude = root / exclude
+    try:
+        entries = {line.strip().rstrip("/") for line in exclude.read_text(encoding="utf-8").splitlines()
+                   if line.strip() and not line.lstrip().startswith("#")}
+    except OSError:
+        entries = set()
+    allowed = rel.startswith(".codex/review-records/") and bool({".codex", ".codex/review-records"} & entries)
     tracked = subprocess.run(["git", "-C", str(root), "ls-files", "--error-unmatch", "--", rel], capture_output=True, check=False)
-    if tracked.returncode == 0 or ignored.returncode != 0:
-        raise ValueError("Git管理対象または除外されていない出力先です。.git/info/excludeで除外済みの場所か作業ツリー外へ保存してください")
+    if tracked.returncode == 0 or not allowed:
+        raise ValueError("Git内へのHTML保存は、.git/info/excludeで除外済みの .codex/review-records/ のみ許可します。その他はリポジトリ外へ保存してください")
 
 
 def private_write(path: Path, value: str) -> None:
