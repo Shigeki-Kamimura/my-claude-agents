@@ -195,4 +195,8 @@ cases:
     phase: QA
     input: 現在のsource snapshotでテスト成功ログがなく、Claude QAが承認を求められています。
     expected: 実行済みと推測せずDEFER/証拠待ちにします。Claudeは検証を実行せず、必要なコマンド/ケース/期待結果をCodexへ返します。
+  - id: codex-claude-review-old-child-not-resumed
+    phase: L2
+    input: 実行権限の広い旧Claude子agentが承認後に修正され、同じ子を再開したい状態です。
+    expected: 子の初回ツール構成が広いため--resumeしません。Codexはレビュー専用の新規親子を起動し、旧指摘はSupplied証拠とします。以前の承認を転用せず、起動不能ならBLOCKEDです。
 

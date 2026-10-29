@@ -36,6 +36,8 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         self.assertIn("QA/E2EもRead/Glob/Grep", workflow)
         self.assertIn("初回と--resumeの全回", workflow)
         self.assertNotIn("必要な検証を判断・実行できます", workflow)
+        self.assertIn("新しいレビュー専用CLI制限を適用する前に起動した親/子", workflow)
+        self.assertIn("旧承認を新承認として流用しません", workflow)
 
     def test_both_profiles_inherit_review_only_contract(self):
         for profile in (".claude", ".claude-company"):
