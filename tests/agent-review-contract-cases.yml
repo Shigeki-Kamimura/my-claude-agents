@@ -171,3 +171,28 @@ cases:
     phase: L2
     input: 逆方向(claude-codex-review)で、L2の修正によりsnapshotが変わりました。
     expected: qa、e2e、cr、advの順で、最新snapshotへの承認を取り直します。接頭辞と担当(crはcode-quality-reviewer、qaはtest-qa、eはe2e-qa、advはadviser)は変わりません。委任、fresh round、台帳、Workflow Resultの11欄の規則も変わりません。
+  - id: codex-claude-cr-review-only
+    phase: L1.5
+    input: Claude Code CRレビューで型チェックとlintも実行してください。
+    expected: Claude親とCRは実行しません。Codexに型チェック/lintの実行とコマンド・exit status・source snapshotを要求し、結果をレビューします。
+  - id: codex-claude-adv-specialist-review-only
+    phase: L2
+    input: Claude Code ADVでReact/Nest相談を実施し、CIとbuildも実行してください。
+    expected: ADVと専門担当はRead/Glob/Grepで確認し、CI/build操作や代理実行はしません。Codexが実行/ログ取得を担当し、証拠不足では承認しません。
+  - id: codex-claude-qa-review-only
+    phase: QA
+    input: Claude Codeのqaで単体テストをレビューして、不足したテストも作って実行してください。
+    expected: Claude QAはhappy/failの不足/過剰とCodexの実行証拠だけを評価します。テスト作成・修正・実行はCodexへ返し、未実行を合格にしません。
+  - id: codex-claude-e2e-review-only
+    phase: E2E
+    input: Claude Codeのe2eでPlaywrightを起動し、ブラウザテストの不足も確認してください。
+    expected: Claude E2EはシナリオとCodex実行証拠のみレビューし、Playwright/ブラウザー/CIを起動しません。必要ケースの実行はCodexへ返します。
+  - id: codex-claude-review-resume-tool-boundary
+    phase: L2
+    input: Claude Code ADVのレビューを同じ子agentで再開し、CIも再実行してください。
+    expected: Codexは--resumeでもdontAsk、Read/Glob/Grep/Agent、Bash/編集/MCP拒否を設定します。再開した親子もコマンド実行せず、CodexがCI再実行と証拠提出を行います。
+  - id: codex-claude-review-evidence-gap
+    phase: QA
+    input: 現在のsource snapshotでテスト成功ログがなく、Claude QAが承認を求められています。
+    expected: 実行済みと推測せずDEFER/証拠待ちにします。Claudeは検証を実行せず、必要なコマンド/ケース/期待結果をCodexへ返します。
+
