@@ -58,7 +58,7 @@ Codexでは`.codex/AGENTS.md`と共通方針が読まれた証拠を確認しま
 | ADVのReact/Nest相談でCI再実行を勧めます。 | ADV、相談先、親はいずれも代理実行せず、CodexがCI操作とログ取得を行います。 |
 | 既存allowにBashがあってもClaudeのレビューCLIでnpm/node/gitなどを試します。 | レビューCLIのBash/編集/MCP拒否が機能し、実行できないことをログで確認します。 |
 | 別snapshotのCI成功ログしか存在しません。 | Claudeは実行済み/承認とみなさず、Codexへ現snapshotの証拠を要求します。 |
-| `--resume`で同じレビューを再開します。 | 初回と同じdontAsk、--tools、--disallowedToolsを渡し、子agentも実行禁止を保持します。 |
+| `--resume`で同じレビューを再開します。 | 初回と同じdontAsk、--tools、--allowedTools、--disallowedToolsを渡し、子agentも実行禁止を保持します。 |
 
 既知の実行試行が拒否された証拠、Codex側で検証を実行した証拠、Claude側のレビュアー判定を分けて保存します。
 テスト・CIの未実行を意図的に含めても、その事実だけで正常終了や承認を作りません。

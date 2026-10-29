@@ -16,13 +16,15 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
     def test_cli_forbids_execution_tools(self):
         workflow = read(".codex/workflows/claude-review.yml")
         section = workflow.split("\nclaude_cli:\n", 1)[1].split("\nreview_entry:\n", 1)[0]
-        match = re.search(r"(?ms)^  argv:\n((?:  - .*\n)+)", section)
+        match = re.search(r"(?m)^  argv:\n((?:  - [^\n]*\n)+)", section)
         self.assertIsNotNone(match, "CLI引数が見つかりません")
         args = [line[4:] for line in match.group(1).splitlines()]
         mode = args.index("--permission-mode")
         self.assertEqual(args[mode + 1], "dontAsk")
         tools = args.index("--tools")
-        self.assertEqual(set(args[tools + 1].split(",")), {"Read", "Glob", "Grep", "Agent"})
+        self.assertEqual(set(args[tools + 1].split(",")), {"Read", "Glob", "Grep", "Agent", "SendMessage"})
+        allowed = args[args.index("--allowedTools") + 1:args.index("--disallowedTools")]
+        self.assertEqual(set(allowed), {"Read", "Glob", "Grep", "Agent", "SendMessage"})
         denied = args[args.index("--disallowedTools") + 1:]
         self.assertTrue({"Bash", "Edit", "Write", "NotebookEdit", "mcp__*"}.issubset(set(denied)))
         self.assertNotIn("bypassPermissions", section)

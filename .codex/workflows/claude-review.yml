@@ -80,7 +80,13 @@ claude_cli:
   - --permission-mode
   - dontAsk
   - --tools
-  - Read,Glob,Grep,Agent
+  - Read,Glob,Grep,Agent,SendMessage
+  - --allowedTools
+  - Read
+  - Glob
+  - Grep
+  - Agent
+  - SendMessage
   - --disallowedTools
   - Bash
   - Edit
@@ -88,9 +94,9 @@ claude_cli:
   - NotebookEdit
   - mcp__*
   model_policy: 親の調整はSonnet/medium、各実agentは自身のmodel/effortです。adviserはclaude-opus-5-5/high、他の既定担当はSonnetです。Agent呼出のmodel/effort上書きで役割設定を変えず、明示された利用者指定を優先します。必要なL2モデルが利用不能なら承認を保留します。
-  permission_basis: 利用者の最新指示に従いレビュー専用です。--toolsで読取りとAgent委譲だけを残し、--disallowedToolsでBash/編集/MCPを明示的に拒否します。dontAskで未許可の操作を拒否します。既存settingsのallowや子agentが制限を緩めたと扱いません。
+  permission_basis: 利用者の最新指示に従いレビュー専用です。--toolsで読取りとAgent委譲/SendMessage再開だけを残し、--disallowedToolsでBash/編集/MCPを明示的に拒否します。dontAskで未許可の操作を拒否します。既存settingsのallowや子agentが制限を緩めたと扱いません。
   limits: OS/Codex/managed設定と実際の利用者制約は守ります。上位制限を迂回せず、止まる場合は確認不能として報告します。
-  tools: 初回と--resumeの全回で同じ--tools/--disallowedTools/--permission-modeを指定します。Claude親・子・専門担当はRead/Glob/Grep/Agentでレビューします。Git差分、型チェック、CI等のコマンドはCodex側で実行してから証拠を渡します。起動側でこの制限を適用できない場合はBLOCKEDとし、権限を広げません。
+  tools: 初回と--resumeの全回で同じ--tools/--allowedTools/--disallowedTools/--permission-modeを指定します。Claude親・子・専門担当はRead/Glob/Grepで資料を読み、Agent/SendMessageでレビュー相談と同じ子agentの再開だけを行います。Git差分、型チェック、CI等のコマンドはCodex側で実行してから証拠を渡します。起動側でこの制限を適用できない場合はBLOCKEDとし、権限を広げません。
   prompt_template: |
     {prefix}: {review_request}
     Workflow: codex-claude-review
