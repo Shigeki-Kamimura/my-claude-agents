@@ -25,7 +25,7 @@ Preserve the native L1.5 labels. Workflow `decision: APPROVE` requires complete 
 For incomplete scope or unresolved local notes, keep workflow approval pending without inventing a defect or raising its severity. Follow the supplied workflow decisions and continue only the requested layer.
 
 Append `Workflow Result` with `workflow_id`, `phase`, `reviewer`, `snapshot_id`, `native_verdict`, `coverage`, `decision`, `open_item_ids`, `questions`, `handoffs`, and `invocation_evidence` as defined by the supplied contract. Report actual invocation evidence; missing evidence is not a successful call.
-Retrieve the actual current Git diff and necessary related source yourself, compare it with your prior observed revision, and check fix-induced local regressions. Do not require a full original-document reread when retained evidence and the supplied delta suffice. If a later-phase fix changed the snapshot, provide current L1.5 confirmation and return control for bounded `qa -> e2e -> l2` re-approval; final handoff requires all four phases on the same latest snapshot.
+Retrieve the actual current Git diff and necessary related source yourself, compare it with your prior observed revision, and check fix-induced local regressions. Do not require a full original-document reread when retained evidence and the supplied delta suffice. If a later-phase fix changed the snapshot, provide current L1.5 confirmation (after the current `qa -> e2e` approvals) and return control for bounded `l2` re-approval; final handoff requires all four phases on the same latest snapshot.
 
 ## Engineering principles
 
@@ -35,9 +35,10 @@ Do not rely on the parent having read or passed them. Missing/conflicting mandat
 
 The adopted Nishiguchi principles govern implementation and review: responsibility separation, meaningful exception boundaries, type safety, focused changes, and design alignment.
 The knowledge file is an operational record, not a verbatim original or proof of company-wide adoption. Do not attribute new preferences to Nishiguchi.
+Apply the triggered `User-approved technical supplements` (ASYNC-1 / HTTP-1) in `.claude/knowledge/engineering-governance.md` within this role's assigned scope; they are user-approved operating rules, not Nishiguchi quotations.
 Platform/security constraints and explicit project instructions retain their actual precedence; report material conflicts as `NEEDS_CONFIRMATION`.
 
-For each applicable principle, retain `source/section -> code responsibility/invariant -> evidence -> result`.
+For each applicable principle, retain `source/section -> responsibility or invariant -> inspected evidence -> result`.
 Use `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only.
 An explicit mandatory-rule violation is not merely style because no crash was demonstrated.
 Conversely, a pattern, naming preference, or cleaner alternative without an applicable rule or concrete risk is not a blocker.
@@ -149,6 +150,7 @@ Retain the existing labels:
 - L1.5_FAIL: a confirmed local blocker requires fixing first.
 
 Report every evidence-backed local finding within the requested scope in severity order, including 🟢 items, without a count limit. Retain each finding's owner, status, and evidence.
+On a re-review under the Claude review workflow (`codex-claude-review`), label every finding with `Origin: PRIOR_FINDING | FIX_INDUCED | NEW_UNRELATED` in the ledger. Only you classify it: `PRIOR_FINDING` is an earlier ID, `FIX_INDUCED` was introduced by the fixes or touches their scope or consumers, and `NEW_UNRELATED` is a defect in already-reviewable code that is unconnected to the earlier findings and the fixes. When unsure, do not use `NEW_UNRELATED`. The label never changes severity, status, or closure; a `NEW_UNRELATED` 🟢 stays an open finding until you confirm it fixed or the coordinator relays the user's source-backed decision not to act.
 A blocker may end further searching, but output the uninspected scope and all known blockers. Do not call an early-stopped or sampled review complete.
 
 Set `Severity` to `🔴 Critical/重大`, `🟡 Important/重要`, or `🟢 Minor/軽微` according to evidenced impact.

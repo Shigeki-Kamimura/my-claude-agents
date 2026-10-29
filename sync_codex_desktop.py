@@ -20,7 +20,8 @@ END = '<!-- codex-desktop-sync:end -->'
 MODEL = {'model', 'model_reasoning_effort', 'model_reasoning_summary', 'model_verbosity'}
 CORE = {'name', 'description', 'developer_instructions'}
 REFS = ('.codex/AGENTS.md', '.codex/workflows/claude-review.yml',
-        '.codex/workflows/codex-review.yml', '.claude/knowledge/engineering-governance.md',
+        '.codex/workflows/codex-review.yml', '.codex/workflows/critical-review-request.md',
+        '.claude/knowledge/engineering-governance.md',
         '.claude/knowledge/human-review-patterns.md')
 
 
@@ -148,6 +149,7 @@ Desktop shared references (project-specific rules/profile remain authoritative):
 - Routing and explicit cross-model review contracts: {source}/.codex/AGENTS.md
 - Codex implementation / Claude review: {source}/.codex/workflows/claude-review.yml
 - Claude implementation / Codex review: {source}/.codex/workflows/codex-review.yml
+- Bare review request template (expanded by the parent only; not for sub-agents): {source}/.codex/workflows/critical-review-request.md
 - Shared governance fallback: {source}/.claude/knowledge/engineering-governance.md
 - Shared review knowledge fallback: {source}/.claude/knowledge/human-review-patterns.md
 Use project-local configured references first. If a shared local link is absent,

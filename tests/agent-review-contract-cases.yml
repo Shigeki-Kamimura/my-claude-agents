@@ -79,3 +79,95 @@ cases:
     phase: L2
     input: Adviser自身には専門担当を起動するツールがありません。
     expected: 親へ依頼を返し、実際の専門結果を受けた同じ確認を再開します。
+  - id: single-layer-cr-forward
+    phase: L1.5
+    input: Claude CodeにL1.5レイヤーでレビューしてもらって
+    expected: codex-claude-reviewの単層モードで、Mode single-layer l1_5を付けてClaude CLIへ送ります。code-quality-reviewerだけを起動し、他層を起動しません。Bare review requestsへ展開しません。
+  - id: single-layer-adv-forward
+    phase: L2
+    input: Claude CodeにL2レイヤーでレビューしてもらって
+    expected: 単層モードで、Mode single-layer l2を付けて送ります。adviserだけを起動し、該当するReact/Nestの独立相談は省略しません。使えなければSPECIALIST_REQUESTを返し、承認しません。
+  - id: single-layer-approval-scope
+    phase: L1.5
+    input: 単層のcrがAPPROVEを返しました。
+    expected: 承認は、その層と確認したsnapshotにだけ有効です。terminal_stateはsingle_layer_approvedで、四層承認、引渡し可、最終承認として扱いません。
+  - id: single-layer-promotion
+    phase: L2
+    input: 単層のcr承認のあとで、四層レビューを依頼します。
+    expected: qa、e2e、cr、advを新規の初回として回します。単層の親子を再開せず、単層の結論はSupplied証拠として添えるだけで、承認の代わりにしません。
+  - id: single-layer-ambiguous
+    phase: L1.5
+    input: Claude Codeにcrとadvを別々にレビューしてもらって
+    expected: 列挙は定義のない指定のため、どちらのモードにも決めず、上村さんへ1つ質問します。
+  - id: rereview-cap
+    phase: L1.5
+    input: 再レビューで、前回指摘と無関係な新規の🟢が2回続けて出ました。
+    expected: 担当レビュアー(cr/qa/e2e/adviser)が出力欄OriginでNEW_UNRELATEDと分類した🟢を、層ごとに通算1回だけ追加で受けて修正します。カウンタはCodexの調整状態としてphaseごとに保持します。2回目以降は自動修正せず一覧にして、そのphaseのCodexの調整状態をNEEDS_USER_INPUTとします。担当レビュアーのWorkflow ResultはREQUEST_CHANGESとopen IDのままで、Codexは書き換えません。上村さんの判断まで承認しません。新規の🔴🟡は上限の対象外です。
+  - id: fix-report
+    phase: L1.5
+    input: Codexが指摘を修正しました。
+    expected: IDと修正前後の要点、変更ファイルを上村さんへ返します。fix_candidateはレビュアーが確認するまで閉じません。
+  - id: html-record
+    phase: L2
+    input: 承認後に会話のHTML記録を依頼します。
+    expected: LLMを使わず、tools/render_review_record.pyでログから決定的に作ります。秘密の伏せ処理は完全でなく、共有前に利用者が確認します。
+  - id: rereview-cap-declined
+    phase: L1.5
+    input: 上限に達した新規の🟢について、上村さんが対応しないと明示しました。
+    expected: 新しい状態を作りません。上村さんの出典付きの指示を根拠に、担当レビュアーが取り下げを確認してreviewer_withdrawnとします。
+  - id: single-layer-resume
+    phase: L2
+    input: 単層のadvの修正後に再レビューを依頼します。
+    expected: single_layerのresume_prompt_templateを使い、Mode single-layer l2の行を付けて、同じ親子を再開します。四層のテンプレートを使いません。
+  - id: mode-line-not-marker
+    phase: L1.5
+    input: 単層の依頼にMode single-layerの行が付いています。
+    expected: Workflowマーカーではないため、複数マーカーのBLOCKEDになりません。Workflowの行は1つのままです。
+  - id: single-layer-literal
+    phase: L2
+    input: 単層のadvがAPPROVEを返しました。
+    expected: invocation_evidenceにmode=single-layer phase=l2を含みます。この文字列を含む結果は、引渡し可・最終承認として受理しません。
+  - id: single-layer-qa-only
+    phase: QA
+    input: Claude Codeにqaでレビューしてもらって
+    expected: 単層モードで、Mode single-layer qaを付けて送ります。test-qaだけを起動し、external_test_adequacy_reviewerを割り当てます。他層を起動せず、e2eへも進みません。Bare review requestsへ展開しません。
+  - id: single-layer-no-layer-name
+    phase: L1.5
+    input: Claude Codeにレビューしてもらって修正入れようか
+    expected: 層名がないため、既定のqaとcrを対象にします。qaを単層で実行し、続けてcrを単層で実行します(並列にしません)。qaのAPPROVE確認後にe2e、crのAPPROVE確認後にadvを、それぞれ単層で実行します。四層モードにしません。
+  - id: single-layer-generic-words
+    phase: L1.5
+    input: Claude Codeにコードレビューをローカルでしてもらって
+    expected: コードレビューとローカルは層名ではありません。層名なしとして既定のqaとcrを対象にし、Bare review requestsの語彙でcr単独にもadv単独にもしません。
+  - id: four-layer-explicit
+    phase: L2
+    input: Claudeレビューをcrからadvまで回して修正してください
+    expected: 範囲を示す表現のため、明示された四層モードです。qa、e2e、cr、advの順で、新規の初回として実行します。
+  - id: single-layer-progression-confirmed
+    phase: L2
+    input: 層名なしの依頼で、crの単層APPROVEがチャットにあります(invocation_evidenceにmode=single-layer phase=l1_5、decisionがAPPROVE、coverageがCOMPLETE、snapshot_idが現在と一致)。
+    expected: Codexが同じチャットの記録を探して確認し、advを単層で実行します(mode=single-layer phase=l2)。qaのAPPROVEが確認できれば、e2eも同様に進みます(順はqa、e2e、cr、adv)。この連鎖は四層承認にも最終承認にもなりません。
+  - id: single-layer-progression-not-confirmed
+    phase: L2
+    input: 層名なしの依頼で、crの単層APPROVEがチャットで見つからない、またはsnapshot_idが現在と一致しません。承認後に修正も入っています。
+    expected: advへ進みません。不足を報告し、上村さんへ1つ質問します。推測や要約で承認とみなしません。
+  - id: single-layer-named-no-progression
+    phase: L2
+    input: Claude CodeにL2レイヤーでレビューしてもらって(層名が明示されています)
+    expected: advだけを実行し、他の層へ進みません。
+  - id: single-layer-literal-missing
+    phase: L1.5
+    input: 単層で起動したcrがAPPROVEを返しましたが、invocation_evidenceにmode=single-layer phase=l1_5が含まれません。
+    expected: decisionがAPPROVEでも未承認として扱い、四層承認にもしません。同じ担当に不足の補完を求めます。
+  - id: rereview-origin-missing
+    phase: L1.5
+    input: 再レビューの🟢にOriginの分類欄がありません。
+    expected: Codexは推測で分類せず、上限を適用しません。通常の指摘として修正します。
+  - id: four-layer-range-expressions
+    phase: L2
+    input: Claude Codeに四層でレビューしてもらって(全層、qaからadvまで、も同じ扱いです)
+    expected: 範囲を示す表現のため、四層モードです。qa、e2e、cr、advの順で、新規の初回として実行します。crとadvのような列挙は四層にせず、上村さんへ1つ質問します。
+  - id: reverse-snapshot-change-order
+    phase: L2
+    input: 逆方向(claude-codex-review)で、L2の修正によりsnapshotが変わりました。
+    expected: qa、e2e、cr、advの順で、最新snapshotへの承認を取り直します。接頭辞と担当(crはcode-quality-reviewer、qaはtest-qa、eはe2e-qa、advはadviser)は変わりません。委任、fresh round、台帳、Workflow Resultの11欄の規則も変わりません。

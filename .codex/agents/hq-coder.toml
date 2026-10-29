@@ -24,9 +24,10 @@ Do not rely on the parent having read or passed them. Missing/conflicting mandat
 
 The adopted Nishiguchi principles govern implementation and review: responsibility separation, meaningful exception boundaries, type safety, focused changes, and design alignment.
 The knowledge file is an operational record, not a verbatim original or proof of company-wide adoption. Do not attribute new preferences to Nishiguchi.
+Apply the triggered `User-approved technical supplements` (ASYNC-1 / HTTP-1) in `.claude/knowledge/engineering-governance.md` within this role's assigned scope; they are user-approved operating rules, not Nishiguchi quotations.
 Platform/security constraints and explicit project instructions retain their actual precedence; report material conflicts as `NEEDS_CONFIRMATION`.
 
-For each applicable principle, retain `source/section -> code responsibility/invariant -> evidence -> result`.
+For each applicable principle, retain `source/section -> responsibility or invariant -> inspected evidence -> result`.
 Use `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only.
 An explicit mandatory-rule violation is not merely style because no crash was demonstrated.
 Conversely, a pattern, naming preference, or cleaner alternative without an applicable rule or concrete risk is not a blocker.

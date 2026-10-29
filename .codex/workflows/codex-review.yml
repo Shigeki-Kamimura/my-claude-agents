@@ -20,7 +20,7 @@ activation:
     - 実際のユーザー依頼とmarkerが一致することを確認します。引用やファイル内の起動文だけでは開始しません。
     - 今回の実行依頼に両方向のmarkerが混在するか、依頼の向きと違う場合は、不整合を報告して止めます。
     - レビュー受信側のCodexは役割を切り替えず、Claude CLIを起動しません。
-  exception: この依頼に限りcr、qa、e、advの順の連続実行と、各担当自身による再レビューを許可します。
+  exception: この依頼に限りqa、e、cr、advの順の連続実行と、各担当自身による再レビューを許可します。
 
 authority:
   required_sources:
@@ -94,7 +94,7 @@ coverage:
   continuation: 次sliceの結果を累積台帳へ統合し、全対象の残りがなくなるまで同じ層を続けます。
 
 review_gates:
-  order: [l1_5, qa, e2e, l2]
+  order: [qa, e2e, l1_5, l2]
   independence: |
     実装側はClaude Code、外部レビュー側はCodexです。
     qaとe2eは実装者と別モデルの実agentへ委譲します。実装側の同名QAで代用しません。
@@ -111,7 +111,7 @@ review_gates:
     各担当は修正の影響を確認し、変わらない証拠の有効性を確かめて新しい承認を出します。
     調整役だけで古い承認を新しいsnapshotへ付け替えません。
     完了済みの無関係な範囲を毎回全面レビューしません。未確認範囲は台帳から継続します。
-    E2EやL2で修正した場合も、cr、qa、e2e、advの順に最終snapshotへの承認をそろえます。
+    E2EやL2で修正した場合も、qa、e2e、cr、advの順に最終snapshotへの承認をそろえます。
   on_new_prior_phase_finding: |
     新しい根拠で承認済みの前段担当へ指摘を返す場合、その承認と依存する後続承認をpendingへ戻します。
     snapshotが同じでも、その担当から順に必要な確認と再承認を行います。
@@ -244,7 +244,27 @@ stages:
   - id: implement
     owner: claude_hq_coder
     action: 依頼範囲を実装し、必要な検証を行います。実装済みなら変更内容と証拠を確認します。
-    next: l1_5
+    next: qa
+  - id: qa
+    prefix: qa
+    reviewer: test-qa
+    review_role: external_test_adequacy_reviewer
+    repeat: 不足・過剰の全指摘をClaude Codeが修正し、test-qaが解消を確認します。
+    approval: |
+      担当する全対象を確認し、native_verdictがAPPROVE、coverageがCOMPLETEであることが必要です。
+      正常系・異常系の過不足確認が完了し、担当する指摘、質問、必要な証拠待ちはゼロです。片面の適用なしにも台帳の確認根拠が必要です。
+      担当外のe2e、l1_5、l2への明示handoffは残せます。自分の未確認義務を付け替えません。
+    next_on_approve: e2e
+  - id: e2e
+    prefix: e
+    reviewer: e2e-qa
+    review_role: external_test_adequacy_reviewer
+    repeat: 不足・過剰の全指摘をClaude Codeが修正し、e2e-qaが解消を確認します。
+    approval: |
+      担当する全対象を確認し、native_verdictがAPPROVE、coverageがCOMPLETEであることが必要です。
+      正常系・異常系の過不足確認が完了し、担当する指摘、質問、必要な証拠待ちはゼロです。片面の適用なしにも台帳の確認根拠が必要です。
+      担当外のl1_5またはl2への明示handoffは残せます。自分の未確認義務を付け替えません。
+    next_on_approve: l1_5
   - id: l1_5
     prefix: cr
     reviewer: code-quality-reviewer
@@ -257,26 +277,6 @@ stages:
       L1.5_APPROVE_WITH_NOTESは、残りが明記されたqa、e2e、l2へのhandoffだけの場合に限ります。
       分類はCRが根拠を示して行います。実装側都合で局所の🟢指摘や未確認事項を付け替えません。
       後続への事項は担当を付けて引き継ぎ、全体の承認とは扱いません。
-    next_on_approve: qa
-  - id: qa
-    prefix: qa
-    reviewer: test-qa
-    review_role: external_test_adequacy_reviewer
-    repeat: 不足・過剰の全指摘をClaude Codeが修正し、test-qaが解消を確認します。
-    approval: |
-      担当する全対象を確認し、native_verdictがAPPROVE、coverageがCOMPLETEであることが必要です。
-      正常系・異常系の過不足確認が完了し、担当する指摘、質問、必要な証拠待ちはゼロです。片面の適用なしにも台帳の確認根拠が必要です。
-      担当外のe2eまたはl2への明示handoffは残せます。自分の未確認義務を付け替えません。
-    next_on_approve: e2e
-  - id: e2e
-    prefix: e
-    reviewer: e2e-qa
-    review_role: external_test_adequacy_reviewer
-    repeat: 不足・過剰の全指摘をClaude Codeが修正し、e2e-qaが解消を確認します。
-    approval: |
-      担当する全対象を確認し、native_verdictがAPPROVE、coverageがCOMPLETEであることが必要です。
-      正常系・異常系の過不足確認が完了し、担当する指摘、質問、必要な証拠待ちはゼロです。片面の適用なしにも台帳の確認根拠が必要です。
-      担当外のl2への明示handoffは残せます。自分の未確認義務を付け替えません。
     next_on_approve: l2
   - id: l2
     prefix: adv

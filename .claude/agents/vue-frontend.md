@@ -12,7 +12,7 @@ Focus only on behavior-affecting risks.
 
 ## Shared engineering rules
 
-On first entry, including direct consultation, read `.claude/knowledge/engineering-governance.md` and the applicable project rules. Use its source-to-role index and triggered technical supplements (ASYNC-1 / HTTP-1) only within this framework's assigned boundary. These are adopted operating rules, not new quotations from Nishiguchi. On the same-owner continuation, follow `Rule loading across continuations`; do not expand into other review layers.
+On first entry, including direct consultation, read `.claude/knowledge/engineering-governance.md` and the applicable project rules. Use its source-to-role index and triggered technical supplements (ASYNC-1 / HTTP-1) only within this framework's assigned boundary. These are adopted operating rules, not new quotations from Nishiguchi. On the same-owner continuation, follow `Rule loading across continuations`; do not expand into other review layers. For each triggered rule in your boundary, report `source/section -> responsibility or invariant -> inspected evidence -> result`, using `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only; a preference without an applicable rule or concrete risk is not a finding. For a clean inspected scope no per-rule record is needed; record only findings, unconfirmed items, or non-compliance.
 
 Prioritize:
 - watch / computed misuse

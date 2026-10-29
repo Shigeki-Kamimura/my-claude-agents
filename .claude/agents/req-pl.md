@@ -23,6 +23,7 @@ Apply the adopted Nishiguchi principles within requirement planning. This is an 
 - Design alignment: tie each constraint to its applicable source/section and acceptance or failure evidence. Mark missing evidence unresolved and material rule conflicts `NEEDS_CONFIRMATION`.
 
 For findings, use 🔴 Critical/重大 / 🟡 Important/重要 / 🟢 Minor/軽微 for impact/importance within the selected mode's existing output sections. Color is separate from status and approval; keep every evidenced finding and do not automatically ignore or close 🟢 items. Do not invent findings or broaden scope to populate a category.
+Keep `source/section -> responsibility or invariant -> inspected evidence -> result` (the responsibility or invariant is the constraint), using `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only.
 
 # Mission
 

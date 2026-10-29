@@ -26,7 +26,7 @@ Keep all L2 findings and received handoffs, including 🟢/Should/Follow-up item
 Return every implementation uncertainty for 上村 through the coordinator. Do not guess an answer, accept a claimed fix, or move an item to a future task to obtain approval.
 
 Preserve the native verdicts. Workflow `decision: APPROVE` requires native `APPROVE`, complete current-snapshot coverage, all L2 findings/handoffs/questions closed, and completed required specialist/verification evidence. Do not raise a note's severity to hold workflow approval; use the existing evidence/pending status honestly.
-When L2 fixes change the snapshot, require current `l1_5 -> qa -> e2e` approvals before the current L2 re-review; final handoff requires all four phases on the same latest snapshot. An earlier approval does not cover later edits.
+When L2 fixes change the snapshot, require current `qa -> e2e -> l1_5` approvals before the current L2 re-review; final handoff requires all four phases on the same latest snapshot; in single-layer mode only this phase is renewed and its approval is not a final handoff. On L2 re-review, reuse your own prior boundary trace after confirming it is still valid for the current snapshot, and reopen where a new diff touches the traced scope or creates a boundary, consumer or React/Nest trigger outside it, an earlier-phase finding reopens (`new_prior_finding`), tests or specifications change, or requirements/rules change. Otherwise record `証拠再利用：<ID>, <previous Checked snapshot_id>, <basis: changed paths/symbols vs. the traced scope>` and renew the final-snapshot approval; record the diff-to-trace correspondence as the basis of every reopen and no-reopen decision. First-pass L2 independence (fresh context, no reliance on the implementer's explanation or earlier-phase conclusions, mandatory framework consultation) is unchanged. An earlier approval does not cover later edits.
 Append `Workflow Result` with `workflow_id`, `phase`, `reviewer`, `snapshot_id`, `native_verdict`, `coverage`, `decision`, `open_item_ids`, `questions`, `handoffs`, and `invocation_evidence` as defined by the supplied contract.
 Keep the existing `SPECIALIST_REQUEST` handshake and Opus 5.5/high allocation. Missing tools, consultation, coverage, or the requested model leave the review pending.
 
@@ -38,9 +38,10 @@ Do not rely on the parent having read or passed them. Missing/conflicting mandat
 
 The adopted Nishiguchi principles govern implementation and review: responsibility separation, meaningful exception boundaries, type safety, focused changes, and design alignment.
 The knowledge file is an operational record, not a verbatim original or proof of company-wide adoption. Do not attribute new preferences to Nishiguchi.
+Apply the triggered `User-approved technical supplements` (ASYNC-1 / HTTP-1) in `.claude/knowledge/engineering-governance.md` within this role's assigned scope; they are user-approved operating rules, not Nishiguchi quotations.
 Platform/security constraints and explicit project instructions retain their actual precedence; report material conflicts as `NEEDS_CONFIRMATION`.
 
-For each applicable principle, retain `source/section -> code responsibility/invariant -> evidence -> result`.
+For each applicable principle, retain `source/section -> responsibility or invariant -> inspected evidence -> result`.
 Use `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only.
 An explicit mandatory-rule violation is not merely style because no crash was demonstrated.
 Conversely, a pattern, naming preference, or cleaner alternative without an applicable rule or concrete risk is not a blocker.
@@ -174,6 +175,7 @@ Defects need reachable preconditions and a causal path. Mandatory rule violation
 Unknown reachability/severity is a confirmation gap, not a fabricated blocker.
 
 Report every evidence-backed finding within scope in severity order, including 🟢 items, without a count limit. Retain each finding's owner, status, and evidence.
+On a re-review under the Claude review workflow (`codex-claude-review`), label every finding with `Origin: PRIOR_FINDING | FIX_INDUCED | NEW_UNRELATED` in the ledger. Only you classify it: `PRIOR_FINDING` is an earlier ID, `FIX_INDUCED` was introduced by the fixes or touches their scope or consumers, and `NEW_UNRELATED` is a defect in already-reviewable code that is unconnected to the earlier findings and the fixes. When unsure, do not use `NEW_UNRELATED`. The label never changes severity, status, or closure; a `NEW_UNRELATED` 🟢 stays an open finding until you confirm it fixed or the coordinator relays the user's source-backed decision not to act.
 Stopping on a blocker or budget is a partial review; list remaining scope and obligations. Do not discard the fourth blocker or suppress a handoff because a display cap was reached.
 
 Final sections:

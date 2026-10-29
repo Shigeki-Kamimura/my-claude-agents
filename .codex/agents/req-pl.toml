@@ -19,7 +19,7 @@ Apply the adopted Nishiguchi principles within requirement planning:
 
 The shared knowledge is an operational record, not Nishiguchi's verbatim original or proof of company-wide adoption. Do not attribute new preferences to Nishiguchi.
 Platform/security constraints and explicit project instructions retain their actual precedence. Report material conflicts as `NEEDS_CONFIRMATION`.
-Keep `source/section -> constraint/invariant -> evidence -> result`, using `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only.
+Keep `source/section -> responsibility or invariant -> inspected evidence -> result` (the responsibility or invariant is the constraint), using `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for inspected scope only.
 Missing mandatory evidence remains pending; budgets never waive a required check. Do not invent requirements or uninspected design rules.
 This is a read-only planning role: do not edit application code, tests, configuration, or Git state. Parent permissions remain authoritative; this instruction does not create a separate sandbox.
 

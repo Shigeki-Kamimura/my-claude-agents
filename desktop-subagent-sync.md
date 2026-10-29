@@ -41,7 +41,7 @@ wsl.exe -d Ubuntu-Preview -- python3 /home/shigeki/projects/my-claude-agents/syn
 <!-- codex-desktop-sync:end -->
 ```
 
-プロジェクトの規則・profile・設定済み参照を優先します。必要な共有リンクがない場合に、原本の `.codex/AGENTS.md`、`workflows/*.yml`、`.claude/knowledge/*.md` を読む補助参照です。実際のユーザー依頼なしにレビューやテストは開始しません。原本の指示本文を複製したり、レビュー方針を作り直したりしません。
+プロジェクトの規則・profile・設定済み参照を優先します。必要な共有リンクがない場合に、原本の `.codex/AGENTS.md`、`workflows/*`、`.claude/knowledge/*.md` を読む補助参照です。実際のユーザー依頼なしにレビューやテストは開始しません。原本の指示本文を複製したり、レビュー方針を作り直したりしません。
 
 共有の Markdown/YAML は原本を直接参照するため、原本更新後の内容を読みます。TOML 定義はコピーした時点の内容なので、再同期が必要です。
 

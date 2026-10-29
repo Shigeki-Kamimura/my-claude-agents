@@ -23,7 +23,7 @@ Select direction only from the current explicit request or its single active `Wo
 
 ### Codex implementation, Claude review
 
-Only an explicit chained-review request activates `codex-claude-review`; standalone `cr:`, `qa:`, `e:` and `adv:` keep their own layer. Read the project's `.codex/workflows/claude-review.yml`, or `workflows/claude-review.yml` beside the resolved `.codex/AGENTS.md`; keep the review project's cwd. Missing configured sources remain pending, without changing project links/settings.
+An explicit request naming Claude Code activates `codex-claude-review`, in single-layer mode by default; standalone `cr:`, `qa:`, `e:` and `adv:` keep their own layer. A layer runs alone only when its name is written in the request (`cr`/`L1.5`, `qa`, `e2e`, `adv`/`L2`; exact list in `activation.rule` of the workflow). General words such as `コードレビュー` or `ローカル` are not layer names. Without a layer name the targets are `qa` then `cr`, each as its own single-layer run; only when Codex finds that layer's single-layer APPROVE in the chat record (`mode=single-layer` literal, current snapshot) does it proceed `qa` -> `e2e` and `cr` -> `adv`, otherwise it does not proceed (execution order `qa -> e2e -> cr -> adv`). A layer named in the request runs alone and does not proceed further. The four-layer `qa -> e2e -> cr -> adv` run happens only when the request explicitly asks for it with a range expression (`〜から〜まで` such as `crからadvまで`, `四層`, `全層`). Read the project's `.codex/workflows/claude-review.yml`, or `workflows/claude-review.yml` beside the resolved `.codex/AGENTS.md`; keep the review project's cwd. Missing configured sources remain pending, without changing project links/settings. In single-layer mode only that phase runs; its approval is valid only for that layer and snapshot and is not four-layer approval, and no chain of single-layer approvals becomes four-layer or final approval. A later four-layer run starts fresh `qa -> e2e -> cr -> adv` with the earlier result only as Supplied evidence, and `adv` still requires the mandatory React/Nest consultation. An enumeration of layers (for example `crとadv`) is undefined: ask the user one question.
 
 The workflow and governance sections `Autonomous Claude review`, `User-authorized staged review baseline`, and `Evidence reuse and concise reporting` are the operational source of truth. Send only the short phase request and actual user constraints/answers; Claude obtains its own diff and source. Use the configured Sonnet coordinator and the actual phase owner, complete the whole first pass before batch fixes, and resume the same parent/child for delta confirmation. Required consultation, all 🔴–🟢 findings, and current-snapshot approval remain mandatory. Native Claude full access follows the workflow; OS/Codex/managed controls and user limits retain precedence.
 
@@ -38,7 +38,7 @@ Load the active project's `.codex/workflows/codex-review.yml` first; otherwise t
 - Read-only must be set on the parent exec, not entrusted to a child's configuration. Codex and its consultants do not edit, run verification, launch Claude CLI, or start an unrequested next layer. Pass this restriction to every child, including QA/E2E; return test creation, test execution, and fix requests to Claude's HQ/QA owners.
 - Retain the `SPECIALIST_REQUEST` handshake for bounded read-only consultation and actual invocation evidence. Missing consultation, evidence, or delegation blocks approval; do not silently replace a required consultant.
 - Claude fixes all findings including 🟢 notes and relays every implementation uncertainty to 上村. Codex reviewers confirm closure and return the supplied eleven-field `Workflow Result` with native verdicts.
-- `adviser` owns L2 re-review and final approval for this marker. Any phase's snapshot-changing fix requires renewed approvals in `cr -> qa -> e -> adv` order. All four approvals must cover the same final snapshot.
+- `adviser` owns L2 re-review and final approval for this marker. Any phase's snapshot-changing fix requires renewed approvals in `qa -> e2e -> cr -> adv` order. All four approvals must cover the same final snapshot.
 - Neither side stages, commits, pushes, or merges. Claude returns the final uncommitted changes to 上村 for code confirmation and the commit. Preserve existing model/effort settings; runtime remains `NOT_RUN` until actual traces are observed.
 
 ### Autonomous Claude review
@@ -49,7 +49,7 @@ HQ's already authorized staged-baseline default is defined in governance. Preser
 
 ### Independent QA and E2E gates
 
-For an explicitly authorized four-layer workflow, follow its full contract in `cr -> qa -> e -> adv` order; standalone requests do not start that chain. Assign `external_test_adequacy_reviewer` to the real QA/E2E owners even when no test changed. QA owns local unit/service/direct-controller contracts; E2E owns browser/API/HTTP/module boundaries. Each checks happy/fail paths for missing and excessive tests with sourced obligations, and preserves required guarantees when consolidating tests.
+For an explicitly authorized four-layer workflow, follow its full contract in `qa -> e2e -> cr -> adv` order; standalone requests do not start that chain. Assign `external_test_adequacy_reviewer` to the real QA/E2E owners even when no test changed. QA owns local unit/service/direct-controller contracts; E2E owns browser/API/HTTP/module boundaries. Each checks happy/fail paths for missing and excessive tests with sourced obligations, and preserves required guarantees when consolidating tests.
 
 Keep every finding through 🟢 Low, question, handoff and mandatory evidence gap until its owner confirms closure or withdraws it with evidence. Missing evidence never becomes approval. Repairs require the same owners to renew their conclusions for one final snapshot in phase order, reusing valid unchanged evidence rather than repeating full discovery. Preserve actual invocation/model evidence and the workflow's eleven result fields. An explicit `rev:` still routes to `reviewer`. The reverse read-only transport retains its own fresh-round and complete-ledger requirements.
 
@@ -292,6 +292,27 @@ Direct-use exceptions:
 - `e:` explicit E2E-only verification
 - `rev:` prior Review Tickets or claimed fixes already exist
 - `sol:` explicit manual high-complexity override
+
+### Bare review requests
+
+Only a review request without any role prefix from `Routing` (`p:`/`pl:`, `rp:`/`plan:`, `cr:`, `r:`/`rev:`, `a:`/`adv:`, `q:`/`qa:`, `e:`/`e2e:`, `h:`/`hq:`, `sol:`) is expanded. A prefixed request is never expanded and routes normally. Check in this order:
+1. An explicit workflow request in either direction (the sentences in `activation.examples` of `claude-review.yml` and `codex-review.yml`, and requests of that kind; a request that only mentions Claude Code, such as reviewing its configuration, is not one) or an active `Workflow` marker is decided only by the direction rule in `Explicit Codex-Claude Review Workflows`. Do not apply this section or the template. A workflow request that names layers (such as `crからadvまで`) never flows into the template.
+2. A re-review, continuation or fix-confirmation request (`再レビュー`, `もう一度`, `再確認`, `再チェック`, `修正確認`, `直したので見て`, `fix確認`, `re-review`, `recheck`, `続き`) is not a bare request: resume the original owner, as in the Review Operating Model. If no original owner is retained in this session, do not ask back: treat it as a primary review, expand the template, and state in `REASON` that it was treated as a primary review because the original owner could not be resumed. Earlier review results present in the conversation are used only as Supplied evidence, limited to the scope the user names. A `もう一度` that refers to a different PR or target is a new primary review. If the user explicitly supplies earlier tickets or a ledger and the request stays bare, attach them to the primary review as Supplied evidence; do not infer `rev`, which still needs its explicit prefix and entry conditions.
+3. Otherwise expand `workflows/critical-review-request.md` (the project's `.codex/workflows/`, or `workflows/` beside the resolved `.codex/AGENTS.md`) and delegate to one existing owner. A missing template stays pending, not guessed.
+
+Expansion rules:
+- Layer: a layer named in the sentence selects the owner. A Claude Code request is decided only by step 1, never by this section: its layer names are the explicit list in `activation.rule` of `claude-review.yml`, and the broad words below (such as `コードレビュー` or `ローカル`) neither start nor select single-layer mode. `adv` and `cr` match broadly on purpose, so the user needs no fixed wording. A Latin-letter name (`L2`, `QA`, `E2E`, ...) matches only when the characters before and after it are not Latin letters or digits (so not `FAQ` or `L2TP`; `QAでレビュー` in a Japanese sentence matches).
+  - `adv`: `L2`, `L2+`, `adviser`, `アドバイザー`, `境界レビュー`, `境界設計`, `設計レビュー`, `アーキテクチャ`, `リスクレビュー`
+  - `cr`: `L1.5`, `コード品質`, `品質レビュー`, `コードレビュー`, `ローカル`, `code quality`
+  - `qa` and `e2e` can choose and run verification, so they match only a phrase that itself states review intent:
+    - `qa`: `QAでレビュー`, `QAレビュー`, `QAとして見て`, `回帰テストのレビュー`, `テスト妥当性のレビュー`, `単体テストのレビュー`, `unit test review`
+    - `e2e`: `E2Eでレビュー`, `E2Eレビュー`, `E2Eとして見て`, `結合テストのレビュー`, `統合テストのレビュー`, `ブラウザテストのレビュー`, `APIテストのレビュー`, `E2Eシナリオのレビュー`
+  - A bare layer name or an unqualified word (`QA`, `E2E`, `結合テスト`, `統合テスト`, `ブラウザテスト`, `テスト妥当性`, `E2Eシナリオ`, a lone `結合`, `シナリオ`, `品質保証`, `単体`) is only a mention, as in `QAに渡す前にレビューして` or `テストもレビューして`. Use `cr`, and `REASON` states that the `qa` / `e2e` reading was not used.
+  - If several layers match, or nothing matches clearly, do not ask back: use `cr` and state the assumption in `REASON`. Never expand several layers or chain them. `rev` is never inferred.
+- `{focus}`: narrow it only when the user specifies one; otherwise the owner's whole scope applies. Split by perspective only when the user asks, as separate requests.
+- `{base}` / `{head}`: resolve from the repository before delegating, with `{base}` in the order user-specified, PR metadata, project rule. Upstream or merge-base is only a confirmation aid and is reported as an assumption if adopted. Never assume `main` or `HEAD~1`. Ask the user one question only for the single item that cannot be resolved (normally `{base}`), never several at once.
+- The parent only expands and delegates, with the usual `ROUTE` block and governance clauses. It does not review or edit, and does not paste the implementer's notes or prior ledgers unless the user names them.
+- The template is a container: it creates no review layer and no automatic chain (a `cr` request never starts `adv`), and it does not override a role's output contract.
 
 ## Duplicate-review Rule
 
