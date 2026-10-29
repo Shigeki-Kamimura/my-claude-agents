@@ -362,6 +362,36 @@ JSONLの`thread.started.thread_id`と、実際のagent委譲を確認します�
 - OpenAI: [Subagents](https://developers.openai.com/codex/subagents)
 - Anthropic: [Run Claude Code programmatically](https://code.claude.com/docs/en/headless)
 
+## レビューログのHTML保存と効率確認
+
+設定には、実際のセッションログからレポートを作る補助スクリプトがあります。これらは**レビューの実行エンジンではありません**。先にCodexからClaude Codeへレビューを依頼し、親セッションのJSONLを取得します。
+
+`tools/render_review_record.py` はCodex/Claudeの会話を時系列のHTMLに変換します。共有を考える場合は `--redact-personal --omit-thinking` を指定します。認証情報以外の業務情報を完全に伏せる機能ではないため、出力内容を人が点検してから共有してください。
+
+`tools/review_efficiency_report.py` はClaude親/子のトークン・子起動・SendMessage・規則の読込みを集計し、本文を含まないHTMLを出します。別担当の初回確認、別の行範囲、検索、同じ範囲の再参照を区別します。再参照を直ちに無駄と判定しません。
+
+`tools/summarize_claude_session.py` はモデル別・層別のトークンをJSONで出します。いずれも親JSONLを入力し、子JSONLは同じセッション配下から自動的に取得します。
+
+例（パスは各環境の実ログに置き換えてください）：
+
+```bash
+AGENTS="$HOME/projects/my-claude-agents"
+REPORTS="$HOME/review-audit"
+CLAUDE_LOG="/absolute/path/to/claude-parent.jsonl"
+CODEX_LOG="/absolute/path/to/codex-rollout.jsonl"
+python3 -I -B "$AGENTS/tools/render_review_record.py" \
+  --redact-personal --omit-thinking \
+  --out "$REPORTS/full-record.html" "$CODEX_LOG" "$CLAUDE_LOG"
+python3 -I -B "$AGENTS/tools/review_efficiency_report.py" \
+  --out "$REPORTS/efficiency.html" "$CLAUDE_LOG"
+python3 -I -B "$AGENTS/tools/summarize_claude_session.py" \
+  "$CLAUDE_LOG" > "$REPORTS/usage.json"
+```
+
+`$REPORTS` はリポジトリ外を推奨します。Git作業ツリー内では、`setup.sh` が `.git/info/exclude` に登録した `.codex/review-records/` だけが出力可能です。既存の `.gitignore` は参照・変更しません。生成したHTMLは所有者のみ読み取り可能な権限（Unix: 0600）で保存します。
+
+合成ログによるテストと実際のCodex/Claude起動テストは別です。`docs/review-efficiency-validation.md` の手順で両方を確認してください。
+
 ## 補助スクリプト
 
 `tools/sync_reviewer_body.py`は、`reviewer`の本文を`.claude`・`.claude-company`・`.codex`の3ファイルで同期します。`reviewer`の本文を変更したときに、引数なしで検証し、`--dry-run`で確認して`--write`で同期します。
