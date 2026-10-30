@@ -76,7 +76,7 @@ Before first edit in a repository or unfamiliar area, quickly verify the local e
 - required env vars, fixtures, or seeds if the change depends on them
 - whether internet / external service access is assumed by the task
 
-Do not do broad setup work unless needed for this change.
+Apply `.codex/AGENTS.md` section `Targeted verification and delegation` (or that section in the resolved shared AGENTS.md). Reuse the existing compatible authorized test environment; do not recreate it per edit. Preserve permission sandboxes and deterministic test-data isolation. Missing execution instructions stay pending; do not invent broader permissions.
 If the environment is the main blocker, state the smallest missing prerequisite explicitly.
 
 ## Async Backlog Rule
@@ -123,8 +123,8 @@ State the resulting implementation boundary. Consultation does not authorize sou
 ## Other Consultations
 
 - `req-pl`: unclear acceptance, scope, product behavior, ticket/design conflict, or inter-PR dependency.
-- `test-qa`: changed behavior/error/API/async contract, regression prevention, or unclear test level.
-- `e2e-qa`: browser/API end-to-end acceptance, multi-user/permission/state flows, or fixture design. Keep read/write/rules/auth axes distinct and split oversized E2E specs near 400 lines.
+- `test-qa`: unresolved local test obligations, failure behavior or test-level choice, a bounded test-code change, or substantive failure analysis; not a command-execution relay.
+- `e2e-qa`: unresolved browser/API flow obligations, fixture design, or a bounded E2E spec change; not a Playwright-command runner. Keep read/write/rules/auth axes distinct and split oversized E2E specs near 400 lines.
 - `sec-arch`: authenticated actor, tenant/owner boundary, authorization, PII/secrets, or unsafe scope drift.
 - `data-platform`: dependent writes, transaction, retry, duplicate actions, migrations/rollback, or durable async state.
 - `spring-boot` / `vue-frontend`: corresponding framework responsibility or behavior changes; do not substitute React/Nest.
@@ -159,11 +159,7 @@ Do not add brittle tests that only mirror implementation details.
 Do not invent fixtures, mocks, or assertions that conflict with existing test style.
 Use producer-faithful data where the boundary matters; avoid over-mocked assertions that bypass the behavior under test.
 
-Consult `test-qa` when:
-- failure behavior is unclear
-- the test level is ambiguous
-- the change touches auth, DB, async, contract, or user-visible error behavior
-- a review finding asks for test evidence
+Consult `test-qa` for the unresolved test question or bounded test-code work listed above, including auth/DB/async risks when unclear. A request for execution evidence alone stays with the authorized execution owner. Reuse accepted same-phase advice while its evidence remains valid; do not repeatedly request confirmation. Independent review and mandatory framework consultations remain separate.
 
 ---
 
@@ -223,7 +219,7 @@ Full gate checks (record each relevant fact once in the preflight below):
 * reuse or reason not reused
 * if not refactoring, future readability/responsibility cost accepted
 * change boundary
-* QA / validation handoff command
+* targeted verification command
 
 For trivial fixes:
 
@@ -232,7 +228,7 @@ For trivial fixes:
 * change boundary
 * triggered risk categories: none / <category>
 * likely fail path: none / <path>
-* QA / validation handoff command
+* targeted verification command
 
 If boundary is unclear:
 → ask one clarifying question
@@ -435,13 +431,13 @@ For high-risk:
 * rollback plan
 * QA / validation handoff
 
-For JS / TS verification:
+For verification in any language:
 
-* HQ does not own broad L0/L1 QA
-* do not spend implementation budget running broad biome/lint/typecheck/test suites unless explicitly requested or needed to unblock the edit
-* when adding tests, target the smallest command that exercises the fail path or changed contract
-* after implementation, list the smallest relevant QA command for the user / QA agent
-* if a command is run, state exactly what was executed and do not infer unexecuted coverage
+* Follow `Targeted verification and delegation` in `.codex/AGENTS.md`; this replaces the old mechanical QA handoff default.
+* HQ owns authorized scoped command execution, waiting and result collection; do not create a run-only QA/E2E/HQ child. A test author may verify its own work in the existing task.
+* Batch related edits, then run affected tests and dependency/caller regressions with the smallest supported commands. Do not run full local CI after each edit or silently fall back from a zero-match selector to the full suite.
+* Reuse compatible authorized test environments. Full-suite execution and environment recreation need the explicit reasons and authorization defined in that section.
+* Record actual commands, selected cases, exit status, source identity and unexecuted obligations once. Preserve test design/adequacy review separately from command execution.
 
 Preferred final handoff (one compact record, not a new report at every parent/child boundary):
 - scope, base/revision, and acceptance addressed
@@ -450,7 +446,7 @@ Preferred final handoff (one compact record, not a new report at every parent/ch
 - risk categories checked
 - Specialist Usage and unresolved consultation/contract obligations
 - commands actually run, exact results, and commands not run
-- suggested QA/L0-L1 command
+- smallest remaining verification command, if execution is still pending
 - review handoff needed: none / `rp:` / `e:` / `qa:`
 
 Reference retained finding/evidence IDs instead of copying unchanged logs, rules or consultant narratives. A separate worker returns this record to the parent; the parent reports decision changes and user questions without rewriting the full record. Keep all pending findings, uncertainty, source identity, native verdicts and required Workflow Result fields; never omit an obligation for brevity.
