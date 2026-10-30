@@ -109,5 +109,42 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         self.assertIn("Claude Codeが修正と必要な検証を行い", reverse)
 
 
+    def test_entrypoints_keep_review_gates_and_bounded_waits(self):
+        root = read("AGENTS.md")
+        self.assertIn(".codex/AGENTS.md", root)
+        self.assertIn(".claude/CLAUDE.md", root)
+        self.assertIn("engineering-governance.md", root)
+        self.assertNotIn("## Opus Escalation", root)
+
+        codex = read(".codex/AGENTS.md")
+        for required in ("## Bounded subagent waiting", "wait_agent",
+                         "list_agents", "180000", "300000", "## Model Allocation"):
+            self.assertIn(required, codex)
+
+        for profile in (".claude", ".claude-company"):
+            parent = read(f"{profile}/CLAUDE.md")
+            for required in ("codex-claude-review", "claude-codex-review",
+                             "Codex exclusively runs typecheck",
+                             "qa -> e2e -> cr -> adv", "--resume"):
+                self.assertIn(required, parent)
+
+    def test_ci_playwright_wait_ownership_needs_no_waiting_agent(self):
+        codex = read(".codex/AGENTS.md")
+        wait = codex.split("## Bounded subagent waiting\n", 1)[1].split(
+            "\n## Mandatory Agent Routing", 1)[0]
+        for required in ("CI", "Playwright", "exit status",
+                         "Do not spawn a separate child", "QA/E2E"):
+            self.assertIn(required, wait)
+
+        for profile in (".claude", ".claude-company"):
+            with self.subTest(profile=profile):
+                parent = read(f"{profile}/CLAUDE.md")
+                cost = parent.split("## Cost Awareness\n", 1)[1].split(
+                    "\n## Model Allocation", 1)[0]
+                for required in ("CI", "Playwright", "exit status",
+                                 "Never launch a separate subagent", "QA/E2E"):
+                    self.assertIn(required, cost)
+
+
 if __name__ == "__main__":
     unittest.main()
