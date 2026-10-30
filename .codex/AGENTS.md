@@ -98,7 +98,7 @@ When `multi_agent_v2` subagents are available:
 - Prefer 180000–300000 ms where supported. Obey all tool and higher-priority limits.
 - Avoid repeated short waits, `list_agents` polling, and unchanged status requests.
 - For long-running processes, use longer bounded `write_stdin` waits where supported.
-- For local CI, tests, builds, and Playwright, the authorized agent that starts the process also waits for completion, collects its exit status, and reads only relevant logs. Do not start or resume another child solely to wait, poll, fetch logs, or reread unchanged rules.
+- For local CI, tests, builds, and Playwright, the authorized agent that starts the process also waits for completion, collects its exit status, and reads only relevant logs. Do not spawn a separate child solely to wait, poll, fetch logs, or reread unchanged rules. An existing execution owner may continue/resume to finish its run.
 - Other agents may do independently authorized work during a run; required QA/E2E reviews and scoped failure investigations remain separate. Waiting alone is never a reason to delegate.
 - Do not create sleeping agents or send heartbeat-only messages.
 - Preserve required progress reporting, specialist consultation, verification, and review gates.

@@ -71,7 +71,7 @@ Avoid:
 
 Local CI and Playwright waits:
 - The authorized agent starting a test/build process also waits for completion, collects its exit status and necessary logs, using a bounded process wait where supported.
-- Do not start or resume a subagent solely to poll progress, await completion, fetch logs, or reread unchanged rules while the process runs.
+- Never launch a separate subagent solely to await completion, poll progress, fetch logs, or reread unchanged rules. An existing execution owner may continue/resume to finish its run.
 - Independent QA/E2E adequacy reviews and substantive failure investigations still follow their assigned roles; happy/fail checks and review-only tool restrictions remain mandatory.
 
 Target review budget:

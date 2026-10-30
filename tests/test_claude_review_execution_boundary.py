@@ -133,7 +133,7 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         wait = codex.split("## Bounded subagent waiting\n", 1)[1].split(
             "\n## Mandatory Agent Routing", 1)[0]
         for required in ("CI", "Playwright", "exit status",
-                         "Do not start or resume another child", "QA/E2E"):
+                         "Do not spawn a separate child", "QA/E2E"):
             self.assertIn(required, wait)
 
         for profile in (".claude", ".claude-company"):
@@ -142,7 +142,7 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                 cost = parent.split("## Cost Awareness\n", 1)[1].split(
                     "\n## Model Allocation", 1)[0]
                 for required in ("CI", "Playwright", "exit status",
-                                 "Do not start or resume a subagent", "QA/E2E"):
+                                 "Never launch a separate subagent", "QA/E2E"):
                     self.assertIn(required, cost)
 
 
