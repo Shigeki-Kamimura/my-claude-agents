@@ -139,28 +139,30 @@ codex_cli:
     - この手順ではexec resumeや--lastを使いません。全指摘と必要な根拠を依頼文で引き継ぎます。
     - --agentや--worktreeなど未確認のflag、承認の回避指定、モデル上書きは追加しません。
     - Claudeがroundごとに新しい出力先を用意します。前回の最終応答ファイルを使い回しません。
+  prompt_layout: 同じphaseの固定契約は同じ順序・原文で先頭に置きます。Snapshot ID、利用者回答、指摘、検証結果は今回の入力へまとめます。規則変更時は固定部も更新し、キャッシュのために古い規則を維持しません。
   prompt_template: |
     {prefix}: {phase}の読み取り専用レビューを実施してください。
     Workflow: claude-codex-review
-    この手順を開始したユーザー依頼: {user_workflow_request}
     調整役はClaude Codeです。Codexはレビュー結果を返し、Claude CLIを起動しません。
+    下記の契約を指定agentにも渡し、実際の委譲結果を返してください。
+    {authority_ownership_findings_questions_and_response_contracts}
+    {review_gates_qa_contract_and_current_phase_contract}
+    Review role: {review_role}
+    今回の受信runtime: Codex / 委譲先agent: {reviewer}
+    qa/e2e phaseでは、このruntimeの上記agentを外部のテスト過不足レビュー担当として明示的に割り当てます。
+    実装側QAの作成・実行作業は行わず、必要な作業を実装側へ返してください。
+    コードを変更せず、現在のファイルを読み直してください。
+    本文の既存判定に加え、末尾にWorkflow Resultを返してください。
+    今回の入力:
+    この手順を開始したユーザー依頼: {user_workflow_request}
     対象worktree: {project_root}
     対象範囲とbase/head: {scope_and_base_head}
     Snapshot ID: {snapshot_id}
-    Review role: {review_role}
-    今回の受信runtime: Codex / 委譲先agent: {reviewer}
     実装担当とreviewerのプラットフォーム・モデル設定・呼び出し証拠: {model_and_invocation_evidence}
-    qa/e2e phaseでは、このruntimeの上記agentを外部のテスト過不足レビュー担当として明示的に割り当てます。
-    実装側QAの作成・実行作業は行わず、必要な作業を実装側へ返してください。
     要件・適用規則・参照パス: {requirements_and_rules}
     前回指摘と修正・質問への回答: {findings_fixes_and_answers}
     当該層の全対象、累積確認済み根拠、未確認義務とパス、次slice: {phase_scope_and_coverage_ledger}
     実際に実行した検証と未実行事項: {verification_evidence}
-    下記の契約を指定agentにも渡し、実際の委譲結果を返してください。
-    {authority_ownership_findings_questions_and_response_contracts}
-    {review_gates_qa_contract_and_current_phase_contract}
-    コードを変更せず、現在のファイルを読み直してください。
-    本文の既存判定に加え、末尾にWorkflow Resultを返してください。
   result_handling:
     - 終了コード、JSONLのthread.started.thread_id、turn.completedと失敗情報を確認します。
     - thread_idは監査用です。phaseとroundに対応させ、今回の最終応答と併せて保存します。

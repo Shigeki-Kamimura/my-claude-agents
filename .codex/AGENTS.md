@@ -63,12 +63,12 @@ Apply governance `Rule loading across continuations` and `Evidence reuse and con
 - a: / adv: -> adviser
 - q: / qa: -> test-qa
 - e: / e2e: -> e2e-qa
-- h: / hq: -> hq-coder
+- h: / hq: / hq-coder -> hq-coder role in the parent by default (see Parent implementation ownership)
 - sol: -> sol-escalation (explicit manual override only)
 
 These are input aliases, not separate registered agents. Normalize an explicit
 agent request such as `hq`, `pl`, or `qa` (with or without `:`) to the canonical
-name above before spawning it. `rp` / `plan` always routes to `review-planner`.
+name above before choosing its execution mode. `rp` / `plan` always routes to `review-planner`.
 Use the canonical name in the actual invocation and `ROUTE` field. Do not pass
 an input alias as an agent type or add a second TOML/symlink for that alias.
 Each agent has one definition whose filename and `name` match; for example,
@@ -122,28 +122,30 @@ These instructions do not enable `multi_agent_v2` or modify runtime behavior.
 
 ## Mandatory Agent Routing
 
-The main Codex session is a coordinator, not the worker.
-Choose one designated role before doing work.
-
-Required output before work:
+Choose the active workflow and role before choosing parent execution or delegation. Read-only reviewer ownership takes precedence over the implementation default below.
 
 ```
-ROUTE: <agent>
-REASON: <routing reason>
-SCOPE: <delegated scope>
+ROUTE: <canonical role>
+EXECUTION: <parent | subagent>
+REASON: <why this role and execution mode>
+SCOPE: <bounded responsibility>
 ```
 
-Rules:
-- implementation -> hq-coder
-- requirement clarification -> req-pl
-- L0/L1 verification and fail-path test design -> test-qa
-- browser/API E2E design or verification -> e2e-qa
-- L1.5 local code-quality review -> code-quality-reviewer
-- first-pass L2+ boundary review -> adviser
-- explicitly requested post-fix `rev:` convergence -> reviewer; ongoing repair confirmation -> original review owner
-- `sol-escalation` is not a normal first route
-- do not silently inline work owned by another agent
-- do not automatically chain review agents unless the user explicitly asks for a chained run
+### Parent implementation ownership
+
+For authorized Codex implementation, the main session owns the HQ role by default. This includes normal implementation requests, `h:`, `hq:`, `hq-coder`, and Codex's implementation side of `codex-claude-review`. In that workflow, Codex/HQ means this parent role, not a mandatory extra process.
+- Before editing, read the active project's `.codex/agents/hq-coder.toml` implementation instructions once (or `agents/hq-coder.toml` beside the resolved `.codex/AGENTS.md`). Apply all its design, test, staged-baseline, evidence and consultation requirements. Reuse your own verified unchanged readings; a missing contract is BLOCKED, not permission to implement without it.
+- Keep cohesive implementation and scoped verification in the parent. Do not spawn `hq-coder` solely to relay work to specialists. The parent invokes required React/Nest and other triggered consultants directly, records real invocation evidence, and integrates their results.
+- For independent parallel work or substantial context isolation, the parent may delegate a bounded implementation slice with explicit file/ownership boundaries. Keep `hq-coder.toml` as a compatible worker for this or an explicit request for a separate HQ child. Do not duplicate the parent's work or concurrent edits to the same files.
+- An isolated HQ worker implements its slice; it is not a second coordinator. It returns required `SPECIALIST_REQUEST` items to the parent, which invokes the consultant and returns the evidence. No parent -> HQ relay -> specialist hierarchy is required.
+- Parent implementation is implementer self-check, never independent review. All required QA/E2E happy/fail adequacy checks, CR/ADV reviews, cross-model evidence, first-pass review consultations and final-snapshot approvals remain mandatory.
+- In `claude-codex-review`, Codex remains a read-only review receiver. It must delegate the real requested reviewer; parent HQ execution is unavailable. A conflicting implementation request is BLOCKED. Never widen tool permissions or reinterpret review approval as implementation authorization.
+- Other explicit role routes remain delegated: `req-pl`, `review-planner`, `test-qa`, `e2e-qa`, `code-quality-reviewer`, `adviser`, `reviewer`, and `sol-escalation`. A requested QA/E2E role or independent review cannot be replaced by parent self-check.
+- No model, effort or permission settings change. Report `EXECUTION: parent` without inventing a child ID; every real delegated review/consultation retains its required invocation evidence. Missing delegation never becomes approval. Do not automatically start extra review layers.
+
+### Compact handoffs
+
+Apply governance `Evidence reuse and concise reporting`. Keep one finding/coverage record per owner and source snapshot; relay it by accessible ID/reference plus changed conclusions, not repeated narratives. Preserve all open findings, questions, evidence gaps, native verdicts and required Workflow Result fields. A recipient without retained evidence receives the necessary original excerpts and source identity; do not substitute the implementer's summary for independent first-pass inspection. Required role output sections remain, but point to the single record instead of repeating its contents.
 
 ## Review Ownership
 
