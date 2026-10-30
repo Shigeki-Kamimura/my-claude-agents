@@ -99,5 +99,26 @@ class InstructionScopeTests(unittest.TestCase):
             self.assertIn(required, personal)
 
 
+    def test_adv_repair_stays_with_original_adviser(self):
+        adviser = read(".codex/agents/adviser.toml")
+        intro = adviser.split("## Bounded consultation and compact results", 1)[0]
+        for required in ("ongoing ADV repair cycle", "standalone `adv:`",
+                         "original `adviser`", "Only an explicit `rev:`",
+                         "convergence-only `reviewer`",
+                         "fresh read-only Codex exec"):
+            self.assertIn(required, intro)
+        self.assertNotIn("Outside the Claude-coordinated Codex review contract", intro)
+
+        routing = read(".codex/AGENTS.md")
+        self.assertIn("- r: / rev: -> reviewer", routing)
+        self.assertIn("An explicit `rev:` request starts `reviewer` convergence.", routing)
+
+        reviewer = read(".codex/agents/reviewer.toml")
+        self.assertIn("Perform convergence only", reviewer)
+        reverse_workflow = read(".codex/workflows/codex-review.yml")
+        self.assertIn("毎roundで新しいexecを起動", reverse_workflow)
+        self.assertIn("この手順ではexec resumeや--lastを使いません", reverse_workflow)
+
+
 if __name__ == "__main__":
     unittest.main()
