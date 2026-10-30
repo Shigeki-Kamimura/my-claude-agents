@@ -128,5 +128,23 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                              "qa -> e2e -> cr -> adv", "--resume"):
                 self.assertIn(required, parent)
 
+    def test_ci_playwright_wait_ownership_needs_no_waiting_agent(self):
+        codex = read(".codex/AGENTS.md")
+        wait = codex.split("## Bounded subagent waiting\n", 1)[1].split(
+            "\n## Mandatory Agent Routing", 1)[0]
+        for required in ("CI", "Playwright", "exit status",
+                         "Do not start or resume another child", "QA/E2E"):
+            self.assertIn(required, wait)
+
+        for profile in (".claude", ".claude-company"):
+            with self.subTest(profile=profile):
+                parent = read(f"{profile}/CLAUDE.md")
+                cost = parent.split("## Cost Awareness\n", 1)[1].split(
+                    "\n## Model Allocation", 1)[0]
+                for required in ("CI", "Playwright", "exit status",
+                                 "Do not start or resume a subagent", "QA/E2E"):
+                    self.assertIn(required, cost)
+
+
 if __name__ == "__main__":
     unittest.main()
