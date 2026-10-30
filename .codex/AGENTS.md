@@ -92,7 +92,17 @@ Reasoning:
 
 ## Bounded subagent waiting
 
-If delegated agents are still working and no independent work remains, call `wait_agent` with a long bounded timeout (prefer 180000–300000 ms if supported; obey the active tool's advertised limits). Handle a completion, question or user interruption promptly. After a timeout, inspect status only if necessary and wait again. Do not repeatedly poll `list_agents`, loop over short `wait_agent` calls or send heartbeat-only messages. Do not spawn duplicate agents or expand review scope just to fill idle time. Preserve all review gates and pending work.
+When `multi_agent_v2` subagents are available:
+- Prefer waits that return on completion, an action request, or user input.
+- Use `wait_agent` only for unfinished agents whose results are needed.
+- Prefer 180000–300000 ms where supported. Obey all tool and higher-priority limits.
+- Avoid repeated short waits, `list_agents` polling, and unchanged status requests.
+- For long-running processes, use longer bounded `write_stdin` waits where supported.
+- Do not create sleeping agents or send heartbeat-only messages.
+- Preserve required progress reporting, specialist consultation, verification, and review gates.
+- Do not change models, reasoning effort, or permissions.
+
+These instructions do not enable `multi_agent_v2` or modify runtime behavior.
 
 ## Mandatory Agent Routing
 
