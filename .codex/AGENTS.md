@@ -147,6 +147,28 @@ For authorized Codex implementation, the main session owns the HQ role by defaul
 
 Apply governance `Evidence reuse and concise reporting`. Keep one finding/coverage record per owner and source snapshot; relay it by accessible ID/reference plus changed conclusions, not repeated narratives. Preserve all open findings, questions, evidence gaps, native verdicts and required Workflow Result fields. A recipient without retained evidence receives the necessary original excerpts and source identity; do not substitute the implementer's summary for independent first-pass inspection. Required role output sections remain, but point to the single record instead of repeating its contents.
 
+## Targeted verification and delegation
+
+Apply this section to authorized implementation-side verification, including local CI and Playwright. Pass the applicable rules and chosen test scope to delegated owners once; reuse unchanged instructions on continuation. Read-only reviews remain read-only and request execution evidence from the implementation owner.
+
+### Meaningful test assignments
+
+- The parent HQ runs already-defined commands. Do not spawn a new agent solely to run tests, prepare the test environment, wait, or collect logs. Duration, parallel command execution, and a fresh task title are not reasons to delegate. An existing test author may run its own changed tests and finish that same task. Honor explicitly requested agent assignments within their permissions.
+- Delegate optional QA/E2E work only for a concrete unresolved test-design question, a bounded test-code change, or substantive failure analysis. State that deliverable and existing evidence; do not ask for another confirmation of an unchanged accepted plan. Batch questions by responsibility, phase and evidence set; reopen the same consultant only for changed or unresolved evidence when the workflow permits. Mandatory React/Nest consultation and independent QA/E2E/CR/ADV review remain required and distinct from implementation advice.
+
+### Select affected tests before execution
+
+- Map the current diff and changed behavior to affected tests, callers/consumers, shared helpers, fixtures and configuration. Selection is not limited to edited test files or names containing the feature label. Preserve affected happy/fail paths and necessary regressions; do not rerun unrelated suites. Record the selected cases/files and exact command in the existing brief plan before execution.
+- Use supported runner selectors and inspect wrapper/setup hooks for hidden full-suite runs or environment rebuilds. Verify that the selected tests actually ran. A zero-match filter, unsupported selector or setup failure is NOT_RUN/BLOCKED, not PASS; do not fall back to an unfiltered run.
+- Batch cohesive edits and planned tests rather than restarting local CI after every file, finding or agent reply. Focused red/green runs for the case being repaired are allowed. Rerun obligations whose code, dependencies, tests, rules or environment changed; reuse unaffected results only with their original source identity and a valid impact basis. Do not relabel old results for a new snapshot. Reapproval by each reviewer does not itself require rerunning every test.
+- Run a full suite only for an explicit user request or a cited mandatory project/release gate at the point it applies. Shared-code changes first expand the affected set, not automatically the entire repository. If impact cannot be bounded, explain the gap and obtain a scope decision before a full run; keep required verification pending. Do not weaken mandatory CI gates or claim a targeted pass proves the full suite passed.
+- Put exhaustive data combinations at the lowest layer that proves the rule; add DB/API/browser cases for distinct integration guarantees. Do not repeat the same matrix at every layer merely for reassurance. Preserve genuinely different happy/fail obligations; test count alone is not a reduction criterion.
+
+### Reuse safe test environments
+
+- Reuse the existing authorized worktree, test services, dependencies and isolated test database when compatible with the target source. Reset only necessary test data with deterministic setup/teardown. Do not create a fresh sandbox/worktree, reinstall dependencies, or rebuild the stack for every edit, test or agent. Recreate only for a concrete incompatibility, contamination, required isolation rule or explicit user request; state the reason and smallest affected component first.
+- Environment reuse never disables permission sandboxes, read-only controls or test isolation, and never permits production/shared-data mutation or conflicting concurrent runs. Preserve exact command, exit status, selected cases, tested source and limitations. Missing or failed evidence stays NOT_RUN/FAILED/PARTIAL as appropriate; no success claim from inspection alone.
+
 ## Review Ownership
 
 ### review-planner
