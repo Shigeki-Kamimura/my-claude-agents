@@ -17,7 +17,14 @@ Choose `codex-claude-review` or `claude-codex-review` only from the current user
 
 In `codex-claude-review`, Claude reviewers/consultants remain read-only; Codex owns edits, tests, CI and Git evidence. In `claude-codex-review`, Codex reviewers/consultants remain read-only; Claude owns implementation and verification. The actual workflow governs CLI restrictions, single-layer progression, independent first passes and eleven-field results; never widen a restricted session through another agent.
 
-Within the same review owner/phase, reuse verified unchanged rules and evidence after checking the relevant source identity. Batch repairs and verification, and resume the original parent/child when supported. New phase owners inspect their scope independently. Keep all unresolved 🔴/🟡/🟢 Low findings (not Info), questions, handoffs and missing checks open until their owner confirms closure.
+### Re-review direction
+
+- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep the workflow's secure-resume exceptions.
+- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings.
+
+Standalone reviews use their own continuation rules.
+
+Reuse verified unchanged rules and evidence only after checking the relevant source identity. New phase owners inspect their scope independently. Keep all unresolved 🔴/🟡/🟢 Low findings (not Info), questions, handoffs and missing checks open until their owner confirms closure.
 
 ## Core Priorities
 
@@ -135,7 +142,7 @@ Standard flows:
 - Normal PR: `rp -> q -> cr -> adv`
 - E2E changes: `rp -> q -> e -> cr -> adv`
 - High-risk API/auth/data/design change: `rp -> adv`, then focused specialists as needed
-- Re-review within an ongoing repair cycle: resume the original owner. An explicit `rev:` request starts separate `reviewer` convergence.
+- Re-review within an ongoing repair cycle outside `claude-codex-review`: resume the original owner. The reverse workflow uses fresh Codex rounds as defined above. An explicit `rev:` request starts separate `reviewer` convergence.
 - Prior plan/review available: pass it as evidence to the relevant agent; do not restart every layer
 
 Layer split:

@@ -27,7 +27,14 @@ Select direction only from the current explicit user request or its active `Work
 
 When a full chain is explicitly authorized, independent `qa -> e2e -> cr -> adv` owners confirm the same final snapshot. QA/E2E must check happy/fail. First-pass L2 must separately obtain required React/Nest specialist evidence. All 🔴/🟡/🟢 Low (not 🟢 Info) findings, questions, handoffs and mandatory evidence gaps remain pending until owner-confirmed closure. Missing source/permission/consultant evidence never becomes approval.
 
-On same-owner continuation, follow governance `Rule loading across continuations` and `Evidence reuse and concise reporting`: reuse verified unchanged readings, receive fixes plus verification together, and recheck changed obligations and dependencies. Different first-pass owners must inspect independently; prior approval alone is insufficient.
+### Re-review direction
+
+- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep the workflow's secure-resume exceptions.
+- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings.
+
+Standalone reviews use their own continuation rules.
+
+Apply governance `Rule loading across continuations` and `Evidence reuse and concise reporting` within the selected workflow. Reuse verified unchanged evidence only after checking its current validity, and recheck changed obligations and dependencies. Different first-pass owners must inspect independently; prior approval alone is insufficient.
 
 ## Available Agents
 
@@ -70,7 +77,7 @@ Each agent has one definition whose filename and `name` match; for example,
 ## Model Allocation
 
 Default strategy:
-- main coordinator -> GPT-6 Luna / medium
+- main coordinator -> GPT-6.1 Sol / high
 - req-pl -> GPT-6.1 Sol / high
 - hq-coder -> GPT-6.1 Sol / high
 - review-planner -> GPT-6 Luna / medium
@@ -92,17 +99,24 @@ Reasoning:
 
 ## Bounded subagent waiting
 
-When `multi_agent_v2` subagents are available:
-- Prefer waits that return on completion, an action request, or user input.
-- Use `wait_agent` only for unfinished agents whose results are needed.
-- Prefer 180000–300000 ms where supported. Obey all tool and higher-priority limits.
-- Avoid repeated short waits, `list_agents` polling, and unchanged status requests.
+### Common waiting rules
+
+Apply these rules to all authorized long-running work, regardless of `multi_agent_v2` availability.
+- Prefer waits that return on completion, an action request, or user input. Obey all tool and higher-priority limits.
+- Avoid repeated short waits, unchanged status requests, and status-only polling.
 - For long-running processes, use longer bounded `write_stdin` waits where supported.
 - For local CI, tests, builds, and Playwright, the authorized agent that starts the process also waits for completion, collects its exit status, and reads only relevant logs. Do not spawn a separate child solely to wait, poll, fetch logs, or reread unchanged rules. An existing execution owner may continue/resume to finish its run.
 - Other agents may do independently authorized work during a run; required QA/E2E reviews and scoped failure investigations remain separate. Waiting alone is never a reason to delegate.
 - Do not create sleeping agents or send heartbeat-only messages.
 - Preserve required progress reporting, specialist consultation, verification, and review gates.
 - Do not change models, reasoning effort, or permissions.
+
+### Tool-specific subagent waits
+
+When `multi_agent_v2` subagents and `wait_agent` are available:
+- Use `wait_agent` only for unfinished agents whose results are needed.
+- Prefer 180000–300000 ms where supported. Obey all tool and higher-priority limits.
+- Avoid repeated `list_agents` polling.
 
 These instructions do not enable `multi_agent_v2` or modify runtime behavior.
 
@@ -271,7 +285,7 @@ Recommended manual sequences:
 - Normal PR: `rp -> q -> cr -> adv`
 - E2E change present: `rp -> q -> e -> cr -> adv`
 - High-risk design/API/auth/DB change: `rp -> adv`, then focused `q/e/cr` as needed
-- After fixes within an ongoing review cycle: resume the original owner for bounded confirmation. An explicit `rev:` request starts `reviewer` convergence.
+- After fixes within an ongoing review cycle outside `claude-codex-review`: resume the original owner for bounded confirmation. The reverse workflow uses fresh Codex rounds as defined above. An explicit `rev:` request starts `reviewer` convergence.
 
 These are manual sequences, not automatic chains.
 Each agent stops after its own layer unless the user explicitly asks otherwise.
