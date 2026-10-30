@@ -39,7 +39,14 @@ Choose direction only from the current explicit request or single active `Workfl
 
 Follow the selected workflow's phase activation/progression. Explicit phases run only their named layer; requests without a phase and explicit four-layer ranges follow `claude-review.yml`. Generic review words and specialist consultation do not authorize extra layers. Four-layer review uses `qa -> e2e -> cr -> adv` with independent QA/E2E happy/fail checks, current-snapshot approvals and fresh first-pass L2 React/Nest consultation. Multiple single-layer approvals do not grant four-layer approval.
 
-Governance sections `Autonomous Claude review`, `Rule loading across continuations`, `Batched re-review evidence` and `Evidence reuse and concise reporting` govern re-review. Finish the entire independent first pass, batch all fixes and planned verification, resume the same restricted parent and child, and recheck the fix and affected obligations. Reuse unchanged verified facts, not previous approvals. Preserve all 🔴/🟡/🟢 Low (not Info), pending questions/handoffs, missing evidence, actual agent invocation records and eleven `Workflow Result` fields. An unavailable rule, tool or required consultant blocks approval.
+### Re-review direction
+
+- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep the workflow's secure-resume exceptions.
+- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings.
+
+Standalone reviews use their own continuation rules.
+
+Apply governance sections `Autonomous Claude review`, `Rule loading across continuations`, `Batched re-review evidence` and `Evidence reuse and concise reporting` within their stated scopes. Finish the independent first pass and recheck fixes and affected obligations. Reuse unchanged verified facts, not previous approvals. Preserve all 🔴/🟡/🟢 Low (not Info), pending questions/handoffs, missing evidence, actual agent invocation records and eleven `Workflow Result` fields. An unavailable rule, tool or required consultant blocks approval.
 
 ## Mission
 
@@ -296,7 +303,7 @@ Standard flows:
 - Normal PR: `rp -> q -> cr -> adv`
 - E2E changes: `rp -> q -> e -> cr -> adv`
 - High-risk API/auth/data/design change: `rp -> adv`, then focused specialists as needed
-- Re-review within an ongoing repair cycle: resume the original owner. An explicit `rev:` request starts separate `reviewer` convergence.
+- Re-review within an ongoing repair cycle outside `claude-codex-review`: resume the original owner. The reverse workflow uses fresh Codex rounds as defined above. An explicit `rev:` request starts separate `reviewer` convergence.
 - Prior plan/review available: pass it as evidence to the relevant agent; do not restart every layer
 
 Layer split:
