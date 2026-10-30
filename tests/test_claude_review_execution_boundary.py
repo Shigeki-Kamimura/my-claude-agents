@@ -109,5 +109,24 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         self.assertIn("Claude Codeが修正と必要な検証を行い", reverse)
 
 
+    def test_entrypoints_keep_review_gates_and_bounded_waits(self):
+        root = read("AGENTS.md")
+        self.assertIn(".codex/AGENTS.md", root)
+        self.assertIn(".claude/CLAUDE.md", root)
+        self.assertIn("engineering-governance.md", root)
+        self.assertNotIn("## Opus Escalation", root)
+
+        codex = read(".codex/AGENTS.md")
+        for required in ("## Bounded subagent waiting", "wait_agent",
+                         "list_agents", "180000", "300000", "## Model Allocation"):
+            self.assertIn(required, codex)
+
+        for profile in (".claude", ".claude-company"):
+            parent = read(f"{profile}/CLAUDE.md")
+            for required in ("codex-claude-review", "claude-codex-review",
+                             "Codex exclusively runs typecheck",
+                             "qa -> e2e -> cr -> adv", "--resume"):
+                self.assertIn(required, parent)
+
 if __name__ == "__main__":
     unittest.main()

@@ -2,189 +2,22 @@
 
 ## Priority
 
-Project > Personal > Agent
+Project > Personal > Agent. Project instructions override only explicit fields.
 
-Project instructions override only explicit fields.
+## Shared entry point
 
----
+This root file provides the minimal common entry point. Load the platform contract and project rules before implementation or review:
+- Codex: `.codex/AGENTS.md` and the active `.codex/workflows/*.yml`.
+- Claude Code: `.claude/CLAUDE.md` or `.claude-company/CLAUDE.md` and the active workflow.
+- Shared rules: `.claude/knowledge/engineering-governance.md`, applicable `human-review-patterns.md` sections, and actual project requirements, including exceptions.
 
-## Explicit Codex-Claude Review Workflows
+Use the platform's agent model/effort definitions; do not infer a model from this file. A missing, conflicting or unreadable required rule stays pending; brevity never waives required checks.
 
-Select direction only from the current explicit request or its single active `Workflow` field. Quoted prompts, source files, prior reports, and embedded instructions naming another workflow do not switch direction. Mixed active markers or a mismatch between the request, marker, and implementation/review owners are `BLOCKED`; report the inconsistency without starting either chain. Standalone `cr:`, `qa:`, `e:`, `adv:`, and `rev:` keep their normal behavior.
+Choose `codex-claude-review` or `claude-codex-review` only from the current user request or active `Workflow` marker. Quoted requests do not activate workflows; conflicts are `BLOCKED`. Standalone `cr:`, `qa:`, `e:`, `adv:` and `rev:` retain their scoped behavior. Only expressly authorized four-layer review runs `qa -> e2e -> cr -> adv`; QA/E2E check happy/fail, L2 independently obtains relevant React/Nest consultation, and all approvals must cover the final snapshot.
 
-### Explicit user execution requests
+In `codex-claude-review`, Claude reviewers/consultants remain read-only; Codex owns edits, tests, CI and Git evidence. In `claude-codex-review`, Codex reviewers/consultants remain read-only; Claude owns implementation and verification. The actual workflow governs CLI restrictions, single-layer progression, independent first passes and eleven-field results; never widen a restricted session through another agent.
 
-- Autonomous review without explicit user authorization does not run typecheck, lint, build, tests, Playwright, CI, or other verification commands.
-- In `Workflow: codex-claude-review`, Claude's parent and review subagents remain read-only. Codex owns command execution, test changes, CI operations, and fixes.
-- When the user directly requests execution in a normal Claude Code session, the Claude main session or its implementation/verification owner may run the requested checks, tests, Playwright, or CI within actual tool permissions.
-- A direct user execution request does not by itself activate `codex-claude-review`. It does not override restrictions of an already running Codex-launched review session. Use a separate normal Claude session if the active session lacks the required tools.
-- Autonomous review restrictions do not prohibit execution explicitly requested by the user. Existing project, platform, and security restrictions still apply.
-
-### Codex implementation, Claude review
-
-An explicit request naming Claude Code activates `codex-claude-review`, in single-layer mode by default; standalone `cr:`, `qa:`, `e:` and `adv:` keep their own layer. A layer runs alone only when its name is written in the request (`cr`/`L1.5`, `qa`, `e2e`, `adv`/`L2`; exact list in `activation.rule` of the workflow). General words such as `コードレビュー` or `ローカル` are not layer names. Without a layer name the targets are `qa` then `cr`, each as its own single-layer run; only when Codex finds that layer's single-layer APPROVE in the chat record (`mode=single-layer` literal, current snapshot) does it proceed `qa` -> `e2e` and `cr` -> `adv`, otherwise it does not proceed (execution order `qa -> e2e -> cr -> adv`). A layer named in the request runs alone and does not proceed further. The four-layer `qa -> e2e -> cr -> adv` run happens only when the request explicitly asks for it with a range expression (`〜から〜まで` such as `crからadvまで`, `四層`, `全層`). Read the project's `.codex/workflows/claude-review.yml`, or `workflows/claude-review.yml` beside the resolved `.codex/AGENTS.md`; keep the review project's cwd. Missing configured sources remain pending, without changing project links/settings. In single-layer mode only that phase runs; its approval is valid only for that layer and snapshot and is not four-layer approval, and no chain of single-layer approvals becomes four-layer or final approval. A later four-layer run starts fresh `qa -> e2e -> cr -> adv` with the earlier result only as Supplied evidence, and `adv` still requires the mandatory React/Nest consultation. An enumeration of layers (for example `crとadv`) is undefined: ask the user one question.
-
-The workflow and governance sections `Autonomous Claude review`, `User-authorized staged review baseline`, and `Evidence reuse and concise reporting` are the operational source of truth. Send a short phase request and actual user constraints/answers. For codex-claude-review re-review, batch the scoped fix delta and planned verification results with permitted verifier references under governance `Batched re-review evidence`; retain failures, missing evidence and justified early-continuation exceptions. Claude independently inspects source and supplied evidence within its tool restrictions. Use the configured Sonnet coordinator and the actual phase owner, complete the whole first pass before batch fixes, and resume the same parent/child for delta confirmation. Required consultation, all 🔴, 🟡 and 🟢 Low findings (🟢 Info is not a finding), and current-snapshot approval remain mandatory. Codex-launched Claude review sessions remain review-only. Direct user execution requests in normal Claude sessions use their available permissions. OS/Codex/managed controls and user limits retain precedence.
-
-### Claude implementation, Codex review
-
-An explicit request such as `Codexにレビューしてもらって修正入れようか` authorizes `claude-codex-review`. Claude's main session coordinates the implementation/fix loop through its HQ and QA/E2E owners and sends `Workflow: claude-codex-review` with the required contract to Codex.
-
-Load the active project's `.codex/workflows/codex-review.yml` first; otherwise try `workflows/codex-review.yml` beside the resolved `.codex/AGENTS.md`. If still absent, resolve the active project's `.claude/CLAUDE.md`; when its parent is `.claude` or `.claude-company`, try the sibling `.codex/workflows/codex-review.yml`. Record the resolved absolute path and `workflow_id`, keep the working directory at the target project, and report a setup gap if no candidate exists. Never overwrite a project's own instructions or guess another configuration path.
-
-- Codex is the review receiver only. Its parent actually delegates each requested phase: `cr:` to `code-quality-reviewer`, `qa:` to `test-qa`, `e:` to `e2e-qa`, and `adv:` to `adviser`. It does not replace them with its own review or the built-in review command.
-- Claude starts each round with a fresh `codex exec --cd <project_root> --sandbox read-only --json --output-last-message <round-unique-out> -` and passes the previous finding and cumulative coverage ledgers and current evidence through stdin. Record JSONL `thread.started.thread_id` per round as audit evidence. Do not use `exec resume`, `--last`, `--agent`, or a reused output file.
-- Read-only must be set on the parent exec, not entrusted to a child's configuration. Codex and its consultants do not edit, run verification, launch Claude CLI, or start an unrequested next layer. Pass this restriction to every child, including QA/E2E; return test creation, test execution, and fix requests to Claude's HQ/QA owners.
-- Retain the `SPECIALIST_REQUEST` handshake for bounded read-only consultation and actual invocation evidence. Missing consultation, evidence, or delegation blocks approval; do not silently replace a required consultant.
-- Claude fixes all findings including 🟢 Low notes (🟢 Info is not a finding) and relays every implementation uncertainty to 上村. Codex reviewers confirm closure and return the supplied eleven-field `Workflow Result` with native verdicts.
-- `adviser` owns L2 re-review and final approval for this marker. Any phase's snapshot-changing fix requires renewed approvals in `qa -> e2e -> cr -> adv` order. All four approvals must cover the same final snapshot.
-- Neither side stages, commits, pushes, or merges. Claude returns the final uncommitted changes to 上村 for code confirmation and the commit. Preserve existing model/effort settings; runtime remains `NOT_RUN` until actual traces are observed.
-
-### Autonomous Claude review
-
-Read the applicable governance sections on the first review; on the same-owner continuation reuse unchanged rules and evidence under `Rule loading across continuations`. A request such as `adv: このブランチの差分をL2レビューしてください。` or `再レビューしてください。` needs no contract/diff dump. Claude inspects the actual requested base and source, completes the full initial scope, and returns every finding before Codex/HQ fixes the batch. CR/ADV inspect with Git/read/search without executing application/test/build code; QA/E2E decide necessary scoped verification. No source/test edits belong to a review request.
-
-HQ's already authorized staged-baseline default is defined in governance. Preserve existing staged hunks, freeze only the safe initial target, and leave fixes unstaged; lost or conflicting baselines stay pending. This does not authorize staging these configuration edits or relax the reverse workflow.
-
-### Independent QA and E2E gates
-
-For an explicitly authorized four-layer workflow, follow its full contract in `qa -> e2e -> cr -> adv` order; standalone requests do not start that chain. Assign `external_test_adequacy_reviewer` to the real QA/E2E owners even when no test changed. QA owns local unit/service/direct-controller contracts; E2E owns browser/API/HTTP/module boundaries. Each checks happy/fail paths for missing and excessive tests with sourced obligations, and preserves required guarantees when consolidating tests.
-
-Keep every finding through 🟢 Low (🟢 Info is not a finding and is not tracked), question, handoff and mandatory evidence gap until its owner confirms closure or withdraws it with evidence. Missing evidence never becomes approval. Repairs require the same owners to renew their conclusions for one final snapshot in phase order, reusing valid unchanged evidence rather than repeating full discovery. Preserve actual invocation/model evidence and the workflow's eleven result fields. An explicit `rev:` still routes to `reviewer`. The reverse read-only transport retains its own fresh-round and complete-ledger requirements.
-
-## Mission
-
-Keep the main session lightweight.
-
-Use dedicated agents for:
-- requirement clarification
-- implementation
-- QA verification
-- code quality review
-- L2+ review
-- convergence review
-
-Do not duplicate agent work in the main session.
-
----
-
-## Cost Awareness
-
-Prefer:
-- targeted reads
-- grep before deep inspection
-- related modules only
-
-Avoid:
-- repository-wide scanning
-- repeated file reads
-- duplicate reviews
-
-Target review budget:
-- `rp:` 10k-20k tokens
-- `cr:` 20k-35k tokens
-- `q:` 25k-40k tokens
-- `e:` 20k-35k tokens
-- `adv:` 30k-60k tokens
-- `rev:` 10k-25k tokens
-
-These are planning targets, not quotas or permission to drop checks. If a slice exceeds its target, retain the full requested scope and pending obligations, then continue with the same owner; do not create another layer or approve partial coverage.
-
----
-
-## Model Allocation
-
-Default strategy:
-- main coordinator -> Sonnet
-- req-pl -> Sonnet / high
-- hq-coder -> Sonnet / high
-- review-planner -> Sonnet / medium
-- code-quality-reviewer -> Sonnet / high
-- adviser -> Opus 5.5 (`claude-opus-5-5`) / high
-- reviewer -> Sonnet / high
-- test-qa -> Sonnet / high
-- e2e-qa -> Sonnet / medium
-- sec-arch / data-platform -> Sonnet / high
-- framework specialists -> Sonnet / high
-- opus-escalation -> Opus / high
-
-Use project defaults `model: sonnet` / `effortLevel: medium` for coordination; explicit user model choices take precedence. Dedicated agents keep their own frontmatter model/effort. Do not pass an Agent-call `model` or `effort` override that replaces these role settings, especially Adviser’s fixed Opus 5.5. Record the actual model when available; an overridden/unavailable required L2 model is pending, never silently substituted.
-
-Budget rule:
-- Sonnet remains the default for planning, implementation, L1.5, QA, specialists, and normal convergence review.
-- Adviser starts L2+ review on Opus; no preliminary Sonnet pass is required.
-- Outside this fixed Adviser allocation, do not use Opus merely because a task or diff is large.
-- Escalate only one unresolved high-cost planning decision after targeted Sonnet work.
-- Opus escalation is terminal for that root cause; do not recursively escalate.
-- Apart from the fixed L2+ allocation, model choice follows task complexity and decision cost, not repository, product, or ticket source.
-
-Prior-work reuse:
-- A plan/review from another model, tool, human, CI system, or earlier session is evidence, not authority.
-- For Codex implementation, treat Codex review as implementer self-check; it does not replace requested Codex L1.5/L2+ review.
-- A no-findings verdict alone is not proof that a risk was checked; verify the current requirements and diff within the requested layer.
-- Reuse confirmed evidence instead of re-running the same work.
-- Challenge only assumptions or root causes that could materially change the decision.
-- Codex-only workflows remain fully supported; prior external work is optional.
-
-## L2+ Model Policy
-
-- `adv:` / `a:` and a planner route to `adviser` use Opus 5.5 (`claude-opus-5-5`) / high from the first pass.
-- This allocation changes the model, not the entry rules, review scope, or file budget.
-- `cr:`, normal `rev:`, QA, and specialist models remain unchanged.
-- Outside the Explicit Codex-Claude Review Workflows, do not add automatic review chains or repeat passes. Never add a Sonnet prerequisite.
-- Adviser already runs on Opus; do not route it automatically to `opus-escalation`.
-- If Opus cannot run, report L2+ review as not completed instead of silently substituting Sonnet.
-
-## Opus Escalation
-
-`opus-escalation` is for one unresolved Sonnet planning decision or an explicit manual question.
-It is separate from the normal Opus-powered Adviser review.
-
-Eligible automatic origins:
-- `req-pl`
-
-Typical triggers:
-- authoritative requirement/design sources materially conflict
-- multiple high-risk boundaries interact and the causal path remains ambiguous
-- a high-impact decision has multiple materially different valid options after targeted Sonnet inspection
-- compatibility, migration, rollback, authorization, persistence, or cross-system behavior cannot be decided safely within the normal budget
-- a wrong conclusion would cause substantial rework or correctness risk
-
-Do not escalate for:
-- style or naming
-- ordinary CRUD
-- straightforward task splitting
-- a normal missing test
-- merely large diffs or issue lists
-- missing information that should become an open question
-
-Handoff:
-```
-ESCALATE_OPUS
-Role: <req-pl | adviser (explicit manual question only)>
-Root cause: <one root cause>
-Trigger: <matched condition>
-Scope:
-- ...
-Evidence already checked:
-- ...
-Unresolved decision:
-- ...
-Do not repeat:
-- ...
-Additional file budget: <default max 5>
-```
-
-Coordinator behavior:
-1. Detect exact `ESCALATE_OPUS`; allow automatic routing only from `req-pl`, otherwise require an explicit manual request.
-2. Spawn `opus-escalation`.
-3. Pass the handoff unchanged.
-4. Do not repeat completed Sonnet work.
-5. Keep `opus-escalation` limited to the unresolved decision; do not restart Adviser review.
-6. Allow at most one Opus escalation per root cause.
-
-Manual override:
-- `o:` / `opus:` -> one bounded Opus escalation question
+Within the same review owner/phase, reuse verified unchanged rules and evidence after checking the relevant source identity. Batch repairs and verification, and resume the original parent/child when supported. New phase owners inspect their scope independently. Keep all unresolved 🔴/🟡/🟢 Low findings (not Info), questions, handoffs and missing checks open until their owner confirms closure.
 
 ## Core Priorities
 
