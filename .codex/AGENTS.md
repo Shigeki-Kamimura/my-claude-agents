@@ -397,6 +397,32 @@ Across all review agents:
 Do not claim tests passed from file existence alone.
 Do not use `verified` for file inspection only.
 
+## GuildBoard pre-Actions Codex self-review
+
+For authorized Codex/HQ implementation or fix work in `guildboard-training-management`, run an **implementer self-review** before reporting review-ready, requesting an already-authorized independent review, or handing off a PR. This is a preflight against the project's GitHub Actions review, not a new reviewer layer, an automatic `rp/cr/adv/qa/e2e` chain, or evidence that Actions/independent review passed. Standalone read-only reviews and other repositories retain their existing role contracts. This check never authorizes new tools, CI execution, stage/commit/push, or broader refactoring.
+
+Use `docs/review/review-prompt.md` in the **target GuildBoard revision** as the versioned checklist; do not copy its M/S/N catalog into this repository or replace its severity definitions. Follow existing governance, role ownership, mandatory consultations, and explicit permissions first. For a materially conflicting rule, report `NEEDS_CONFIRMATION`, not a fabricated pass.
+
+Required self-review sequence (one cohesive batch; recheck changed obligations after repairs):
+
+1. **Sources:** Read the applicable `.codex/AGENTS.md`, `.claude/knowledge/engineering-governance.md`, the target project's `docs/review/review-prompt.md`, and the design/coding rules actually triggered by the diff. Reuse previously read unchanged sources only under governance's continuation rules. Missing mandatory sources remain `BLOCKED`.
+2. **Pinned scope:** Record the user/PR/project-derived base and actual head commit SHAs, plus relevant staged, unstaged, and untracked current work. Review the intended PR layer and worktree; never assume `main` or `HEAD~1`. Preserve ignore/secret exclusions, the existing index, and the staged-baseline policy. Identify mutable source contents separately from HEAD.
+3. **Introduced defects only:** Seek evidence-backed problems caused or surfaced by this diff. Read surrounding code only for affected behavior and necessary caller/consumer impact. Do not open unrelated cleanup, parent-PR refactors, or speculative tickets.
+4. **CI boundary:** Do not re-list formatter, Biome, depcruise, tsc, or test failures as mere AI-review findings. A deeper design defect evidenced by the diff remains reportable. Distinguish file inspection (`Checked`) from actual command/CI evidence (`Executed`); an absent, stale, skipped, or failed result is never `PASS`. Run only authorized targeted verification under `Targeted verification and delegation`; do not start a full CI run merely to satisfy this self-review.
+5. **Actions classification:** Use `must-fix`, `should-fix`, `nitpick` as defined in the current project prompt. Fix every confirmed must-fix before proceeding. Resolve should-fix where feasible; any deferral needs concrete rationale, owner, and a disposition compatible with existing mandatory review/closure rules. Nitpicks are non-blocking suggestions; cap to the project's requested limit. Do not downgrade 🔴/🟡/🟢 Low tracked findings to nitpick/Info to force a pass.
+6. **Explicit second look:** After drafting the findings, independently recheck [M9] atomic transactions/invariants, [S20] commit-before-irreversible-side-effect ordering, and [S15] N+1/DB or API I/O inside loops against the changed paths. Record `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` for each, with a short reason; do not silently skip these checks.
+7. **Prior findings:** Re-evaluate earlier comments against the current exact diff and code. Keep truly open items; close fixed items with observed evidence, or withdraw out-of-scope/invalid findings with an explicit reason. A previous verdict cannot approve a changed source.
+8. **Actionable evidence:** Each actual finding states `file:line`, code fact/condition, user-visible or operational impact, smallest fix, applicable rule/source section, classification, and current owner/status. Never manufacture line numbers, test outcomes, or applicable rules. Group duplicate root causes.
+9. **Coverage and handoff:** Report checked and unchecked files/paths, pending questions/consultations, original and current snapshot, supplied CI/test evidence with revision/status, and every remaining obligation. A missing base, mandatory source, or required evidence is not a clean review.
+
+**Gate and repair loop:** Fix a coherent batch of confirmed issues, perform only permitted affected verification, then re-evaluate the changed source and all impacted/open findings. Avoid automatic full re-review and repeat work on unchanged evidence. Stop and report a blocker when the remaining check cannot be completed; never loop without progress.
+
+- `CODEX SELF-REVIEW: PASS`: scope and all applicable nine checks are complete on the **current** source, no `must-fix` or unclosed mandatory/tracked obligations remain, and any should-fix disposition is supported. This is only permission to hand off to the next already-authorized gate.
+- `CODEX SELF-REVIEW: CHANGES_REQUIRED`: confirmed actionable issues remain. State the file/rule, owner and repair plan; do not claim ready.
+- `CODEX SELF-REVIEW: BLOCKED`: required source, base/snapshot, consultation, or verification evidence needed for the gate is unavailable. Name the missing evidence and owner; do not turn `NOT_RUN` into success.
+
+Use this **self-review status**, not the GitHub Action's `CODEX VERDICT: LGTM` line. Preserve actual CI status independently (`PASS / FAILED / NOT_RUN / PARTIAL`) with run ID/commit when available. A self-review PASS never implies CI, CR, ADV, QA, E2E, Claude, or human approval.
+
 ## GuildBoard固有の成果物保存先
 
 この規則は `/home/shigeki/projects/guildboard-training-management` の作業だけに適用し、他のプロジェクトには適用しません。
