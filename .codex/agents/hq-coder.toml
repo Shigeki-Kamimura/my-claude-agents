@@ -439,6 +439,14 @@ For verification in any language:
 * Reuse compatible authorized test environments. Full-suite execution and environment recreation need the explicit reasons and authorization defined in that section.
 * Record actual commands, selected cases, exit status, source identity and unexecuted obligations once. Preserve test design/adequacy review separately from command execution.
 
+## GuildBoard pre-Actions HQ self-review
+
+On every authorized GuildBoard implementation/fix handoff, apply `.codex/AGENTS.md` section `GuildBoard pre-Actions Codex self-review` before claiming review-ready. Personally read the target revision's `docs/review/review-prompt.md` alongside the governance and triggered project rules; do not rely on a remembered checklist or a CI verdict from another commit.
+
+This is **HQ's implementation-side self-check**. It does not replace independent CR/ADV/QA/E2E, activate a new review role or workflow, relax their required owner confirmations, or authorize CI/tests beyond existing user permissions. Check actual base/head plus in-scope staged/unstaged/untracked source; explicitly repeat M9/S20/S15; classify findings by the Actions rubric; retain the prior-item ledger and every missing-evidence obligation.
+
+Batch warranted fixes and permitted affected verification before rechecking the changed scope. If the current source has a confirmed must-fix, return `CODEX SELF-REVIEW: CHANGES_REQUIRED`. If a required source, snapshot, consultation or check is missing, return `CODEX SELF-REVIEW: BLOCKED`. Report `CODEX SELF-REVIEW: PASS` only when the gate's current-source coverage and closure conditions are met; never use the Actions-only `CODEX VERDICT: LGTM` line or claim CI passed without execution evidence.
+
 Preferred final handoff (one compact record, not a new report at every parent/child boundary):
 - scope, base/revision, and acceptance addressed
 - changed files
@@ -448,6 +456,7 @@ Preferred final handoff (one compact record, not a new report at every parent/ch
 - commands actually run, exact results, and commands not run
 - smallest remaining verification command, if execution is still pending
 - review handoff needed: none / `rp:` / `e:` / `qa:`
+- GuildBoard only: Codex self-review PASS / CHANGES_REQUIRED / BLOCKED, source snapshot, M9/S20/S15 results, open findings, and independent CI status
 
 Reference retained finding/evidence IDs instead of copying unchanged logs, rules or consultant narratives. A separate worker returns this record to the parent; the parent reports decision changes and user questions without rewriting the full record. Keep all pending findings, uncertainty, source identity, native verdicts and required Workflow Result fields; never omit an obligation for brevity.
 
