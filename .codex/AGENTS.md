@@ -45,6 +45,7 @@ Apply governance `Rule loading across continuations` and `Evidence reuse and con
 - test-qa
 - e2e-qa
 - code-quality-reviewer
+- ci-reviewer
 - hq-coder
 - sec-arch
 - data-platform
@@ -59,6 +60,7 @@ Apply governance `Rule loading across continuations` and `Evidence reuse and con
 - p: / pl: -> req-pl
 - rp: / plan: -> review-planner
 - cr: -> code-quality-reviewer
+- ci: -> ci-reviewer (explicit GuildBoard Actions-rubric preflight only)
 - r: / rev: -> reviewer
 - a: / adv: -> adviser
 - q: / qa: -> test-qa
@@ -82,6 +84,7 @@ Default strategy:
 - hq-coder -> GPT-6.1 Sol / high
 - review-planner -> GPT-6 Luna / medium
 - code-quality-reviewer -> GPT-6.1 Sol / high
+- ci-reviewer -> GPT-6.1 Terra / high (requires Codex CLI >= 0.159.0)
 - adviser -> GPT-6.1 Sol / xhigh
 - reviewer -> GPT-6.1 Sol / high
 - test-qa -> GPT-6.1 Sol / high
@@ -199,6 +202,9 @@ Owns L1.5 only:
 
 CR does not escalate models directly.
 A broader concern goes to adviser/security/data through the normal handoff.
+
+### ci-reviewer
+Owns only the explicitly requested `ci:` GuildBoard pre-Actions review, using the target revision's `docs/review/review-prompt.md` and its actual diff. Runs on `gpt-6.1-terra` / high in a real delegated agent. It is a read-only rubric check, not GitHub Actions execution, HQ implementation, CR/L2/QA/E2E, or merge approval. Missing model/agent availability is BLOCKED; never silently fall back to parent Sol.
 
 ### adviser
 Owns first-pass L2+:
@@ -322,10 +328,11 @@ Direct-use exceptions:
 - `e:` explicit E2E-only verification
 - `rev:` prior Review Tickets or claimed fixes already exist
 - `sol:` explicit manual high-complexity override
+- `ci:` explicit GuildBoard-only review against the Actions Codex rubric (no GitHub workflow dispatch)
 
 ### Bare review requests
 
-Only a review request without any role prefix from `Routing` (`p:`/`pl:`, `rp:`/`plan:`, `cr:`, `r:`/`rev:`, `a:`/`adv:`, `q:`/`qa:`, `e:`/`e2e:`, `h:`/`hq:`, `sol:`) is expanded. A prefixed request is never expanded and routes normally. Check in this order:
+Only a review request without any role prefix from `Routing` (`p:`/`pl:`, `rp:`/`plan:`, `cr:`, `ci:`, `r:`/`rev:`, `a:`/`adv:`, `q:`/`qa:`, `e:`/`e2e:`, `h:`/`hq:`, `sol:`) is expanded. A prefixed request is never expanded and routes normally. Check in this order:
 1. An explicit workflow request in either direction (the sentences in `activation.examples` of `claude-review.yml` and `codex-review.yml`, and requests of that kind; a request that only mentions Claude Code, such as reviewing its configuration, is not one) or an active `Workflow` marker is decided only by the direction rule in `Explicit Codex-Claude Review Workflows`. Do not apply this section or the template. A workflow request that names layers (such as `crからadvまで`) never flows into the template.
 2. A re-review, continuation or fix-confirmation request (`再レビュー`, `もう一度`, `再確認`, `再チェック`, `修正確認`, `直したので見て`, `fix確認`, `re-review`, `recheck`, `続き`) is not a bare request: resume the original owner, as in the Review Operating Model. If no original owner is retained in this session, do not ask back: treat it as a primary review, expand the template, and state in `REASON` that it was treated as a primary review because the original owner could not be resumed. Earlier review results present in the conversation are used only as Supplied evidence, limited to the scope the user names. A `もう一度` that refers to a different PR or target is a new primary review. If the user explicitly supplies earlier tickets or a ledger and the request stays bare, attach them to the primary review as Supplied evidence; do not infer `rev`, which still needs its explicit prefix and entry conditions.
 3. Otherwise expand `workflows/critical-review-request.md` (the project's `.codex/workflows/`, or `workflows/` beside the resolved `.codex/AGENTS.md`) and delegate to one existing owner. A missing template stays pending, not guessed.
@@ -420,6 +427,8 @@ Required self-review sequence (one cohesive batch; recheck changed obligations a
 - `CODEX SELF-REVIEW: PASS`: scope and all applicable nine checks are complete on the **current** source, no `must-fix` or unclosed mandatory/tracked obligations remain, and any should-fix disposition is supported. This is only permission to hand off to the next already-authorized gate.
 - `CODEX SELF-REVIEW: CHANGES_REQUIRED`: confirmed actionable issues remain. State the file/rule, owner and repair plan; do not claim ready.
 - `CODEX SELF-REVIEW: BLOCKED`: required source, base/snapshot, consultation, or verification evidence needed for the gate is unavailable. Name the missing evidence and owner; do not turn `NOT_RUN` into success.
+
+An explicit `ci:` request instead routes to the separate read-only `ci-reviewer` (GPT-6.1 Terra/high). It independently inspects the requested source using the target project's rubric, rather than relying on HQ's self-check. `ci:` does not trigger GitHub Actions or tests; a missing actual agent/model invocation is `BLOCKED`.
 
 Use this **self-review status**, not the GitHub Action's `CODEX VERDICT: LGTM` line. Preserve actual CI status independently (`PASS / FAILED / NOT_RUN / PARTIAL`) with run ID/commit when available. A self-review PASS never implies CI, CR, ADV, QA, E2E, Claude, or human approval.
 
