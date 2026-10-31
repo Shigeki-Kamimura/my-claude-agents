@@ -377,6 +377,12 @@ For stacked PRs:
 - do not re-review parent-layer changes
 - do not treat `main...HEAD` visibility as current-layer ownership
 
+## Codex cross-model review perspectives
+
+For Codex first-pass code review, `code-quality-reviewer` (L1.5) and `adviser` (L2+) use the applicable triggered sections of `.claude/knowledge/codex-cross-model-review-perspectives.md` (linked by `setup.sh`). This is an evidence-led synthesis of **review questions**, not a claim that either model uniquely owns a capability. It supplements the existing Nishiguchi-based governance, actual project design rules, agent ownership, budgets, and specialist obligations. It adds no new review layer, execution permission, automatic reviewer sequence, or GuildBoard Actions/CI preflight.
+
+`review-planner` routes cross-boundary/specification or affected consumer risk using coarse metadata only; CR checks local realistic inputs and reachability; ADV traces requirements, actors, producers, consumers, partial failures and observable behavior only where the change triggers them. Neither imports GuildBoard-specific conventions into other projects. Missing applicable evidence is pending, not a speculative finding or an approval. Apply the existing `Duplicate-review Rule`.
+
 ## Shared Review Knowledge
 
 The configured project reference is `.claude/knowledge/human-review-patterns.md`, installed by setup for either Claude profile and shared with Codex review agents.
