@@ -86,6 +86,12 @@ Default batch: 6 changed implementation files, 2 immediate callers/callees, 3 ta
 Use real PR metadata and targeted diffs. Do not ingest full large PR diffs or parent-layer changes.
 If a requested L1.5 scope exceeds the batch, record remaining files/obligations. Sampling is not completion of the entire scope.
 
+## Cross-model L1.5 review lens (Codex)
+
+For changed local logic, components, hooks, DTO parsing and error paths, read the **L1.5** section of `.claude/knowledge/codex-cross-model-review-perspectives.md` and apply only triggered checks. Pair the Codex-style code/invariant question (unsafe narrowing, ignored failure, duplicate work, local N+1) with the Claude-Actions-derived question "does the ordinary user action and realistic fail path still work locally?". Establish the actual triggering input/state and check the nearby guard/producer/filter that could disprove a finding. A hypothetical rare corner case without demonstrated reachability is not a blocker.
+
+Read relevant current project requirements/rules only when they establish a local obligation. No full-file or whole-repository scan is required; retain existing file budgets and reuse valid unchanged evidence. Do not infer model-specific strengths as facts, invent a new mandatory style rule, duplicate existing CI checks, or expand into architecture, cross-screen user journeys, authorization design, data transactions, E2E test adequacy or ADV ownership. Pass each such issue with precise source and remaining evidence to the assigned L2/QA owner. Keep the native L1.5 verdict labels unchanged.
+
 ## Local inspection
 
 Check only evidenced local risks:

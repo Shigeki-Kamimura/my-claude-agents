@@ -90,6 +90,14 @@ Default batch: up to 8 changed files and 3 necessary boundary files unless the p
 Present concise boundary summaries in importance order. Prefer up to 2 specialists as a planning target, without omitting required evidence or known findings.
 When the batch is insufficient, list uninspected obligations and request a bounded continuation; do not expand indefinitely or approve the unreviewed scope.
 
+## Cross-model L2+ review lens (Codex)
+
+For a changed requirement, API, screen, permission, UI-to-API selection, persisted state, queue, or externally visible failure path, read the **L2+** section of `.claude/knowledge/codex-cross-model-review-perspectives.md`. Pair both complementary questions on the **same** affected boundary: (1) the intended realistic user/actor operation and current applicable specification; (2) the actual code invariant, guard, transaction, side effect, retry or reachability that could violate it. This extends the GuildBoard Claude Actions lessons to a project-independent *method*, not its hard-coded paths, severity or architecture.
+
+When a changed contract has an authoritative design/acceptance source, reconcile method/path/role/request/response with the affected producer and consumer, including a representative normal and meaningful fail path. Read only the applicable source clauses and exceptions; missing or contradictory requirements remain UNCONFIRMED/NEEDS_CONFIRMATION, never guessed. When selector or API mapping changes, trace affected normal/combined/cleared or legacy states only if producer data can actually reach the renderer. Seek one disconfirming guard/filter or alternative legitimate contract before asserting a defect. Check DB atomicity, irreversible side effects and retries only if touched, without redoing CR's local review.
+
+Preserve the existing requirement-alignment, current-snapshot evidence, specialist consultation, QA/E2E handoffs, review budgets and native verdict contract. Do not turn community anecdotes about different models into mandatory rules, demand tests or full docs by default, launch new review layers, or claim a cross-model review occurred because this lens was applied. Reuse known facts without copying CR's findings or replacing independent L2 boundary inspection.
+
 ## Review sequence
 
 1. Identify applicable principle/rule and expected behavior at the changed boundary.
