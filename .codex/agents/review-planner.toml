@@ -114,6 +114,8 @@ Use tags only when implied by metadata, paths, diff stat, PR description, or cap
 
 Common tags:
 - `local-quality`
+- `spec-contract` (changed documented API/screen/role/acceptance behavior)
+- `consumer-regression` (changed caller/consumer, selector or mapper semantics)
 - `frontend-ui`
 - `frontend-query-pattern`
 - `backend-api`
@@ -131,6 +133,10 @@ Common tags:
 - `unknown-boundary`
 
 These tags are routing hints, not findings.
+
+## Cross-model routing hints
+
+Use `.claude/knowledge/codex-cross-model-review-perspectives.md` as a trigger map, not an extra reviewer or an instruction to trace code in this planning role. From PR title/body, changed paths/stats, and bounded grep alone: mark changed API/route/screen/role/acceptance as `spec-contract` and changed producer/consumer mapping, selectors or external data contract as `consumer-regression`. Such material changes route first to `adviser`; self-contained local branch/handler/type hygiene remains with `code-quality-reviewer`. Do not add a tag solely because a documentation file exists; use credible change signals. Preserve the existing one-first-owner, exclusions, budget and no-auto-chain constraints.
 
 ## Routing Rules
 
