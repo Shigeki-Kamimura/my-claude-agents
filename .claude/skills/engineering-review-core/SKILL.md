@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `aff0af1253b49f0d5023a1d10dea8fe19c8c2be91f7565599a5f0e735f4f6f4b`
+SHA-256: `1850e9b03fe9fbabe691b243f78837ec761648344eac584163160ec1a06fcd5e`
 Included sections: Core rules for Claude preload, Pinned source and reconciliation, User-directed execution permissions, Evidence and reporting
 
 
@@ -28,6 +28,7 @@ This is the user-approved operational core, not Nishiguchi's wording or proof of
 - Responsibility: identify the actual owner/layer and a concrete mixed responsibility before requesting a boundary change. Reuse existing validated concepts, but do not merge contracts merely because their fields match.
 - Exceptions: catch for recovery, error translation, cleanup or meaningful context. Preserve unexpected failures and their cause. Do not remove every catch or accept an empty catch.
 - Types: validate untrusted boundaries and narrow types. An annotation/cast is not runtime validation; a justified framework assertion is not automatically a defect. Check the actual producer and nearest guard before asserting reachability.
+- Intake: before substantive judgment, record injected/read/missing rule sections and applicable project design exceptions once. Read required missing originals; an empty Glob is not absence. Inspect changed responsibilities and necessary surrounding code, expanding with a reason rather than requiring full files by default. User/project whole-file requirements and all pending obligations remain.
 - Scope/design: make the smallest design-correct change, including required boundary repair. Read applicable project rules and their exceptions. A sourced mandatory violation needs no invented crash; an optional preference is not a blocker.
 - Evidence: separate reachable defects, mandatory-rule violations, verification gaps and optional observations. Record inspected revision/source and the obligation behind the expected behavior. Missing evidence never becomes approval; retain supplied unresolved findings and handoffs until the owning reviewer confirms closure or withdraws with evidence. Never use Info classification to close an unresolved mandatory obligation.
 - Ownership: implementation owns edits; each requested review layer retains its own scope. L1.5 stays self-contained. HQ and first-pass L2 must obtain applicable React/Nest consultation after tracing the boundary; implementation advice does not replace independent L2 evidence. Consultants advise only on their assigned boundary, and review-planner routes metadata only. This does not authorize an additional layer or delegate.

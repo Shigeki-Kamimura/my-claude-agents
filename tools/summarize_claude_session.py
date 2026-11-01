@@ -26,13 +26,16 @@ USAGE_KEYS = (
 )
 
 
-def read_records(path: Path):
+def read_records(path: Path, with_lines=False):
     with path.open(encoding="utf-8") as stream:
         for line_no, line in enumerate(stream, 1):
             if not line.strip():
                 continue
             try:
-                yield json.loads(line)
+                record = json.loads(line)
+                if not isinstance(record, dict):
+                    raise ValueError(f"JSONLの形式が不正: {path}:{line_no}")
+                yield (line_no, record) if with_lines else record
             except json.JSONDecodeError as exc:
                 raise ValueError(f"JSONLの解析に失敗: {path}:{line_no}") from exc
 
@@ -50,6 +53,60 @@ def layer_of(path: Path, session_path: Path) -> str:
     if not isinstance(agent_type, str) or not agent_type:
         return UNKNOWN_LAYER
     return LAYER_BY_AGENT_TYPE.get(agent_type, agent_type)
+
+
+def merge_response_usage(response: dict, usage: dict) -> None:
+    """分割応答を重複除去し、通常応答に含まれないadvisor使用量も保持します。"""
+    entries = [("main", response["model"], usage)]
+    for index, iteration in enumerate(usage.get("iterations") or []):
+        if isinstance(iteration, dict) and iteration.get("type") == "advisor_message":
+            entries.append((f"advisor:{index}", str(iteration.get("model") or "unknown-advisor"), iteration))
+    for key, model, values in entries:
+        item = response.setdefault("components", {}).setdefault(key, {"model": model, "usage": {}})
+        for name in USAGE_KEYS:
+            value = values.get(name)
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+                item["usage"][name] = max(item["usage"].get(name, 0), value)
+
+
+def review_boundary(paths: list[Path]) -> dict:
+    """実ツールの公開と呼出しを検査します。レビューの合否は決めません。"""
+    allowed = {"Read", "Glob", "Grep", "Agent", "SendMessage"}
+    missing, violations, calls, agent_calls = [], [], {}, set()
+    for path in paths:
+        shape_seen = False
+        for line, record in read_records(path, with_lines=True):
+            names = []
+            if record.get("type") == "api-request-shape":
+                tools = record.get("shape", {}).get("tools")
+                if isinstance(tools, list):
+                    shape_seen = True
+                    names.extend(t.get("name", "unknown") for t in tools if isinstance(t, dict))
+            attachment = record.get("attachment") or {}
+            if attachment.get("type") == "prompt_snapshot" and isinstance(attachment.get("tools"), list):
+                names.extend(t.get("name", "unknown") for t in attachment["tools"] if isinstance(t, dict))
+            if attachment.get("type") == "advisor_tool" and attachment.get("available") is True:
+                names.append("advisor")
+            content = record.get("message", {}).get("content", [])
+            if record.get("type") == "assistant" and isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") in ("tool_use", "server_tool_use"):
+                        name = str(block.get("name") or "unknown")
+                        names.append(name)
+                        if name == "Agent":
+                            agent_calls.add((str(path), block.get("id")))
+                        if block["type"] == "server_tool_use":
+                            key = (str(path), str(block.get("id") or f"line:{line}"))
+                            calls[key] = {"source": path.name, "line": line, "name": name, "id": block.get("id")}
+            for name in sorted(set(names) - allowed - {"DeferredToolPlaceholder"}):
+                violations.append({"source": path.name, "line": line, "name": name})
+        if not shape_seen:
+            missing.append(path.name)
+    if len(agent_calls) > len(paths) - 1:
+        missing.append("child transcripts for Agent calls")
+    return {"status": "BLOCKED" if violations else "UNCONFIRMED" if missing else "CHECKED",
+            "violations": violations, "missing_tool_shapes": missing,
+            "server_tool_calls": list(calls.values())}
 
 
 def summarize(session_path: Path) -> dict:
@@ -92,10 +149,7 @@ def summarize(session_path: Path) -> dict:
             usage = message.get("usage") or {}
             if isinstance(usage, dict):
                 prev = responses.setdefault(key, {"model": model, "usage": {}})
-                for usage_key in USAGE_KEYS:
-                    value = usage.get(usage_key)
-                    if isinstance(value, (int, float)) and value >= 0:
-                        prev["usage"][usage_key] = max(prev["usage"].get(usage_key, 0), value)
+                merge_response_usage(prev, usage)
 
             content = message.get("content")
             if not isinstance(content, list):
@@ -119,8 +173,9 @@ def summarize(session_path: Path) -> dict:
         messages_by_file[path.name] = len(responses)
         for key, response in responses.items():
             response_ids.add(key)
-            usage_by_model[response["model"]].update(response["usage"])
-            usage_by_layer[layer][response["model"]].update(response["usage"])
+            for component in response.get("components", {}).values():
+                usage_by_model[component["model"]].update(component["usage"])
+                usage_by_layer[layer][component["model"]].update(component["usage"])
             layer_responses[layer] += 1
         if path == session_path:
             parent_responses += len(responses)
@@ -132,6 +187,7 @@ def summarize(session_path: Path) -> dict:
         totals.update(counter)
     return {
         "session_id": session_path.stem,
+        "review_boundary": review_boundary(paths),
         "child_transcript_count": len(children),
         "api_responses": {"parent": parent_responses, "children": child_responses, "total": len(response_ids)},
         "agent_invocations": {"parent": parent_tool_counts["Agent"], "all": tool_counts["Agent"]},
@@ -222,18 +278,28 @@ def main():
     )
     for name, help_text in ledger_options:
         parser.add_argument(f"--{name}", default="", help=help_text + "(--ledger-row用)")
+    parser.add_argument("--check-review-boundary", action="store_true", help="ツール違反は終了1、記録不足は終了2。レビュー承認とは別です")
     args = parser.parse_args()
+    if args.check_review_boundary and args.ledger_row:
+        parser.error("--check-review-boundary はJSON出力で使ってください")
     if not args.ledger_row:
         # JSON出力では台帳用の値を使わないため、黙って無視せず指定の誤りとして知らせる
         ignored = [f"--{name}" for name, _ in ledger_options if getattr(args, name.replace("-", "_"))]
         if ignored:
             parser.error(f"{', '.join(ignored)} は --ledger-row と一緒に指定してください")
-    summary = summarize(args.session_jsonl)
+    try:
+        summary = summarize(args.session_jsonl)
+    except (OSError, ValueError) as exc:
+        print(json.dumps({"review_boundary": {"status": "UNCONFIRMED"}, "error": str(exc)}, ensure_ascii=False))
+        return 2
     if args.ledger_row:
         print(ledger_row(summary, args))
     else:
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    if args.check_review_boundary:
+        return {"CHECKED": 0, "BLOCKED": 1, "UNCONFIRMED": 2}[summary["review_boundary"]["status"]]
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

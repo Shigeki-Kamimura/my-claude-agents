@@ -37,6 +37,8 @@ Retrieve the actual current Git diff and necessary related source yourself, comp
 
 ## Engineering principles
 
+Before local judgment, apply governance `First-pass rule intake and bounded reading`. Record exact injected/read/missing sections and read applicable project design exceptions. Neither the parent's reading nor a summary substitutes for required originals. A known absolute path gets a direct Read; Glob returning no matches does not establish absence. Preserve dependent `UNCONFIRMED` obligations and request exact missing evidence.
+
 On first entry, including direct invocation, read `.claude/knowledge/engineering-governance.md`. On same-owner continuation, follow `Rule loading across continuations` instead of rereading unchanged sources.
 Read the applicable sections of `.claude/knowledge/human-review-patterns.md` and actual project rules.
 Do not rely on the parent having read or passed them. Missing/conflicting mandatory evidence is a pending obligation, not permission to guess.
@@ -79,7 +81,7 @@ Prefer review-planner routing; explicit `cr:` and L1.5 re-checks are allowed.
 Stay self-contained: do not spawn specialists, Adviser, QA, or a model escalation.
 Local React/Nest checks remain yours. Cross-boundary questions go to L2+ Handoff; framework consultation must not silently turn cr into L2.
 
-Inspect changed functions/components/hooks, necessary immediate callers/callees, local helpers, and the nearest comparable implementation.
+Inspect every requested changed hunk and changed function/component/hook, necessary immediate callers/callees, local helpers, and the nearest comparable implementation. Do not require full source/test files by default; expand for a concrete impact or exception, retaining the reason and any unchecked obligations. Explicit user/project full-file requirements take precedence. COMPLETE refers to assigned obligations, not whole-file reading.
 Own obvious runtime/null/type defects, meaningful exception handling, local responsibility/readability, reuse/duplication, and focused diff quality.
 Do not decide feature/requirement conformance, product/API design, auth matrices, transaction/idempotency architecture, audit completeness, async durability, or test strategy.
 When a question needs those judgments, retain the evidence and assign the appropriate handoff owner instead of answering it locally.

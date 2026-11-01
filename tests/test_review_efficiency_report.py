@@ -71,6 +71,21 @@ class EfficiencyTests(unittest.TestCase):
         self.assertIn('同じ読み取り範囲', html)
         self.assertNotIn('rg governance.md', html)
 
+    def test_advisor_usage_and_server_call_reach_html(self):
+        row = {"type": "assistant", "message": {"id": "advisor-response", "model": "fixture-sonnet",
+            "usage": {"input_tokens": 2, "output_tokens": 3, "iterations": [
+                {"type": "message", "input_tokens": 2, "output_tokens": 3},
+                {"type": "advisor_message", "model": "fixture-opus", "input_tokens": 70, "output_tokens": 8}]},
+            "content": [{"type": "server_tool_use", "id": "server", "name": "advisor", "input": {}}]}}
+        with self.parent.open("a") as stream:
+            stream.write(json.dumps(row) + "\n" + json.dumps(row) + "\n")
+        value = report.scan_session(self.parent)
+        self.assertEqual(112, value["usage"]["input_tokens"])
+        self.assertEqual(27, value["usage"]["output_tokens"])
+        self.assertIn("fixture-opus", value["models"])
+        self.assertEqual(1, len(value["review_boundary"]["server_tool_calls"]))
+        self.assertIn("server tool呼出: 1件", report.html_report([value]))
+
     def test_only_private_excluded_repo_output(self):
         out = self.root / 'outside' / 'report.html'
         report.safe_output(out)

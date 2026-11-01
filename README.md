@@ -265,6 +265,31 @@ Opus 5.5を使えない場合は、L2の承認を保留します。
 確認範囲、必須相談、🟢Lowまでの解消条件は減らしません。
 設定の短縮だけでは、実際の消費量や精度の同等性は証明できません。
 
+### 初回の資料確認と内部advisor
+
+担当は、注入済み・原文を読んだ節・未確認を初回に記録します。
+未注入の必須節と、適用する設計書の節・例外を先に確認します。
+既知の絶対パスは直接読み、検索0件だけで不存在としません。
+変更hunkと関数・必要な呼び出し先を確認し、必要な場合だけ範囲を広げます。
+利用者やprojectが全文確認を求めた場合は、その指示を優先します。
+
+`codex-claude-review`では、初回・再開とも内部advisorを無効にします。
+起動プロセスへ`CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1`を渡し、契約の`--settings`も保ちます。
+通常の`adviser` Agentと、そのモデル設定は変えません。
+根拠: [Claude Code公式資料「Turn the advisor off」](https://code.claude.com/docs/en/advisor#turn-the-advisor-off)。
+
+起動後と再開前、完了時に、Codexが次を実行します。
+親JSONLと同セッション配下の子JSONLを検査します。
+
+```bash
+python3 -I -B tools/summarize_claude_session.py /absolute/path/session.jsonl --check-review-boundary
+```
+
+終了コードは、0が記録上の制限一致、1が禁止ツール検出、2が記録不足です。
+1・2では承認せず、不足や違反を保持します。実行中の違反はCodexが停止します。
+これはログ検査で、起動前の通信防止やOSの隔離、レビュー承認を保証しません。
+集計は内部advisorの追加使用量も含め、通常Agentとserver toolを別に数えます。
+
 ### 設定の読み込み
 
 手順は[claude-review.yml](.codex/workflows/claude-review.yml)にあります。

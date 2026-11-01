@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 from collections import Counter, defaultdict
 from html import escape
 import json
@@ -12,6 +13,11 @@ import sys
 import subprocess
 import os
 import tempfile
+
+# -I実行でも、同じ管理元の集計関数だけを読み込みます。
+_spec = importlib.util.spec_from_file_location("claude_session_usage", Path(__file__).with_name("summarize_claude_session.py"))
+_usage = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_usage)
 
 USAGE_KEYS = (
     "input_tokens", "output_tokens", "cache_read_input_tokens",
@@ -108,10 +114,7 @@ def scan_session(parent: Path) -> dict:
                     r["model"] = msg.get("model") or r["model"]
                     usage = msg.get("usage")
                     if isinstance(usage, dict):
-                        for key in USAGE_KEYS:
-                            v = usage.get(key)
-                            if isinstance(v, (int, float)) and not isinstance(v, bool) and v >= 0:
-                                r["usage"][key] = max(r["usage"].get(key, 0), v)
+                        _usage.merge_response_usage(r, usage)
             blocks = msg.get("content", [])
             if not isinstance(blocks, list):
                 continue
@@ -161,9 +164,10 @@ def scan_session(parent: Path) -> dict:
                 elif rule and kind == "search":
                     search_access[(label, rule)] += 1
         for msg in responses.values():
-            totals.update(msg["usage"])
-            model_set.add(str(msg["model"]))
-        usage_by_agent[label] = sum(v["usage"].get("input_tokens", 0) + v["usage"].get("output_tokens", 0) for v in responses.values())
+            for component in msg.get("components", {}).values():
+                totals.update(component["usage"])
+                model_set.add(component["model"])
+        usage_by_agent[label] = sum(c["usage"].get("input_tokens", 0) + c["usage"].get("output_tokens", 0) for v in responses.values() for c in v.get("components", {}).values())
         for tool_use_id, is_error in observed_results:
             if tool_use_id in sent_ids:
                 if is_error:
@@ -173,6 +177,7 @@ def scan_session(parent: Path) -> dict:
     rerereads = sum(repeated_slices.values())
     return {
         "session_id": parent.stem,
+        "review_boundary": _usage.review_boundary(files),
         "parent_file": parent.name,
         "children": len(files) - 1,
         "agents": roles,
@@ -217,9 +222,11 @@ def html_report(results: list[dict]) -> str:
     for s in results:
         cells = [s["session_id"], s["children"], s["new_agent_calls"], s["send_calls"], *(f'{s["usage"][k]:,}' for k in USAGE_KEYS),s["same_agent_rule_repeat_accesses"]]
         parts.append("<tr>" + "".join(td(c) for c in cells) + "</tr>")
-    parts.append('</tbody></table><p class="small">各モデル応答はmessage.idで重複計上を避けています。モデル別の正確な集計には設定リポジトリ内のsummarize_claude_session.pyを使用してください。</p>')
+    parts.append('</tbody></table><p class="small">各モデル応答はmessage.idで重複計上を避け、内部advisorの追加使用量も含めています。モデル別の正確な集計には設定リポジトリ内のsummarize_claude_session.pyを使用してください。</p>')
     for s in results:
         parts.append(f'<h2>{escape(s["session_id"])} の詳細</h2>')
+        boundary = s["review_boundary"]
+        parts.append(f'<p>レビュー専用ツールの記録検査: {escape(boundary["status"])} ／ server tool呼出: {len(boundary["server_tool_calls"])}件。記録不足は適合としません。この検査はレビュー承認ではありません。</p>')
         parts.append(f'<p>担当: {escape(", ".join(s["agents"]))}</p>')
         parts.append(f'<p>モデル: {escape(", ".join(s["models"]))} ／ SendMessage結果のうちエラーなし: {s["send_result_ok"]}件、エラー: {s["send_result_error"]}件（成功判定には元ログの確認が必要です）</p>')
         parts.append('<table><thead><tr><th>担当</th><th>規則ファイル</th><th>本文参照</th><th>別の読み取り範囲</th><th>同じ読み取り範囲の再アクセス候補</th><th>検索</th></tr></thead><tbody>')

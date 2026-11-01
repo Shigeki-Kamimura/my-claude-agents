@@ -103,6 +103,32 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                      "batched-rereview-waived-or-interrupted"):
             self.assertEqual(cases.count("  - id: " + case + "\n"), 1)
 
+    def test_advisor_disabled_on_launch_and_resume_with_runtime_check(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        cli = workflow.split("\nclaude_cli:\n", 1)[1].split("\nreview_entry:\n", 1)[0]
+        self.assertIn("CLAUDE_CODE_DISABLE_ADVISOR_TOOL: '1'", cli)
+        self.assertIn('"env":{"CLAUDE_CODE_DISABLE_ADVISOR_TOOL":"1"}', cli)
+        for expected in ("--check-review-boundary", "server_tool_use", "BLOCKED", "UNCONFIRMED", "--resume"):
+            self.assertIn(expected, cli)
+        for profile in (".claude", ".claude-company"):
+            agent = read(f"{profile}/agents/code-quality-reviewer.md")
+            self.assertIn("First-pass rule intake and bounded reading", agent)
+            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
+            self.assertIn("- Intake:", core)
+            self.assertIn("User/project whole-file requirements", core)
+
+    def test_intake_and_bounded_reading_keep_all_mandatory_obligations(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        entry = workflow.split("\nreview_entry:\n", 1)[1].split("\nexecution:\n", 1)[0]
+        for required in ("required_intake:", "Rules loaded", "例外込み", "Readで直接", "UNCONFIRMED",
+                         "reading_scope:", "変更hunk", "利用者やproject規則", "未確認の義務"):
+            self.assertIn(required, entry)
+        for profile in (".claude", ".claude-company"):
+            governance = read(f"{profile}/knowledge/engineering-governance.md")
+            intake = governance.split("### First-pass rule intake and bounded reading\n", 1)[1].split("\n### ", 1)[0]
+            for required in ("not a substitute", "exceptions", "whole-file requirements still apply", "Same-owner"):
+                self.assertIn(required, intake)
+
     def test_reverse_workflow_still_has_its_own_owner(self):
         reverse = read(".codex/workflows/codex-review.yml")
         self.assertIn("claude-codex-review", reverse)

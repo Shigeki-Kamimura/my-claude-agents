@@ -75,6 +75,10 @@ ownership:
   review_only: Claudeの親とcr・qa・e2e・adv、相談先の全agentは、ソース/要件/既存結果の読取り、証拠評価、指摘、質問、不足証拠の要求だけを行います。Claude自身と相談先は型チェック・lint・format・build・unit/integration/E2E/Playwright・CI/CDの実行/再実行/操作、アプリやサーバーの起動、依存導入、migration、スクリプト実行、source/test/fixture編集、stage/commit/push/mergeを行いません。
   codex_execution_owner: Codexのみがコードとテストの作成/修正、必要な検証コマンドの選定と実行、CIの再実行・ログ取得、環境準備、差分とsnapshot証拠の取得、HTMLログ生成を担当します。Claudeが検証不足を見つけたら実行せず、必要なコマンド/ケース/期待結果/根拠をCodexに返します。Codexは実際の実行コマンド・終了コード・対象source snapshot・CI run識別子を返し、Claudeがレビューします。
 claude_cli:
+  environment:
+    CLAUDE_CODE_DISABLE_ADVISOR_TOOL: '1'
+  advisor_policy: 初回と--resumeの全回で、この環境値をClaudeプロセスへ渡します。CLIの--settingsでも同じenvを指定し、子にも継承させます。内部advisorは通常のadviser Agentと別で、この方向では無効です。通常のadviserのmodel/effortと必須相談は変更しません。managed設定を変更・迂回せず、無効化できなければBLOCKEDです。公式仕様は https://code.claude.com/docs/en/advisor#turn-the-advisor-off を参照します。
+  runtime_check: Codexは起動後の親/子JSONLをtools/summarize_claude_session.py --check-review-boundaryで確認します。api-request-shapeとadvisor_tool等の追加、通常tool_useとserver_tool_useを分けて確認します。CLI引数だけで制限済みとしません。禁止ツールの追加・呼出しはBLOCKED、記録不足はUNCONFIRMEDです。検出時はCodexがその実行を止め、承認や通常の再開に進みません。この検査は起動前の通信防止やOSの隔離を保証しません。
   cwd: 必ずレビュー対象projectを保ちます。
   argv:
   - claude
@@ -85,6 +89,8 @@ claude_cli:
   - sonnet
   - --effort
   - medium
+  - --settings
+  - '{"env":{"CLAUDE_CODE_DISABLE_ADVISOR_TOOL":"1"}}'
   - --permission-mode
   - dontAsk
   - --tools
@@ -127,6 +133,8 @@ claude_cli:
   - qa/e2eの実担当へexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。短い親依頼から設定を読み、親が実委譲時に伝えます。
   - 初回/--resumeのいずれもレビュー専用CLI制限とCodex実行責務を保持し、子agentと専門担当にも明示します。Claudeのコマンド実行・編集・CI操作を実際に検出した場合は承認不可として記録し、Codexが対処します。
 review_entry:
+  required_intake: Claudeの各実担当は実コードの判断前に、Rules loadedを1回記録します。必須資料ごとに注入済みの節・自分でReadした節・未確認を分け、出典の同一性と適用するproject設計/規約の節（例外込み）を確認します。親の既読やagent定義の要約を未注入の原文の代わりにしません。既知の絶対パスはReadで直接確認し、Globの0件だけで不存在としません。必須資料が不明なら正確なINPUT_REQUESTを返し、依存する判断はUNCONFIRMEDにします。独立した範囲は続けられます。
+  reading_scope: 全対象の変更hunkと変更した関数/責務、必要な直接caller/calleeを確認します。全ファイル・全テスト・全設計書の全文読了を一律に要求しません。影響や例外を判断できなければ必要箇所へ広げ、理由と範囲を記録します。利用者やproject規則が全文確認を明示する場合は従います。coverageは担当の義務を確認した範囲で示し、全文読了の意味でCOMPLETEを使いません。未確認の義務は残します。
   autonomy: Codexが確定したbase/HEAD、staged・unstaged・untrackedとrenameを含むGit差分・必要な元版の証拠を取得します。Claudeはその証拠をSuppliedとして扱い、Read/Glob/Grepで現ソース、要件、テスト、関連境界を独立に確認します。実装者の結論を根拠にチェックを省かず、不足があればCodexへ特定の証拠を要求します。
   scope: 明示base/除外を優先します。狭い指定がなければstaged・unstaged・untrackedを含め、index/worktreeの打消しや新規/削除/renameを落としません。
   base: Codexが実PRやproject規則から実baseを取得して出典とともに渡します。Claudeはproject規則と照合し、main等を推測しません。不明なbranch範囲は承認しません。
