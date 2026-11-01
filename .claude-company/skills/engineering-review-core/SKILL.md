@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `d04fdc53b7cd22ee5887934ddfbb395f506223721e379913f56af205641901b1`
+SHA-256: `e7900057cdc507172b15305804c881ffa4d9fbb95736bcf92eae64a6a12609a9`
 Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Evidence and reporting
 
 
@@ -43,6 +43,8 @@ This is the user-approved operational core, not Nishiguchi's wording or proof of
 For Claude owners, record resolved original paths/versions, complete injected/read sections and missing obligations in the existing `Rules loaded` record. A complete active role definition already injected into your own system prompt needs no self-Read when its correspondence to the current original path/version is verified through invocation/source evidence. The same applies to exact rule sections actually delivered in your own context. A role name, skills declaration, parent's summary or another owner's reading is insufficient. If identity, delivery or retained text is missing, recover only the necessary original clauses, including exceptions; keep dependent approval pending. Do not reread a verified definition merely to confirm your role or format the result.
 
 Use the Claude platform contract. Codex routing/model/implementation instructions in `.codex/AGENTS.md` are not a default Claude-child reading assignment. Resolve a workflow beside that file without loading its full text. Explicit project/common instructions and directly applicable cross-platform clauses still apply; read any such required originals and exceptions. In `codex-claude-review`, the coordinator reads the complete workflow once; reviewers independently read the complete original sections selected by `review_entry.role_sections`, plus any triggered cross-references. Keep the actual path/version and section keys, not a parent-written replacement contract. A narrower delivery never waives permissions, approval conditions, handoffs or the eleven-field result.
+
+In a restricted Claude review, the coordinator uses the workflow's process-local auto-compaction setting to limit accumulated input rather than disabling prompt caching. After compaction, the same owner checks retained source identities, coverage/evidence references, all open findings/questions/handoffs, specialist IDs/adoption, rule versions/read sections and verification gaps against the existing records. A compaction summary alone is not proof of reading, closure or approval. Recover only necessary missing originals with permitted tools; preserve full native logs and pending obligations. Compaction is not a new reviewer or an output/turn limit, and savings require observed request usage.
 
 On a rule-source change, the authorized coordinator compares retained old and current originals and supplies their identities, changed complete sections with exceptions, and added/removed obligations once. Each owner reads the applicable changed originals and required cross-references, reusing verified unchanged retained sections. A new whole-document hash alone is not a reason to reread every section. Missing old text or an uncertain change boundary requires permitted recovery and remains pending; never freeze outdated rules or substitute a parent summary. Report setup facts, including missing links, only from current inspection.
 

@@ -89,6 +89,9 @@ ownership:
 claude_cli:
   environment:
     CLAUDE_CODE_DISABLE_ADVISOR_TOOL: '1'
+  context_policy: このレビュー委譲の初回と--resumeだけに、--settingsのautoCompactWindow=200000を渡し、親子に適用します。優先順位の高い設定を上書きする圧縮用env/--autocompactは追加しません。約20万tokensを目安に履歴を自動圧縮する設定で、応答数の上限やmodel/effortの変更ではありません。キャッシュは無効にしません。全体設定やproject設定は変更せず、managed制限・既存env・明示的な圧縮無効設定を迂回しません。有効値が異なるか確認できない場合も未適用/未確認として報告します。無効・未対応なら効率設定は未適用と報告し、承認の根拠にしません。公式仕様は https://code.claude.com/docs/en/model-config#context-window-and-auto-compaction と https://code.claude.com/docs/en/sub-agents#auto-compaction です。
+  context_retention: 圧縮後も同じownerで、base/前回と現source、確認済みの義務・境界と根拠参照、全open ID/質問/handoff、専門回答の実IDと採否、規則の版/既読節、検証結果と未了を既存記録から復元します。圧縮要約だけで既読・解消・承認を作らず、失われた必要証拠だけ許可された原本から回収します。ログと原文を削除・改変せず、新規担当へ置き換えません。
+  context_measurement: 起動設定だけで効いたと判断せず、tools/summarize_claude_session.pyのcontext_inputs_by_transcriptで、重複除去した各応答の入力（inputとcache read/writeを含む）の件数・中央値・最大値を確認します。recorded_compaction_boundariesはJSONLに記録された圧縮境界だけを数え、0件だけで無効と断定しません。圧縮直後のcache write増加も含め総量と義務の保持を比較し、利用枠の消費率へ換算しません。
   advisor_policy: 初回と--resumeの全回で、この環境値をClaudeプロセスへ渡します。CLIの--settingsでも同じenvを指定し、子にも継承させます。内部advisorは通常のadviser Agentと別で、この方向では無効です。通常のadviserのmodel/effortと必須相談は変更しません。managed設定を変更・迂回せず、無効化できなければBLOCKEDです。公式仕様は https://code.claude.com/docs/en/advisor#turn-the-advisor-off を参照します。
   runtime_check: Codexは起動後の親/子JSONLをtools/summarize_claude_session.py --check-review-boundaryで確認します。api-request-shapeとadvisor_tool等の追加、通常tool_useとserver_tool_useを分けて確認します。CLI引数だけで制限済みとしません。禁止ツールの追加・呼出しはBLOCKED、記録不足はUNCONFIRMEDです。検出時はCodexがその実行を止め、承認や通常の再開に進みません。この検査は起動前の通信防止やOSの隔離を保証しません。
   cwd: 必ずレビュー対象projectを保ちます。
@@ -102,7 +105,7 @@ claude_cli:
   - --effort
   - medium
   - --settings
-  - '{"env":{"CLAUDE_CODE_DISABLE_ADVISOR_TOOL":"1"}}'
+  - '{"env":{"CLAUDE_CODE_DISABLE_ADVISOR_TOOL":"1"},"autoCompactWindow":200000}'
   - --permission-mode
   - dontAsk
   - --tools

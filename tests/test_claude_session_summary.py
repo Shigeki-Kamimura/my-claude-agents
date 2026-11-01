@@ -76,6 +76,34 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(1, len(value["review_boundary"]["server_tool_calls"]))
         self.assertEqual("BLOCKED", value["review_boundary"]["status"])
         self.assertNotIn("encrypted-private-body", json.dumps(value))
+        self.assertEqual({"samples": 1, "min_tokens": 124, "median_tokens": 124.0,
+                          "max_tokens": 124}, value["context_inputs_by_transcript"][child.name])
+
+    def test_context_usage_merges_streamed_updates_and_records_compaction(self):
+        first = self.response([], {"input_tokens": 2, "cache_read_input_tokens": 100})
+        update = self.response([], {"input_tokens": 2, "cache_read_input_tokens": 100,
+                                    "cache_creation_input_tokens": 20, "output_tokens": 900})
+        second = self.response([], {"input_tokens": 3, "cache_read_input_tokens": 40})
+        second["message"]["id"] = "after-compact"
+        boundary = {"type": "system", "subtype": "compact_boundary", "uuid": "compact-1"}
+        synthetic = self.response([])
+        synthetic["message"].update({"id": "synthetic", "model": "<synthetic>"})
+        self.write(self.parent, [self.shape, first, update, boundary, boundary, second, synthetic])
+        value = summary.summarize(self.parent)
+        self.assertEqual({"samples": 2, "min_tokens": 43, "median_tokens": 82.5,
+                          "max_tokens": 122}, value["context_inputs_by_transcript"][self.parent.name])
+        self.assertEqual(1, value["recorded_compaction_boundaries"][self.parent.name])
+
+    def test_missing_context_usage_is_not_reported_as_zero_sized_input(self):
+        self.write(self.parent, [self.shape, self.response([])])
+        value = summary.summarize(self.parent)
+        self.assertEqual({"samples": 0, "min_tokens": None, "median_tokens": None,
+                          "max_tokens": None}, value["context_inputs_by_transcript"][self.parent.name])
+
+    def test_empty_compaction_ids_are_counted_as_separate_records(self):
+        boundary = {"type": "system", "subtype": "compact_boundary", "uuid": ""}
+        self.write(self.parent, [self.shape, boundary, boundary])
+        self.assertEqual(2, summary.summarize(self.parent)["recorded_compaction_boundaries"][self.parent.name])
 
     def test_incomplete_or_malformed_records_do_not_pass_the_cli(self):
         for raw in ("", "[]\n", "not-json\n", json.dumps(self.response([])) + "\n"):

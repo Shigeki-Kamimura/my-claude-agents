@@ -311,6 +311,16 @@ AdviserとReact/Nestは、通常経路と意味のある失敗経路を優先し
 通常の`adviser` Agentと、そのモデル設定は変えません。
 根拠: [Claude Code公式資料「Turn the advisor off」](https://code.claude.com/docs/en/advisor#turn-the-advisor-off)。
 
+同じ委譲の初回・再開では、一時`--settings`に`"autoCompactWindow":200000`を指定します。
+管理設定や既存の圧縮用環境変数を上書きしません。
+親子の履歴を約20万トークンを目安に自動圧縮し、毎回扱う入力を抑えます。
+キャッシュは有効なままです。応答数やモデルは変えません。
+設定済みでも、動作と削減量の確認は実ログが必要です。
+集計の`context_inputs_by_transcript`で、担当別の入力中央値と最大値を確認します。
+`recorded_compaction_boundaries`は、記録された圧縮境界の件数です。
+圧縮後も全未解決事項と必要証拠を保持し、不足だけを原本から回収します。
+根拠: [Claude Code公式資料「Context window and auto-compaction」](https://code.claude.com/docs/en/model-config#context-window-and-auto-compaction)。
+
 起動後と再開前、完了時に、Codexが次を実行します。
 親JSONLと同セッション配下の子JSONLを検査します。
 

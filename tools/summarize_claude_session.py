@@ -127,13 +127,19 @@ def summarize(session_path: Path) -> dict:
     parent_responses = 0
     child_responses = 0
     messages_by_file = {}
+    context_inputs_by_file = {}
+    compaction_boundaries = {}
     send_recipients = set()
 
     for path in paths:
         layer = layer_of(path, session_path)
         layer_transcripts[layer] += 1
         responses = {}
-        for record in read_records(path):
+        compact_ids = set()
+        for index, record in enumerate(read_records(path)):
+            if record.get("type") == "system" and record.get("subtype") == "compact_boundary":
+                compact_id = record.get("uuid")
+                compact_ids.add(compact_id if isinstance(compact_id, str) and compact_id else index)
             if record.get("type") != "assistant":
                 continue
             message = record.get("message")
@@ -171,6 +177,23 @@ def summarize(session_path: Path) -> dict:
                         send_recipients.add(str(args.get("to") or "unknown"))
 
         messages_by_file[path.name] = len(responses)
+        # 出力やadvisorの別入力を足さず、主応答の入力だけを数えます。
+        inputs = []
+        input_keys = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+        for response in responses.values():
+            usage = response.get("components", {}).get("main", {}).get("usage", {})
+            count = sum(usage.get(name, 0) for name in input_keys)
+            if count > 0:
+                inputs.append(count)
+        inputs.sort()
+        count = len(inputs)
+        context_inputs_by_file[path.name] = {
+            "samples": count,
+            "min_tokens": inputs[0] if count else None,
+            "median_tokens": ((inputs[(count - 1) // 2] + inputs[count // 2]) / 2) if count else None,
+            "max_tokens": inputs[-1] if count else None,
+        }
+        compaction_boundaries[path.name] = len(compact_ids)
         for key, response in responses.items():
             response_ids.add(key)
             for component in response.get("components", {}).values():
@@ -196,6 +219,8 @@ def summarize(session_path: Path) -> dict:
         "tokens": {key: totals[key] for key in USAGE_KEYS},
         "tokens_by_model": {model: {key: counts[key] for key in USAGE_KEYS} for model, counts in sorted(usage_by_model.items())},
         "api_responses_by_transcript": messages_by_file,
+        "context_inputs_by_transcript": context_inputs_by_file,
+        "recorded_compaction_boundaries": compaction_boundaries,
         "tokens_by_layer": {
             layer: {
                 "transcripts": layer_transcripts[layer],

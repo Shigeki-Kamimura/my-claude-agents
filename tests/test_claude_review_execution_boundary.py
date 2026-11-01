@@ -2,6 +2,7 @@
 """Codex→Claudeレビュー専用の実行禁止設定を静的に検証します。"""
 
 import re
+import json
 import unittest
 from pathlib import Path
 
@@ -13,6 +14,24 @@ def read(relative: str) -> str:
 
 
 class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
+    def test_review_compaction_is_process_local_and_preserves_evidence(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        cli = workflow.split("\nclaude_cli:\n", 1)[1].split("\nreview_entry:\n", 1)[0]
+        settings = json.loads(re.search(r"(?m)^  - '(\{.*\})'$", cli)[1])
+        self.assertEqual(200000, settings["autoCompactWindow"])
+        self.assertNotIn("CLAUDE_CODE_AUTO_COMPACT_WINDOW", settings["env"])
+        environment = cli.split("  environment:\n", 1)[1].split("  context_policy:", 1)[0]
+        self.assertNotIn("CLAUDE_CODE_AUTO_COMPACT_WINDOW", environment)
+        self.assertNotIn("DISABLE_PROMPT_CACHING", cli)
+        for required in ("初回と--resume", "managed", "未適用", "全open ID/質問/handoff",
+                         "要約だけで既読・解消・承認を作らず", "削除・改変せず",
+                         "context_inputs_by_transcript", "cache write増加"):
+            self.assertIn(required, cli)
+        for profile in (".claude", ".claude-company"):
+            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
+            self.assertIn("A compaction summary alone is not proof", core)
+            self.assertIn("all open findings/questions/handoffs", core)
+
     def test_cli_forbids_execution_tools(self):
         workflow = read(".codex/workflows/claude-review.yml")
         section = workflow.split("\nclaude_cli:\n", 1)[1].split("\nreview_entry:\n", 1)[0]
@@ -187,7 +206,8 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         workflow = read(".codex/workflows/claude-review.yml")
         cli = workflow.split("\nclaude_cli:\n", 1)[1].split("\nreview_entry:\n", 1)[0]
         self.assertIn("CLAUDE_CODE_DISABLE_ADVISOR_TOOL: '1'", cli)
-        self.assertIn('"env":{"CLAUDE_CODE_DISABLE_ADVISOR_TOOL":"1"}', cli)
+        settings = json.loads(re.search(r"(?m)^  - '(\{.*\})'$", cli)[1])
+        self.assertEqual("1", settings["env"]["CLAUDE_CODE_DISABLE_ADVISOR_TOOL"])
         for expected in ("--check-review-boundary", "server_tool_use", "BLOCKED", "UNCONFIRMED", "--resume"):
             self.assertIn(expected, cli)
         for profile in (".claude", ".claude-company"):
