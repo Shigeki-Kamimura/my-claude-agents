@@ -21,6 +21,26 @@ Purpose: improve the **existing Codex L1.5 (`code-quality-reviewer`) and L2+ (`a
 
 Apply both lenses **only within the assigned role's scope**. The implementer's claim and prior verdict are starting context, never proof. Consider a plausible counterexample, then inspect the actual validation/filter/guard or producer that could refute it. Do not turn hypothetical examples into blocker findings.
 
+## Scope-preserving incidental signals and handoffs
+
+A reviewer may **notice** a problem owned by another layer during authorized inspection. Noticing it does not authorize conducting that layer's review, changing the finding's owner, starting a new agent, or asserting that layer's coverage is complete.
+
+- **Owned finding:** The current layer has concrete evidence within its responsibility; report and classify it under that layer's existing verdict rules. Never relabel a local defect as a handoff to force local approval.
+- **Incidental cross-layer signal:** When the changed symbol, user-facing copy, event type, or adjacent code directly reveals a possible downstream mismatch, record the observed source and exact question for the proper owner. At most a **bounded exact-reference lookup within existing file/search budgets** may confirm the direct relationship; do not search all tests, reproduce the entire flow, or judge QA/E2E adequacy. No new mandatory cross-layer search is created.
+- **Handoff contract:** `Owner/route | Source revision and observed path:line | Specific mismatch and possible impact | Evidence already inspected | Required confirmation`. Clearly mark `HANDOFF / PENDING` or `UNCONFIRMED` instead of counting it as an owned finding. A confirmed prior/other-layer blocker remains in the shared ledger with its owner and status; do not quietly discard or downgrade it.
+- **Verdicts:** A locally complete CR may use its existing `L1.5_APPROVE_WITH_NOTES` when **only explicit other-owner handoffs** remain. This does not close those handoffs or certify overall PR/merge readiness. A missing required **local** check or confirmed local defect keeps CR non-approved; missing required cross-layer evidence remains pending for the coordinator and designated owner.
+- **No implicit execution:** Handoff is a record for an already authorized review/verification workflow, not permission to launch ADV, QA, E2E, tests, CI, or a Claude session. The next owner performs its own evidence check and maintains actual invocation records.
+
+### Calibration example: GuildBoard growth-history PR #1006
+
+This is an **example of ownership**, not a universal project rule or proof of any model's inherent ability. Revalidate the relevant source revision before using it as a regression test.
+
+| Observed condition | Owner | Correct layer behavior |
+| --- | --- | --- |
+| Negative status display copy changed while a directly related Playwright expectation retained the old phrase | `e2e-qa` | CR can relay the exact code/expectation pair if encountered incidentally; **does not** run E2E, perform test-sufficiency review, or create a local CR blocker solely from that pair |
+| Two changed files unexpectedly showed executable-bit metadata `100755 -> 100644` | `code-quality-reviewer` | CR checks the diff metadata for paths already under review; flag only an unintended change with a reason, not every permission change as a bug |
+| Old status-correction event type also gained "decrease" wording, but documentation coverage was questioned | `adviser` | CR relays the changed event-kind/condition; ADV checks whether the authoritative spec already covers it and whether any update is genuinely required, without inventing a missing rule |
+
 ## L1.5 owner: code-quality-reviewer (`cr:`)
 
 Use this focused matrix for **changed functions/components and immediate context**:
