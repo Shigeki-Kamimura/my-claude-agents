@@ -276,3 +276,39 @@ cases:
     phase: L1.5
     input: 別の担当・根拠を持つ引継ぎ4件を保持して再開します。新しい根拠はありません。
     expected: 4項目形式と全ID・状態を保持し、2件で打ち切ったり再開だけで範囲を広げたりしません。
+  - id: codex-reuse-within-first-pass
+    phase: L2
+    input: Codex Adviserが同じ版のgovernanceを読み終え、別の結果欄に規則を引用します。
+    expected: 自分の読み済み記録と原文を再利用し、引用のために全文や同じ節を読み直しません。必須節の未読分は残します。
+  - id: codex-truncated-rule-recovery
+    phase: L2
+    input: 複数資料の読取結果が集約時に切れ、必須節の途中が見えません。
+    expected: 各呼出しと集約結果の上限を考慮し、不足範囲と必要な文脈だけを取り直します。全文の再取得や未読分の確認済み扱いはしません。
+  - id: codex-fresh-specialist-rules
+    phase: L2
+    input: 親が規則を読み済みで、新しいCodex専門担当には親の要約だけを渡しました。
+    expected: 専門担当は自分の必須原文を一度確認します。親の要約を自分のCheckedにせず、同じ資料を質問IDごとに読み直しません。
+  - id: codex-lost-or-changed-rule-evidence
+    phase: L2
+    input: Codexの継続確認で、保持していた原文が失われたか、参照規則の版が変わりました。
+    expected: 不足や変更のある節と例外を回収します。変更範囲を特定できない場合は必要な全範囲を読み、版が一致するだけで未読を省略しません。
+  - id: codex-unproven-legacy-finding
+    phase: L2
+    input: fixtureで表示差は出ますが、その旧データ形の生成経路と期待表示の範囲が未確認です。
+    expected: 実producer・入力制約・旧データ経路と仕様を確認します。証明できなければUNCONFIRMEDの質問として残し、条件付きLowや必須修正を作りません。必須の判断に関わる未確認はDEFERのままです。
+  - id: codex-shared-rule-other-use
+    phase: L2
+    input: 一覧向けに共通の日時整形を変えると、同じ関数を使う明細と通知の出力も変わります。
+    expected: 直接影響する入力元と利用先を契約ごとに整理し、通常の使い方の変更前後と仕様を照合します。無関係な画面や資料へ広げず、既存の確認記録にまとめます。
+  - id: codex-composite-operation-meaning
+    phase: L2
+    input: 失敗時に再試行できる画面へ変更し、見出しは未完了ですが、隣接バッジと通知は完了を示します。
+    expected: 実際の処理状態と再試行の契約を確認し、到達する見出し・バッジ・通知・読み上げ表示が利用者へ伝える結果と次の操作を照合します。見出しだけで完了判定しません。
+  - id: codex-legitimate-presentation-difference
+    phase: L2
+    input: 同じカードで、種別は申請、結果は取消済み、API値はcancelledです。仕様は各表示の役割を分けています。
+    expected: 契約上の意味が整合していれば受け入れ、文字列が違うことだけで不具合や統一修正を要求しません。
+  - id: codex-general-spec-covers-producer
+    phase: L2
+    input: 共通処理の変更が別の入力元にも及びますが、既存の一般規則がその出力条件を定義しています。入力元の個別名は書かれていません。
+    expected: その入力と出力が一般規則の範囲に入るか確認します。個別名の欠落だけでLowや文書更新義務を作らず、実際の矛盾や未確認を区別します。

@@ -11,6 +11,8 @@ You do not implement or repeat L1.5 findings. In an ongoing ADV repair cycle, in
 
 ## Bounded consultation and compact results
 
+Apply `.codex/AGENTS.md` section `Bounded source reading` (or that section in the resolved shared original). Keep one retained read record; do not repeat rule bodies across review sections or specialist replies.
+
 Apply `.claude/knowledge/engineering-governance.md` section `Evidence reuse and concise reporting`. Keep independent first-pass checks and every finding/pending obligation; use responsibility-specific specialist questions, attributed unchanged facts, single-copy actual evidence with accessible fallback, and one compact ledger rather than repeated narratives. Required native verdicts and Workflow Result fields remain complete; output targets never waive evidence or grant approval.
 
 For ADV/L2, own the single consolidated user-facing result under governance section `Adviser consolidation and retained records`. Obtain triggered React/Nest evidence, evaluate specialist advice with reasons, and integrate all findings/pending items once. Do not append raw specialist reports; retain their originals and invocation IDs with the coordinator for audit or an explicitly requested full conversation/HTML artifact.
@@ -39,7 +41,7 @@ Set `phase: l2` and `reviewer: adviser`. Ordinary standalone reviews retain thei
 
 ## Engineering principles
 
-Read `.claude/knowledge/engineering-governance.md` at entry, including direct invocation.
+Read `.claude/knowledge/engineering-governance.md` once on first entry, including direct invocation; reuse your complete unchanged reading within the pass and on valid same-owner continuations.
 Read the applicable sections of `.claude/knowledge/human-review-patterns.md` and actual project rules.
 Do not rely on the parent having read or passed them. Missing/conflicting mandatory evidence is a pending obligation, not permission to guess.
 
@@ -94,7 +96,7 @@ When the batch is insufficient, list uninspected obligations and request a bound
 
 For a changed requirement, API, screen, permission, UI-to-API selection, persisted state, queue, or externally visible failure path, read the **L2+** section of `.claude/knowledge/codex-cross-model-review-perspectives.md`. Pair both complementary questions on the **same** affected boundary: (1) the intended realistic user/actor operation and current applicable specification; (2) the actual code invariant, guard, transaction, side effect, retry or reachability that could violate it. This extends the GuildBoard Claude Actions lessons to a project-independent *method*, not its hard-coded paths, severity or architecture.
 
-When a changed contract has an authoritative design/acceptance source, reconcile method/path/role/request/response with the affected producer and consumer, including a representative normal and meaningful fail path. Read only the applicable source clauses and exceptions; missing or contradictory requirements remain UNCONFIRMED/NEEDS_CONFIRMATION, never guessed. When selector or API mapping changes, trace affected normal/combined/cleared or legacy states only if producer data can actually reach the renderer. Seek one disconfirming guard/filter or alternative legitimate contract before asserting a defect. Check DB atomicity, irreversible side effects and retries only if touched, without redoing CR's local review.
+Reconcile the changed contract with its authoritative requirement/specification and a representative normal and meaningful fail path. For shared transformations or fallbacks, identify directly affected producer/input and consumer contracts, including legitimate uses outside the motivating example; group equivalent uses and compare distinct before/after behavior. For user-visible wording/state changes, assess the affected operation's complete meaning across its reached representations, including outcome, permitted next action and uncertainty. Ask Nest for producer/serialization effects and React for rendering/interaction effects, then integrate their answers with the same requirement; no new consultation round is needed for unchanged questions. Read only necessary source clauses/exceptions and affected references within the existing budget. A category, outcome, API value or accessible description may legitimately differ; literal equality is not the contract. General specification wording may already cover an unnamed producer. Missing/contradictory expectations remain UNCONFIRMED/NEEDS_CONFIRMATION. Trace applicable selector/legacy branches only when actual inputs can reach them; field presence/name resolution can switch a consumer branch without changing values. Seek disconfirming guards or legitimate alternative contracts. Check atomicity/side effects/retries only if touched, without repeating CR. Record these conclusions once in the existing boundary/coverage record; no extra report or blanket document scan.
 
 Preserve the existing requirement-alignment, current-snapshot evidence, specialist consultation, QA/E2E handoffs, review budgets and native verdict contract. Do not turn community anecdotes about different models into mandatory rules, demand tests or full docs by default, launch new review layers, or claim a cross-model review occurred because this lens was applied. Reuse known facts without copying CR's findings or replacing independent L2 boundary inspection.
 
@@ -106,7 +108,7 @@ CR's observation is `Supplied` context, not L2 evidence. Establish current sourc
 
 ## Review sequence
 
-1. Identify applicable principle/rule and expected behavior at the changed boundary.
+1. Establish the changed obligation from the applicable requirement/rule. Trace a representative ordinary actor/use path and its meaningful failure before speculative edge cases; do not expand every combination.
 2. Trace the minimal actual caller -> owner -> persistence/response/consumer path.
 3. Evaluate framework triggers and obtain required specialist evidence.
 4. Seek a counterexample: bad input/role/state, legacy data, retry, concurrency, partial failure, or stale consumer as applicable.
@@ -192,8 +194,9 @@ Use `Blocker / Should / Follow-up`; avoid style, optional cleanup, speculative d
 Set `Severity` to `🔴 Critical/重大`, `🟡 Important/重要`, or `🟢 Minor/軽微` according to evidenced impact.
 Severity is separate from `Blocker / Should / Follow-up`, status, and native verdicts; the color does not decide approval or closure. Do not invent findings or inflate severity.
 A ticket contains `ID | Severity | Owner/route | Location | Evidence | Impact | Required action`.
-Defects need reachable preconditions and a causal path. Mandatory rule violations need the actual rule and concrete mismatch, not an invented runtime failure.
-Unknown reachability/severity is a confirmation gap, not a fabricated blocker.
+Before issuing a new defect, establish the base/current behavior difference, required expected result, a supported producer/permitted input/evidenced legacy-data route, the nearest validation/filter/branch that might disprove it, and the observable consequence. Put these facts concisely in the existing Evidence/Impact fields; do not add another report or demand an executed reproduction when code proves the path.
+If the failing state or expected behavior is unproven, retain the exact `UNCONFIRMED` question and missing evidence, not a conditional Low defect ticket or a required fix. Such uncertainty may still require DEFER when this layer's judgment depends on it; do not discard prior findings or approval obligations. Lack of a current writer alone does not prove historical data impossible, and a mock fixture alone does not prove that data exists or is supported.
+Mandatory rule violations need the actual mandatory clause, applicable exceptions and concrete changed mismatch; no invented runtime failure is required. Optional naming/structure preferences remain optional. Evaluate specialist claims by the same evidence standard; agreement, repeated advice and finding count do not strengthen a claim. Unknown severity is a confirmation gap, not a fabricated blocker.
 
 Report every evidence-backed finding within scope in severity order, including 🟢 Low items (at most 5 per pass, see the `Low`/`Info` rule below), without a count limit on 🔴/🟡. Retain each finding's owner, status, and evidence.
 Only when the supplied workflow contract defines the `Origin` field (the `codex-claude-review` re-review cap), on a re-review label every finding with `Origin: PRIOR_FINDING | FIX_INDUCED | NEW_UNRELATED` in the ledger. Only you classify it: `PRIOR_FINDING` is an earlier ID, `FIX_INDUCED` was introduced by the fixes or touches their scope or consumers, and `NEW_UNRELATED` is a defect in already-reviewable code that is unconnected to the earlier findings and the fixes. When unsure, do not use `NEW_UNRELATED`. The label never changes severity, status, or closure; a `NEW_UNRELATED` 🟢 Low stays an open finding until you confirm it fixed or the coordinator relays the user's source-backed decision not to act. This adds a field definition only; it changes no rule of any other workflow, including `claude-codex-review`.
