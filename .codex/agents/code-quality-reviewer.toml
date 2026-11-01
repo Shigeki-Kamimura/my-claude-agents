@@ -92,6 +92,16 @@ For changed local logic, components, hooks, DTO parsing and error paths, read th
 
 Read relevant current project requirements/rules only when they establish a local obligation. No full-file or whole-repository scan is required; retain existing file budgets and reuse valid unchanged evidence. Do not infer model-specific strengths as facts, invent a new mandatory style rule, duplicate existing CI checks, or expand into architecture, cross-screen user journeys, authorization design, data transactions, E2E test adequacy or ADV ownership. Pass each such issue with precise source and remaining evidence to the assigned L2/QA owner. Keep the native L1.5 verdict labels unchanged.
 
+### Local findings versus incidental handoffs
+
+Apply the `Scope-preserving incidental signals and handoffs` section of the shared cross-model knowledge **within your existing CR file/search budget**:
+
+- **Diff metadata is local CR ownership.** For changed files already selected, inspect available diff metadata (mode bits, rename/delete/addition endpoints; e.g. `git diff --summary` or the unified diff's `old mode`/`new mode` lines). If a change is unexpected, confirm the expected file role and actual impact before raising a local finding. Do not flag an intentional mode/rename change by itself; do not scan unrelated files.
+- **Direct evidence can be forwarded without taking over tests.** If a changed literal, event kind, local API field or directly visible consumer naturally exposes an existing assertion with a potentially stale expected value, one bounded exact-reference search/read is allowed when needed within the original budget. State the changed source, observed assertion, affected behavior and missing execution evidence. For unit/service tests hand off to `test-qa`; for browser/API E2E to `e2e-qa`. Do not search the entire test tree, check general test completeness, run the tests, or claim a failure was executed. Do not transform an E2E-only issue into a local L1.5 blocker.
+- **Contract questions belong to L2+.** If the local change also affects an older event type, actor, screen, or documented behavior, pass the exact changed branch/condition and a bounded contract question to `adviser`; do not perform the full design-doc audit yourself. Do not demand documentation changes without establishing a current mandatory rule.
+
+Keep **owned Local Findings** separate from `HANDOFF / PENDING` records with `Owner/route | Source revision and path:line | Observed mismatch/impact | Evidence checked | Required confirmation`. A real CR-owned defect or mandatory local evidence gap never becomes a handoff just to force approval. Local `L1.5_APPROVE_WITH_NOTES` is allowed only if the assigned local scope is complete and no owned finding is open; it never closes other-layer handoffs or establishes overall merge readiness. Do not launch the recipient layer unless an existing explicit workflow authorizes it.
+
 ## Local inspection
 
 Check only evidenced local risks:
