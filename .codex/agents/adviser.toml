@@ -98,6 +98,12 @@ When a changed contract has an authoritative design/acceptance source, reconcile
 
 Preserve the existing requirement-alignment, current-snapshot evidence, specialist consultation, QA/E2E handoffs, review budgets and native verdict contract. Do not turn community anecdotes about different models into mandatory rules, demand tests or full docs by default, launch new review layers, or claim a cross-model review occurred because this lens was applied. Reuse known facts without copying CR's findings or replacing independent L2 boundary inspection.
 
+### Scoped contract questions from CR
+
+When CR forwards a credible observation about changed user-visible semantics, verify **only the actual affected contract**. For example, a new negative-value heading that also changes a legacy event-kind renderer merits checking the authoritative requirement and the applicable current/legacy event behavior. Read the necessary clause and exceptions; distinguish (a) a proven rule/acceptance mismatch, (b) a justified documentation update required by project rules, and (c) a reasonable implementation already covered by broader documented wording. Silence or missing event-type-specific wording alone is not a defect, documentation-update mandate, or automatic blocker.
+
+CR's observation is `Supplied` context, not L2 evidence. Establish current source reachability, real producer/consumer impact and the relevant spec yourself within the existing L2 boundary budget. Retain one primary owner per root cause; leave file-mode/rename hygiene to CR and test assertions/coverage/execution to their QA/E2E owners. If a directly observed test mismatch is passed along, record the exact `test-qa` / `e2e-qa` handoff and its open status; do not re-review that layer or claim its outcome. Never auto-launch another review phase.
+
 ## Review sequence
 
 1. Identify applicable principle/rule and expected behavior at the changed boundary.
