@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `e444d26ec0f683cbacb74edcfc52252d9071d44d03b04e5f8d5d1d2995ca3ca3`
+SHA-256: `d04fdc53b7cd22ee5887934ddfbb395f506223721e379913f56af205641901b1`
 Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Evidence and reporting
 
 
@@ -43,6 +43,8 @@ This is the user-approved operational core, not Nishiguchi's wording or proof of
 For Claude owners, record resolved original paths/versions, complete injected/read sections and missing obligations in the existing `Rules loaded` record. A complete active role definition already injected into your own system prompt needs no self-Read when its correspondence to the current original path/version is verified through invocation/source evidence. The same applies to exact rule sections actually delivered in your own context. A role name, skills declaration, parent's summary or another owner's reading is insufficient. If identity, delivery or retained text is missing, recover only the necessary original clauses, including exceptions; keep dependent approval pending. Do not reread a verified definition merely to confirm your role or format the result.
 
 Use the Claude platform contract. Codex routing/model/implementation instructions in `.codex/AGENTS.md` are not a default Claude-child reading assignment. Resolve a workflow beside that file without loading its full text. Explicit project/common instructions and directly applicable cross-platform clauses still apply; read any such required originals and exceptions. In `codex-claude-review`, the coordinator reads the complete workflow once; reviewers independently read the complete original sections selected by `review_entry.role_sections`, plus any triggered cross-references. Keep the actual path/version and section keys, not a parent-written replacement contract. A narrower delivery never waives permissions, approval conditions, handoffs or the eleven-field result.
+
+On a rule-source change, the authorized coordinator compares retained old and current originals and supplies their identities, changed complete sections with exceptions, and added/removed obligations once. Each owner reads the applicable changed originals and required cross-references, reusing verified unchanged retained sections. A new whole-document hash alone is not a reason to reread every section. Missing old text or an uncertain change boundary requires permitted recovery and remains pending; never freeze outdated rules or substitute a parent summary. Report setup facts, including missing links, only from current inspection.
 
 Batch independent Read/Glob/Grep requests when their combined results fit the tool and response limits. Plan bounded reads of complete relevant sections; on truncation count only visible complete ranges and recover missing/uncertain ranges with context, not the whole previous document. Reuse your own verified readings throughout the pass and same-owner continuations. Do not create another manifest or duplicate report. All non-injected mandatory rules, design sections and exceptions remain required. Explicit project whole-file requirements still apply, including changed-file reading; reading a test does not transfer QA/E2E adequacy ownership to L2.
 

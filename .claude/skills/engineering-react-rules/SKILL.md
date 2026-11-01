@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `e444d26ec0f683cbacb74edcfc52252d9071d44d03b04e5f8d5d1d2995ca3ca3`
+SHA-256: `d04fdc53b7cd22ee5887934ddfbb395f506223721e379913f56af205641901b1`
 Included sections: ASYNC-1: Promise aggregation does not cancel work, HTTP-1: Distinguish authentication and forbidden access
 
 

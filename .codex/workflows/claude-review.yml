@@ -44,9 +44,9 @@ single_layer:
     Workflow Resultのinvocation_evidenceに、文字列 mode=single-layer phase={phase} を必ず含めてください。
     前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
     再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
-    規則の原文が変わった場合だけ出典を更新: {changed_rule_source_identity}
+    規則変更時だけ新旧出典と変更節の参照（review_entry.rule_delta_delivery）: {changed_rule_source_identity}
     新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
-    修正差分と予定した検証結果をまとめて（対象source・狭い参照先・限界を含む）: {fix_and_verification_evidence}
+    指摘ID→変更箇所→再確認する義務と検証結果（対象source・狭い参照先・限界）: {fix_and_verification_evidence}
     通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
   continuation_prompt_template: |
     {prefix}: 未完了のレビューを続けてください。理由: {continuation_reason}
@@ -134,9 +134,9 @@ claude_cli:
     Workflow: codex-claude-review
     再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
     前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
-    規則の原文が変わった場合だけ出典を更新: {changed_rule_source_identity}
+    規則変更時だけ新旧出典と変更節の参照（review_entry.rule_delta_delivery）: {changed_rule_source_identity}
     新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
-    修正差分と予定した検証結果をまとめて（対象source・狭い参照先・限界を含む）: {fix_and_verification_evidence}
+    指摘ID→変更箇所→再確認する義務と検証結果（対象source・狭い参照先・限界）: {fix_and_verification_evidence}
     通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
   continuation_prompt_template: |
     {prefix}: 未完了のレビューを続けてください。理由: {continuation_reason}
@@ -176,6 +176,7 @@ review_entry:
   comparison_basis: 利用者が許可したstaged-baseline方式ではCodex/HQが安全に固定した初回indexを使います。Codexは実baseに対する初回index差分と修正後のunstaged/untrackedを別々に取得し、元版・snapshot情報を渡します。ClaudeはRead等で現版を独立確認し、差分と過去の指摘を比較します。元内容や基準が失われたら確認不能です。
   no_packaging_gate: コマンド権限を持たないClaudeへCodexが必要なGit差分とsnapshotを一度渡すことは必須です。一方、レビューごとの巨大なmanifestや全文packet、未変更資料の再送や毎回のhash照合は行いません。必要な根拠だけ追加取得します。
   source_delivery: 初回依頼のreview_source_evidenceには、実baseと出典、HEAD、現working sourceの識別情報、対象と除外、staged・unstaged・untrackedを区別した差分・必要な元版の読取先を短く渡します。rename/削除の元側と新規内容も含め、同一資料は参照します。Codexが取得した証拠をSuppliedとして渡すもので、Claudeの独立した現コード確認を代替しません。取得不能な項目は理由付きで未確認とし、可能な独立確認は続けます。読取専用を理由に差分を省略せず、巨大manifestや専用形式は必須にしません。
+  rule_delta_delivery: 規則変更時は、Codexが保持済みの旧原文と現原文を比較し、新旧の出典・同じ種類のhash、変更した完全な節と例外の参照、追加/削除した義務を一度渡します。新hashだけで全員へ全文再読を依頼しません。各担当は自分に適用される変更節・必要な相互参照を確認し、不変な既読節を再利用します。旧原文が失われた場合や変更範囲を特定できない場合は、必要範囲の回収を省かず未確認を残します。更新規則を無視・固定して承認せず、原本の代わりに親の要約を使いません。リンク不在等の設定事実は今回の現物確認だけを伝え、古い記録を現在の事実として転記しません。
   fallback: Git/規則/元内容/認証/環境が取得不能なら正確な不足を返します。必要な部分だけ補い、同じ担当で続けます。任意の包装がないだけでは停止しません。
   git_inspection: Codexは--no-ext-diff/--no-textconv等でGit差分を安全に取得し、snapshotと出典を提示します。Claude親子はBash/gitコマンドを実行せず、Read/Glob/Grepで元の実コードを閲覧します。
 execution:
@@ -186,6 +187,8 @@ review_cycle:
   fix: 初回レビュー完了後にCodexが全指摘を一括修正し、必要な予定済み検証を行います。その結果（失敗を含む）がそろってから、修正差分と検証結果を一度に元の同じ親子へ渡します。ファイル/テスト編集ごとの再起動、修正だけの先行依頼、結果だけの不要な後送を避けます。全テスト成功を一律の再依頼条件にはしません。
   rereview_inputs: 対象の修正差分（staged/unstaged/untrackedの区別、新規内容、実source identityを含む）、正確な利用者回答と出典・制約、実コマンド・ケース・終了コード・検証対象source、結果と限界を一緒に渡します。既知の未変更範囲は再利用し、既読の不変資料や全logは再送しません。短い依頼と狭い参照先または必要な抜粋で満たせます。巨大manifest、全差分・全テスト本文の転送、毎回のhash照合は必須にしません。
   rereview: 短く再依頼し、元の子が前回確認したsource/指摘と現在の実差分・影響範囲を比較します。無関係な全面再探索を繰り返しません。
+  impact_mapping: Codexは既存の依頼/台帳に、指摘IDまたは変更義務→変更hunk/責務→影響するcaller/consumer・テスト・規則→検証と未了を短く対応づけます。担当が実差分と旧確認範囲から独立に確かめ、必要なら広げます。新しい報告書や全ファイル一覧は作りません。未変更の保留は再列挙・再調査せずID参照で保持し、新証拠や依存変更がある場合だけ再確認します。テスト/仕様/規則変更時の既存の再確認義務、全open ID、他ownerの義務は省略しません。
+  origin_evidence: 担当は返答前にOriginと根拠を照合します。PRIOR_FINDINGは元ID、FIX_INDUCEDは修正による発生か修正範囲/consumerとの関連かを、新旧の証拠で区別して一言添えます。後者だけで「修正が発生させた」と断定しません。新しくLowを付ける場合は新たな義務/証拠を示し、既存Infoの付け替えをしません。不明なら不明のまま保持し、指摘や必須義務を削りません。分類権限と既存Origin定義・上限は変更しません。
   verification_evidence: 検証に使ったtest/scriptの狭い参照先、または判断に必要なassertionと読み込み対象を、再依頼時にClaudeの許可されたRead範囲で同時参照できるようにします。ケース名やPASS表示だけで検証内容を証明せず、verifierが実際に読み込んだ対象と検証sourceの対応を示します。除外されたreports全体の許可や無関係なログ公開は行わず、必要箇所だけ参照可能にします。Claudeは実行せず、Codexの提示証拠として評価します。
   rereview_exceptions: 利用者が検証不要と明示した場合、検証不能・失敗・未実行・部分中断は、NOT_RUN/FAILED/PARTIAL等の実状態・理由と未了義務を保持します。成功や閉鎖に読み替えません。レビュー判断が先に必要な追加質問、利用者の明示指示など根拠のある例外は、通常の一括提供と区別して理由と残りを示し、必要な同じ担当へ先に確認できます。単層のhandoffや他層の独立承認を代替しません。
   rereview_cap: 再レビューは前回指摘の解消確認と、修正が導入した問題を中心にします。担当レビュアー(cr/qa/e2e/adviser。convergence専用のagentであるreviewerではありません)は、再レビューの各指摘に出力欄Origin(PRIOR_FINDING、FIX_INDUCED、NEW_UNRELATED)を付けます。分類は担当レビュアーだけが行い、Codexは推測も変更もしません。Originの定義は、cr(code-quality-reviewer)、qa(test-qa)、e2e(e2e-qa)、adviserの各agent定義にあります。Originがない指摘には上限を適用せず、通常どおり修正します。Origin NEW_UNRELATEDの🟢Lowは、層(phase)ごとに、四層昇格や新しい初回、単層の進行をまたいで通算1回だけ追加で受けて修正します。通算1回のカウンタは、Codexの調整状態として、phase(l1_5、qa、e2e、l2)ごとに1つずつ、Codexの親sessionが持つ指摘台帳のphase別項目に保持します。担当レビュアーのWorkflow Resultには持たせません。それ以降のNEW_UNRELATEDの🟢は自動修正せず一覧にして、そのphaseのCodexの調整状態をNEEDS_USER_INPUTとします。担当レビュアーのWorkflow ResultはREQUEST_CHANGESとopen IDのままで、Codexは書き換えません。上村さんの判断まで閉じず、承認しません。新規の🔴🟡は上限の対象外です。先送りではなく、上限到達時の判断依頼です。上村さんが対応しないと明示した場合は、新しい状態を作らず、その出典付きの指示を根拠に、担当レビュアーが取り下げを確認してreviewer_withdrawnとします。
@@ -194,6 +197,7 @@ review_cycle:
 consultation:
   required: L2の該当React/Nest境界は初回に必要な独立相談を行います。実装時の相談を流用せず、単層のadvでも省略しません。
   batch: adviserは最小限の実境界・規則・phase/snapshotが分かった時点で、ReactのUI/state/render、Nestのproducer/validation/serializationへ責務別の質問をまとめます。全frameworkの詳細調査や指摘の確定まで依頼を遅らせません。相談はframework・phase・同じ証拠ごとに一度とし、変更・未回答だけ再開します。
+  delta_questions: 再相談は、同じ専門担当へ質問ID・前回確認範囲・今回の変更hunkと責務・必要な検証/規則変更だけを渡します。PR全体や他担当の全文回答を一律に再送しません。専門担当は自分の境界と反証を確認し、追加範囲が必要なら理由を示して広げます。必須の独立初回相談、変更で再開する義務、未回答の問いは省略しません。現証拠で依存変更がない未回答の仕様は保持し、答えを探索し直しません。
   completion: 前景のAgent呼出しを優先します。実schemaにrun_in_backgroundがあればfalseを使い、親のphase起動にも同じ方針を使います。model/effortや許可toolは変更しません。直接相談が使えなければSPECIALIST_REQUESTをまとめて親へ返し、親が実回答を受領してアクセス可能な原文・実IDを一度に同じadviserへ戻します。起動確認や回答待ちは未完了です。許可された完了通知・待機機能を使い、状態照会・原文再投入・統合催促を繰り返しません。待機のためのtool追加、全体設定変更、待機専用agentは作りません。取得不能なら実IDと途中証拠、正確な不足機能と未了義務を残し、承認しません。
   integration: 実回答の受領後にadviserが一度で統合します。必要な追加相談は変更・未回答の問いに限ります。親は担当の判定・変更点・残件を短く伝え、詳細回答を再説明しません。全未解決・native verdict・11項目は維持し、同じ台帳を参照します。
   scope: 専門担当は担当境界に限定し、出典・版・元担当のある未変更事実は活用します。未解決や変更箇所以外の重複調査を避けます。

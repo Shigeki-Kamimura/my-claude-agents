@@ -65,6 +65,8 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                 self.assertIn("{fix_and_verification_evidence}", resume)
                 self.assertIn("{new_answers_or_constraints}", resume)
                 self.assertIn("{rereview_exception}", resume)
+                self.assertIn("review_entry.rule_delta_delivery", resume)
+                self.assertIn("指摘ID→変更箇所→再確認する義務", resume)
                 if name == "single_layer":
                     self.assertIn("Mode: single-layer {phase}", resume)
 
@@ -131,6 +133,37 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                 self.assertIn("Matching identity permits reuse only for complete sections", governance)
                 self.assertIn("independent first owners for new phases", governance)
                 self.assertIn("reverse `claude-codex-review` fresh-round contract", governance)
+
+    def test_rule_delta_reuse_requires_originals_and_preserves_recovery(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        delivery = re.search(r"(?m)^  rule_delta_delivery: (.+)$", workflow)[1]
+        for required in ("旧原文", "同じ種類のhash", "完全な節と例外", "追加/削除した義務",
+                         "旧原文が失われた", "未確認", "親の要約", "今回の現物確認"):
+            self.assertIn(required, delivery)
+        for profile in (".claude", ".claude-company"):
+            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
+            for required in ("retained old and current originals", "changed complete sections with exceptions",
+                             "added/removed obligations", "required cross-references",
+                             "Missing old text", "never freeze outdated rules"):
+                self.assertIn(required, core)
+
+    def test_delta_consultation_and_origin_keep_independence_and_open_items(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        mapping = re.search(r"(?m)^  impact_mapping: (.+)$", workflow)[1]
+        for required in ("独立に確かめ", "必要なら広げ", "テスト/仕様/規則変更", "全open ID", "他owner"):
+            self.assertIn(required, mapping)
+        questions = re.search(r"(?m)^  delta_questions: (.+)$", workflow)[1]
+        for required in ("前回確認範囲", "反証", "必須の独立初回相談", "未回答"):
+            self.assertIn(required, questions)
+        origin = re.search(r"(?m)^  origin_evidence: (.+)$", workflow)[1]
+        for required in ("元ID", "新旧の証拠", "既存Info", "不明", "既存Origin定義・上限は変更しません"):
+            self.assertIn(required, origin)
+        for profile in (".claude", ".claude-company"):
+            governance = read(f"{profile}/knowledge/engineering-governance.md")
+            for required in ("independently validates this mapping", "every open item",
+                             "scope overlap alone does not prove causation",
+                             "does not add a routine classification-only round"):
+                self.assertIn(required, governance)
 
     def test_batched_delivery_is_scoped_and_reaches_both_preloads(self):
         for profile in (".claude", ".claude-company"):
