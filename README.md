@@ -482,6 +482,16 @@ CodexからClaudeへのレビューでは、各phase初回に2資料の解決済
 
 公式仕様: [Claude Code — Preload skills into subagents](https://code.claude.com/docs/en/sub-agents#preload-skills-into-subagents)
 
+Claudeの各担当は、原本と対応を確認できる注入済みの自己定義・規則を再取得しません。初回の親がworkflow全文を確認し、各担当へ原本の場所・版・担当する節を渡します。各担当は`review_entry.role_sections`が指定する原文と例外を自分で読みます。Codex用`AGENTS.md`の全文を一律には課しません。project共通指示、未注入の必須節、設計書、変更ファイル全文を求める規則は維持します。
+
+Adviserは最小限の境界確認後、ReactとNestへ責務別の質問をまとめます。相談は前景実行を優先し、実回答を受けて一度で統合します。実toolに`run_in_background`があれば`false`を使います。直接呼出しが使えなければ、親がまとめて実相談し、アクセス可能な回答原本と実IDを同じ担当へ戻します。実ID、質問・回答原本、採否と根拠は残します。起動確認や回答待ちを完了とは扱いません。権限やtoolを増やさず、取得できない回答は未了として残します。
+
+前景実行の仕様: [Claude Code — Run subagents in foreground or background](https://code.claude.com/docs/en/sub-agents#run-subagents-in-foreground-or-background)（2026-11-01確認）。実行版のtool定義を優先し、未対応の引数は作りません。
+
+使用量の目標は、1アカウントの5時間枠で初回4層が33％以内、再レビュー込みで約40％です。初回には必読不足の回収と必須専門相談を含めます。修正後の再レビューとCodexとの比較実験は初回から除きます。同じアカウント・同じリセット窓で、開始前、各層後、初回完了、再レビュー完了の使用率を記録します。開始時との差分（％ポイント）で、使用枠の消費量を確認します。比較実験の分は別記します。開始・終了時刻、実行版とsource snapshotも残します。窓やアカウントが変わった区間は分け、目標達成を断定しません。キャッシュ込みトークン累計や参考ドル額を使用枠％へ換算しません。今回の設定だけでは削減率を証明できません。
+
+キャッシュTTLは変更しません。5分を超えて待つ担当だけを1時間TTLの検討対象にし、採用時に実行版の公式仕様と実測を確認します。短い作業での書込み単価の増加も含め、全体へ一律適用しません。
+
 ## 補助スクリプト
 
 `tools/sync_reviewer_body.py`は、`reviewer`の本文を`.claude`・`.claude-company`・`.codex`の3ファイルで同期します。`reviewer`の本文を変更したときに、引数なしで検証し、`--dry-run`で確認して`--write`で同期します。

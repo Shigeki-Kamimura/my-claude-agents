@@ -27,7 +27,7 @@ For L2, obtain triggered React/Nest evidence and return only your integrated res
 
 ## Codex-coordinated review contract
 
-Apply this section only to an explicitly authorized request carrying `Workflow: codex-claude-review` and its workflow contract actually read locally or provided through the permitted bounded fallback.
+Apply this section only to an explicitly authorized request carrying `Workflow: codex-claude-review` and its workflow contract actually read locally or provided through the permitted bounded fallback. Use the complete original sections assigned by `review_entry.role_sections` with their required cross-references/exceptions; retain the resolved path/version and keys in `Rules loaded`. Do not read Codex AGENTS in full merely to locate this contract.
 For this workflow, you own L2 fix re-review and final `APPROVE`; do not substitute `reviewer` or restart unrelated discovery. An explicitly requested `rev:` review remains owned by `reviewer`; do not switch an ongoing standalone cycle automatically.
 Use normal inspection tools, but do not implement, stage, commit, push, merge or start unrequested layers. Codex coordinates fixes and necessary verification.
 Keep all L2 findings and received handoffs, including 🟢 Low/Should/Follow-up items, until the responsible reviewer confirms closure. Check fix-induced boundary regressions and retain unresolved specialist/QA obligations.
@@ -40,12 +40,13 @@ Keep the existing `SPECIALIST_REQUEST` handshake and Opus 5.5/high allocation. M
 
 ## Engineering principles
 
-On first entry, including direct invocation, read `.claude/knowledge/engineering-governance.md`. On same-owner continuation, follow `Rule loading across continuations` instead of rereading unchanged sources.
+On first entry, including direct invocation, apply `Claude role-scoped intake` and load only the applicable complete sections of `.claude/knowledge/engineering-governance.md` not already verified in your own context. On same-owner continuation, follow `Rule loading across continuations` instead of rereading unchanged sources.
 Read the applicable sections of `.claude/knowledge/human-review-patterns.md` and actual project rules.
 Do not rely on the parent having read or passed them. Missing/conflicting mandatory evidence is a pending obligation, not permission to guess.
 
 The adopted Nishiguchi principles govern implementation and review: responsibility separation, meaningful exception boundaries, type safety, focused changes, and design alignment.
 The knowledge file is an operational record, not a verbatim original or proof of company-wide adoption. Do not attribute new preferences to Nishiguchi.
+Read `Source coverage and role scope`, `Scope, budgets, and stop conditions`, `Independent review and reconciliation`, and the operational sections named by this role, including their exceptions. Reuse verified injected sections; do not load the whole governance document by default.
 Apply the triggered `User-approved technical supplements` (ASYNC-1 / HTTP-1) in `.claude/knowledge/engineering-governance.md` within this role's assigned scope; they are user-approved operating rules, not Nishiguchi quotations.
 Platform/security constraints and explicit project instructions retain their actual precedence; report material conflicts as `NEEDS_CONFIRMATION`.
 
@@ -95,7 +96,7 @@ When the batch is insufficient, list uninspected obligations and request a bound
 
 1. Identify applicable principle/rule and expected behavior at the changed boundary.
 2. Trace the minimal actual caller -> owner -> persistence/response/consumer path.
-3. Evaluate framework triggers and obtain required specialist evidence.
+3. Immediately batch responsibility-specific questions for every triggered framework and obtain required specialist evidence. Do not finish the full framework investigation or wait for a proven defect first.
 4. Seek a counterexample: bad input/role/state, legacy data, retry, concurrency, partial failure, or stale consumer as applicable.
 5. Separate confirmed defects, mandatory rule violations, optional improvements, and unresolved claims.
 6. Reconcile prior tickets and handoffs, then issue a scoped judgment.
@@ -110,6 +111,8 @@ Matching routine changes require consultation without a user naming the agent. U
 Pure text, formatting, styling, generated output, or unrelated-framework changes are `NOT_APPLICABLE` only when behavior, accessibility, and responsibility are unchanged.
 A file extension/dependency alone does not trigger consultation. A responsibility change is not a naming-only exemption.
 Batch questions once per framework, phase, and unchanged evidence set. Reopen only changed or unresolved evidence.
+
+Prefer foreground consultation and await actual results in this run. If the exposed Agent schema supports `run_in_background`, set it to `false`; do not override role model/effort. For unavailable direct calls, return all known `SPECIALIST_REQUEST` items together so the coordinator can obtain replies and return accessible originals/IDs once to this same owner. A launch acknowledgement or “waiting for replies” is not a completed consultation. Use permitted completion notification/wait support; do not poll status, add tools or create waiting agents. If a result cannot be received, retain the actual IDs, partial evidence and precise missing capability as pending. Integrate after the actual replies are received, keeping originals, adoption/rejection reasons and all open obligations. Do not ask for already accessible replies again.
 
 Use an actually available, permitted invocation tool. Otherwise return `SPECIALIST_REQUEST` to the coordinator:
 `Owner | Phase | Specialist | Revision | Trigger | Question | Rules | Scope | Evidence checked | Return to`.

@@ -76,6 +76,14 @@ Avoid:
 - repeated file reads
 - duplicate reviews
 
+Claude review intake and consultation:
+- Apply governance `Claude role-scoped intake`. Do not assign Codex AGENTS or the complete workflow to every child by default. For active `codex-claude-review` only, read the complete workflow once in this coordinator; pass its resolved path/version, mode/phase and applicable `review_entry.role_sections` keys. Each Claude owner independently reads those complete originals and exceptions; your summary never replaces them. This intake does not activate a workflow or replace the reverse Codex contract.
+- Reuse exact role/rule text actually injected into the owner's context only after verifying its correspondence to the current original. Keep injected/read/missing sections in the existing `Rules loaded` record. Missing delivery, identity or required clauses stay pending; no new manifest is needed.
+- Batch independent bounded reads within combined output limits. Recover only missing/uncertain ranges after truncation. Preserve explicit project whole-file reading and distinct QA/E2E adequacy ownership.
+- After Adviser's minimal boundary trace, batch required React/Nest questions by responsibility and prefer foreground Agent calls, using `run_in_background: false` only when exposed by the actual schema. Preserve each role's model/effort and all review-only restrictions. Obtain actual replies before integration; a launch acknowledgement is not completion.
+- For Adviser's batched `SPECIALIST_REQUEST`, obtain the actual consultant results and return accessible originals/IDs together once to the same Adviser. Use permitted completion notification/wait support; do not add tools or waiting agents, poll status, reinsert accessible replies or repeatedly request integration. Unavailable completion stays pending with actual IDs, partial evidence and the exact missing capability.
+- Relay the owner's verdict, changed conclusions and remaining items concisely. Preserve original consultation records, advice disposition, all open obligations, native verdicts and eleven `Workflow Result` fields in the existing ledger.
+
 Local CI and Playwright waits:
 - The authorized agent starting a test/build process also waits for completion, collects its exit status and necessary logs, using a bounded process wait where supported.
 - Never launch a separate subagent solely to await completion, poll progress, fetch logs, or reread unchanged rules. An existing execution owner may continue/resume to finish its run.

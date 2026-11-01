@@ -204,6 +204,71 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                              "qa -> e2e -> cr -> adv", "--resume"):
                 self.assertIn(required, parent)
 
+    def test_claude_role_sections_preserve_independent_original_reading(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        entry = workflow.split("\nreview_entry:\n", 1)[1].split("\nexecution:\n", 1)[0]
+        delivery = entry.split("  contract_delivery: ", 1)[1].split("\n  role_sections:", 1)[0]
+        for required in ("原本のpath/版", "自分で確認", "例外", "Rules loaded",
+                         "親の要約だけでは既読にしません", "切詰め", "承認を保留"):
+            self.assertIn(required, delivery)
+        roles = entry.split("  role_sections:\n", 1)[1].split("  required_intake:", 1)[0]
+        common = roles.split("    phase_common: ", 1)[1].splitlines()[0]
+        for required in ("authority", "ownership", "review_entry", "review_cycle", "review_gates",
+                         "findings", "questions", "response_contract", "handoff", "staged_baseline",
+                         "single_layer", "例外"):
+            self.assertIn(required, common)
+        for phase, extra in (("l1_5", "execution.cr_adv"), ("qa", "qa_contract"),
+                             ("e2e", "qa_contract"), ("l2", "consultation")):
+            line = roles.split(f"    {phase}: ", 1)[1].splitlines()[0]
+            self.assertIn("phase_common", line)
+            self.assertIn(extra, line)
+        self.assertIn("11項目の代理作成はしません", roles)
+        for profile in (".claude", ".claude-company"):
+            for role in ("adviser", "code-quality-reviewer", "test-qa", "e2e-qa"):
+                owner = read(f"{profile}/agents/{role}.md")
+                self.assertIn("review_entry.role_sections", owner)
+                self.assertIn("including direct invocation, apply `Claude role-scoped intake`", owner)
+                self.assertNotIn("including direct invocation, read `.claude/knowledge/engineering-governance.md`", owner)
+            for role in ("react-ui-flow", "nestjs-backend"):
+                owner = read(f"{profile}/agents/{role}.md")
+                self.assertIn("Read only missing applicable governance sections", owner)
+                self.assertIn("Stay read-only", owner)
+
+    def test_injected_self_definition_reuse_keeps_missing_rules_pending(self):
+        for profile in (".claude", ".claude-company"):
+            governance = read(f"{profile}/knowledge/engineering-governance.md")
+            intake = governance.split("### Claude role-scoped intake\n", 1)[1].split("\n### ", 1)[0]
+            for required in ("own system prompt", "current original path/version", "invocation/source evidence",
+                             "parent's summary", "is insufficient", "including exceptions",
+                             "keep dependent approval pending", "combined results", "on truncation",
+                             "missing/uncertain ranges", "Explicit project whole-file requirements still apply",
+                             "does not transfer QA/E2E adequacy ownership to L2"):
+                self.assertIn(required, intake)
+            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
+            self.assertIn("### Claude role-scoped intake\n", core)
+            self.assertTrue(intake.strip() in core, "原文の節本文が生成物に保持されていません")
+            self.assertNotIn("## Mandatory framework consultation\n", core)
+
+    def test_foreground_consultation_requires_real_results_without_widening_tools(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        consultation = workflow.split("\nconsultation:\n", 1)[1].split("\nqa_contract:\n", 1)[0]
+        for required in ("最小限の実境界", "依頼を遅らせません", "run_in_background", "false",
+                         "model/effortや許可toolは変更しません", "SPECIALIST_REQUEST",
+                         "同じadviser", "起動確認や回答待ちは未完了", "tool追加",
+                         "取得不能", "承認しません", "実回答の受領後", "11項目"):
+            self.assertIn(required, consultation)
+        for profile in (".claude", ".claude-company"):
+            adviser = read(f"{profile}/agents/adviser.md")
+            for required in ("Immediately batch", "Do not finish the full framework investigation",
+                             "exposed Agent schema", "`false`", "actual replies", "same owner",
+                             "precise missing capability", "adoption/rejection reasons"):
+                self.assertIn(required, adviser)
+            parent = read(f"{profile}/CLAUDE.md")
+            for required in ("foreground Agent", "only when exposed", "actual replies",
+                             "do not add tools or waiting agents", "eleven `Workflow Result` fields",
+                             "For active `codex-claude-review` only", "does not activate a workflow"):
+                self.assertIn(required, parent)
+
     def test_ci_playwright_wait_ownership_needs_no_waiting_agent(self):
         codex = read(".codex/AGENTS.md")
         wait = codex.split("## Bounded subagent waiting\n", 1)[1].split(

@@ -24,7 +24,7 @@ Focus only on behavior-affecting risks and applicable responsibility rules.
 
 ## Shared engineering contract
 
-Read `.claude/knowledge/engineering-governance.md` and the matching sections of `human-review-patterns.md` before consultation.
+Apply `Claude role-scoped intake` before consultation. Read only missing applicable governance sections: `Pinned source and reconciliation`, `Source coverage and role scope`, `Phase ownership`, `Evidence reuse and concise reporting`, and `Evidence and reporting`, plus triggered supplements and the matching human-review/project rules with exceptions. Reuse exact verified injected sections instead of loading whole documents.
 Apply the supplied original/project rules; do not attribute new preferences to Nishiguchi.
 Apply the triggered `User-approved technical supplements` (ASYNC-1 / HTTP-1) in `.claude/knowledge/engineering-governance.md` within this role's assigned scope; they are user-approved operating rules, not Nishiguchi quotations.
 Stay read-only and within the assigned phase, revision, and boundary. Do not delegate further or issue overall PR approval.

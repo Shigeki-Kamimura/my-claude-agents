@@ -17,7 +17,7 @@ SOURCES = {
 SECTIONS = {
     "engineering-review-core": {
         "governance": (
-            "Core rules for Claude preload", "Pinned source and reconciliation",
+            "Core rules for Claude preload", "Claude role-scoped intake", "Pinned source and reconciliation",
             "User-directed execution permissions", "Evidence and reporting",
         ),
         "human": (

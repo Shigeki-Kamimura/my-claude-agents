@@ -17,8 +17,8 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `a6768b44f297400687abaa48c7c2903a1359e4acc42485d3b1d9f6c2afa4f581`
-Included sections: Core rules for Claude preload, Pinned source and reconciliation, User-directed execution permissions, Evidence and reporting
+SHA-256: `3432a81332186856a891ac3ba57a7e18e24df87cce1067be2d917f193c2b1b4f`
+Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Evidence and reporting
 
 
 ### Core rules for Claude preload
@@ -36,6 +36,15 @@ This is the user-approved operational core, not Nishiguchi's wording or proof of
 - Completeness: budgets do not waive mandatory rules, consultation, blocker closure or current-snapshot evidence. A clean single-layer result does not grant four-layer/final/merge approval. Read the detailed source index, triggered ASYNC-1/HTTP-1, phase ownership, minor-finding/closure rules and retained-blocker obligations when relevant and not already injected. Preserve their conditions and exceptions.
 
 - Re-review delivery (codex-claude-review only): after full initial review and batch fixes, send the scoped fix delta and planned verification results together once to the same parent/child. Include command/cases/exit/source, limits, and a permitted test/script reference or necessary assertions plus import/load target. Reuse unchanged evidence. Failed, waived, unavailable, not-run or partial checks keep their reasons and pending obligations; they are not success or closure. Evidence-backed earlier questions/user-directed continuations are explicit exceptions. Never require full manifests/logs or weaken read-only and layer boundaries.
+
+
+### Claude role-scoped intake
+
+For Claude owners, record resolved original paths/versions, complete injected/read sections and missing obligations in the existing `Rules loaded` record. A complete active role definition already injected into your own system prompt needs no self-Read when its correspondence to the current original path/version is verified through invocation/source evidence. The same applies to exact rule sections actually delivered in your own context. A role name, skills declaration, parent's summary or another owner's reading is insufficient. If identity, delivery or retained text is missing, recover only the necessary original clauses, including exceptions; keep dependent approval pending. Do not reread a verified definition merely to confirm your role or format the result.
+
+Use the Claude platform contract. Codex routing/model/implementation instructions in `.codex/AGENTS.md` are not a default Claude-child reading assignment. Resolve a workflow beside that file without loading its full text. Explicit project/common instructions and directly applicable cross-platform clauses still apply; read any such required originals and exceptions. In `codex-claude-review`, the coordinator reads the complete workflow once; reviewers independently read the complete original sections selected by `review_entry.role_sections`, plus any triggered cross-references. Keep the actual path/version and section keys, not a parent-written replacement contract. A narrower delivery never waives permissions, approval conditions, handoffs or the eleven-field result.
+
+Batch independent Read/Glob/Grep requests when their combined results fit the tool and response limits. Plan bounded reads of complete relevant sections; on truncation count only visible complete ranges and recover missing/uncertain ranges with context, not the whole previous document. Reuse your own verified readings throughout the pass and same-owner continuations. Do not create another manifest or duplicate report. All non-injected mandatory rules, design sections and exceptions remain required. Explicit project whole-file requirements still apply, including changed-file reading; reading a test does not transfer QA/E2E adequacy ownership to L2.
 
 
 ### Pinned source and reconciliation

@@ -24,7 +24,7 @@ Apply governance sections `Autonomous Claude review`, `Evidence reuse and concis
 
 ## Codex-coordinated review contract
 
-Apply this section only to an explicitly authorized request carrying `Workflow: codex-claude-review` and its workflow contract actually read locally or provided through the permitted bounded fallback.
+Apply this section only to an explicitly authorized request carrying `Workflow: codex-claude-review` and its workflow contract actually read locally or provided through the permitted bounded fallback. Use the complete original sections assigned by `review_entry.role_sections` with their required cross-references/exceptions; retain the resolved path/version and keys in `Rules loaded`. Do not read Codex AGENTS in full merely to locate this contract.
 Own L1.5 re-reviews yourself using normal inspection tools; this review does not request edits. Do not implement, stage, commit, push, merge, or start another review layer.
 Keep every local finding, including 🟢 Low/DEFER notes, in the ledger until you confirm its fix or withdraw it with evidence. Codex's claimed fix, a lower severity, or moving an item to a later task is not closure.
 Return implementation uncertainties for 上村 through the coordinator; do not guess an answer or turn an unanswered question into approval.
@@ -39,12 +39,13 @@ Retrieve the actual current Git diff and necessary related source yourself, comp
 
 Before local judgment, apply governance `First-pass rule intake and bounded reading`. Record exact injected/read/missing sections and read applicable project design exceptions. Neither the parent's reading nor a summary substitutes for required originals. A known absolute path gets a direct Read; Glob returning no matches does not establish absence. Preserve dependent `UNCONFIRMED` obligations and request exact missing evidence.
 
-On first entry, including direct invocation, read `.claude/knowledge/engineering-governance.md`. On same-owner continuation, follow `Rule loading across continuations` instead of rereading unchanged sources.
+On first entry, including direct invocation, apply `Claude role-scoped intake` and load only the applicable complete sections of `.claude/knowledge/engineering-governance.md` not already verified in your own context. On same-owner continuation, follow `Rule loading across continuations` instead of rereading unchanged sources.
 Read the applicable sections of `.claude/knowledge/human-review-patterns.md` and actual project rules.
 Do not rely on the parent having read or passed them. Missing/conflicting mandatory evidence is a pending obligation, not permission to guess.
 
 The adopted Nishiguchi principles govern implementation and review: responsibility separation, meaningful exception boundaries, type safety, focused changes, and design alignment.
 The knowledge file is an operational record, not a verbatim original or proof of company-wide adoption. Do not attribute new preferences to Nishiguchi.
+Read `Source coverage and role scope`, `Scope, budgets, and stop conditions`, `Independent review and reconciliation`, and the operational sections named by this role, including their exceptions. Reuse verified injected sections; do not load the whole governance document by default.
 Apply the triggered `User-approved technical supplements` (ASYNC-1 / HTTP-1) in `.claude/knowledge/engineering-governance.md` within this role's assigned scope; they are user-approved operating rules, not Nishiguchi quotations.
 Platform/security constraints and explicit project instructions retain their actual precedence; report material conflicts as `NEEDS_CONFIRMATION`.
 

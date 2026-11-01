@@ -135,7 +135,17 @@ claude_cli:
   - qa/e2eの実担当へexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。短い親依頼から設定を読み、親が実委譲時に伝えます。
   - 初回/--resumeのいずれもレビュー専用CLI制限とCodex実行責務を保持し、子agentと専門担当にも明示します。Claudeのコマンド実行・編集・CI操作を実際に検出した場合は承認不可として記録し、Codexが対処します。
 review_entry:
+  platform_scope: Claude担当はClaude側の規則を使います。.codex/AGENTS.mdの全文を既定の必読にしません。workflowの所在確認はリンク先の解決だけで足ります。明示されたproject共通指示と直接適用される原文・例外は確認します。
+  contract_delivery: Claude親はworkflow全文を一度確認し、実担当には解決済み原本のpath/版、mode/phase、role_sectionsの該当キーを渡します。各担当はその完全な原文部分と例外・必要な相互参照を自分で確認し、Rules loadedへ記録します。本人の文脈に全文が注入済みで原本との対応を確認できる自己定義・規則の節は再Readしません。名前やskills指定、親の要約だけでは既読にしません。欠落・版違い・省略・切詰めは必要部分だけ原本から回収し、承認を保留します。新しいmanifestや規則一式は作りません。
+  role_sections:
+    phase_common: authority、ownership、review_entry、review_cycle、review_gates、findings、questions、response_contract、handoff、staged_baselineの完全な節です。single-layerではsingle_layerも例外込みで確認します。
+    l1_5: phase_commonとexecution.cr_advです。
+    qa: phase_common、qa_contract、execution.qa_e2eです。
+    e2e: phase_common、qa_contract、execution.qa_e2eです。
+    l2: phase_common、consultation、execution.cr_advです。
+    consultants: ownership、review_entry、consultation、execution.cr_advと、割り当てられた責務に直接適用される節・例外です。phase担当の承認や11項目の代理作成はしません。
   required_intake: Claudeの各実担当は実コードの判断前に、Rules loadedを1回記録します。必須資料ごとに注入済みの節・自分でReadした節・未確認を分け、出典の同一性と適用するproject設計/規約の節（例外込み）を確認します。親の既読やagent定義の要約を未注入の原文の代わりにしません。既知の絶対パスはReadで直接確認し、Globの0件だけで不存在としません。必須資料が不明なら正確なINPUT_REQUESTを返し、依存する判断はUNCONFIRMEDにします。独立した範囲は続けられます。
+  batched_reads: 独立したRead/Glob/Grepは、各toolと合計の出力上限に収まる単位でまとめます。切詰め時は見えた完全な範囲だけを既読とし、文脈を保って不足・不明範囲だけ回収します。既読の不変な節は同じpassでも再取得しません。全文確認を求めるproject規則は維持し、テストの読取義務とQA/E2Eの妥当性判断を分けます。
   reading_scope: 全対象の変更hunkと変更した関数/責務、必要な直接caller/calleeを確認します。全ファイル・全テスト・全設計書の全文読了を一律に要求しません。影響や例外を判断できなければ必要箇所へ広げ、理由と範囲を記録します。利用者やproject規則が全文確認を明示する場合は従います。coverageは担当の義務を確認した範囲で示し、全文読了の意味でCOMPLETEを使いません。未確認の義務は残します。
   autonomy: Codexが確定したbase/HEAD、staged・unstaged・untrackedとrenameを含むGit差分・必要な元版の証拠を取得します。Claudeはその証拠をSuppliedとして扱い、Read/Glob/Grepで現ソース、要件、テスト、関連境界を独立に確認します。実装者の結論を根拠にチェックを省かず、不足があればCodexへ特定の証拠を要求します。
   scope: 明示base/除外を優先します。狭い指定がなければstaged・unstaged・untrackedを含め、index/worktreeの打消しや新規/削除/renameを落としません。
@@ -160,7 +170,9 @@ review_cycle:
   unknown: 比較する元内容、仕様、必須証拠が未確認なら確認不能/非承認です。推測で解消・実行成功にしません。
 consultation:
   required: L2の該当React/Nest境界は初回に必要な独立相談を行います。実装時の相談を流用せず、単層のadvでも省略しません。
-  batch: adviserが境界を追い、責務別に質問をまとめます。実際に使える通常toolで相談し、使えなければ親へ必要な質問だけ返し同じ担当へ戻します。
+  batch: adviserは最小限の実境界・規則・phase/snapshotが分かった時点で、ReactのUI/state/render、Nestのproducer/validation/serializationへ責務別の質問をまとめます。全frameworkの詳細調査や指摘の確定まで依頼を遅らせません。相談はframework・phase・同じ証拠ごとに一度とし、変更・未回答だけ再開します。
+  completion: 前景のAgent呼出しを優先します。実schemaにrun_in_backgroundがあればfalseを使い、親のphase起動にも同じ方針を使います。model/effortや許可toolは変更しません。直接相談が使えなければSPECIALIST_REQUESTをまとめて親へ返し、親が実回答を受領してアクセス可能な原文・実IDを一度に同じadviserへ戻します。起動確認や回答待ちは未完了です。許可された完了通知・待機機能を使い、状態照会・原文再投入・統合催促を繰り返しません。待機のためのtool追加、全体設定変更、待機専用agentは作りません。取得不能なら実IDと途中証拠、正確な不足機能と未了義務を残し、承認しません。
+  integration: 実回答の受領後にadviserが一度で統合します。必要な追加相談は変更・未回答の問いに限ります。親は担当の判定・変更点・残件を短く伝え、詳細回答を再説明しません。全未解決・native verdict・11項目は維持し、同じ台帳を参照します。
   scope: 専門担当は担当境界に限定し、出典・版・元担当のある未変更事実は活用します。未解決や変更箇所以外の重複調査を避けます。
   record: 実相談ID/回答原本、重要な未解決、adviserの採否と根拠は保持します。指摘数や専門家名だけで完了にしません。
 qa_contract:
