@@ -85,6 +85,53 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         self.assertIn("追加質問", values["rereview_exceptions"])
         self.assertIn("単層", values["rereview_exceptions"])
 
+    def test_initial_continuation_and_fix_requests_keep_distinct_evidence(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        for name, end in (("single_layer", "authority"), ("claude_cli", "review_entry")):
+            with self.subTest(template=name):
+                block = workflow.split("\n" + name + ":\n", 1)[1].split("\n" + end + ":\n", 1)[0]
+                templates = {}
+                for key in ("prompt_template", "resume_prompt_template", "continuation_prompt_template"):
+                    match = re.search(r"(?m)^  " + key + r": \|\n((?:    [^\n]*\n)+)", block)
+                    self.assertIsNotNone(match, key)
+                    templates[key] = match[1]
+                self.assertIn("{review_source_evidence}", templates["prompt_template"])
+                self.assertIn("{fix_and_verification_evidence}", templates["resume_prompt_template"])
+                continuation = templates["continuation_prompt_template"]
+                for field in ("continuation_reason", "retained_record_reference", "new_evidence"):
+                    self.assertIn("{" + field + "}", continuation)
+                self.assertNotIn("{fix_and_verification_evidence}", continuation)
+                self.assertIn("SendMessage", continuation)
+                self.assertIn("再開不能", continuation)
+                for key in ("resume_prompt_template", "continuation_prompt_template"):
+                    for field in ("parent_session_id", "owner_agent_id"):
+                        self.assertIn("{" + field + "}", templates[key])
+                if name == "single_layer":
+                    self.assertIn("Mode: single-layer {phase}", continuation)
+
+    def test_diff_delivery_and_resume_failure_do_not_expand_permissions(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        delivery = re.search(r"(?m)^  source_delivery: (.+)$", workflow)[1]
+        for required in ("実base", "HEAD", "working source", "除外", "staged", "unstaged",
+                         "untracked", "rename/削除", "元版", "Supplied", "未確認", "巨大manifest"):
+            self.assertIn(required, delivery)
+        self.assertIn("親の--resumeだけでは子の再開証拠になりません", workflow)
+        self.assertIn("新規Agentへの自動置換や再試行ループを行いません", workflow)
+        self.assertIn("phaseをまたぐ再開はしません", workflow)
+        self.assertIn("安全上の新規起動例外は維持します", workflow)
+
+    def test_governance_has_no_conflicting_git_or_hash_execution_instruction(self):
+        for profile in (".claude", ".claude-company"):
+            with self.subTest(profile=profile):
+                governance = read(f"{profile}/knowledge/engineering-governance.md")
+                self.assertNotIn("gets its own Git diff/status", governance)
+                self.assertNotIn("the receiver runs the same command", governance)
+                self.assertNotIn("this is not a Read/Grep/Glob-only", governance)
+                self.assertIn("Restricted Claude reviewers never run a hash/Git command", governance)
+                self.assertIn("Matching identity permits reuse only for complete sections", governance)
+                self.assertIn("independent first owners for new phases", governance)
+                self.assertIn("reverse `claude-codex-review` fresh-round contract", governance)
+
     def test_batched_delivery_is_scoped_and_reaches_both_preloads(self):
         for profile in (".claude", ".claude-company"):
             with self.subTest(profile=profile):

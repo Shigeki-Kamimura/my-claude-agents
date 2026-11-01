@@ -34,6 +34,8 @@ When a full chain is explicitly authorized, independent `qa -> e2e -> cr -> adv`
 
 Standalone reviews use their own continuation rules.
 
+For Claude review delivery, use the matching workflow's initial/continuation/re-review templates and `review_entry.source_delivery`. Pass actual source/diff evidence and retained owner IDs through the short request; do not expand it into a new all-role reading checklist or resend unchanged rules. An initial pass interrupted by a limit, a next slice or specialist-result integration returns to the same actual owner. Missing secure resumption stays pending under the workflow's exceptions; a new same-role agent is not a resume.
+
 Apply governance `Rule loading across continuations` and `Evidence reuse and concise reporting` within the selected workflow. Reuse verified unchanged evidence only after checking its current validity, and recheck changed obligations and dependencies. Different first-pass owners must inspect independently; prior approval alone is insufficient.
 
 ## Available Agents

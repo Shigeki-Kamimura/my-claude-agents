@@ -33,6 +33,7 @@ single_layer:
     {prefix}: {review_request}
     Workflow: codex-claude-review
     規則の出典（初回のみ、2資料のresolved pathとSHA-256）: {rule_source_identity}
+    比較元・現sourceと差分の読取先（review_entry.source_delivery）: {review_source_evidence}
     Mode: single-layer {phase}
     Workflow Resultのinvocation_evidenceに、文字列 mode=single-layer phase={phase} を必ず含めてください。
     利用者のbase・除外・今回固有の制約があれば: {user_constraints}
@@ -42,10 +43,19 @@ single_layer:
     Mode: single-layer {phase}
     Workflow Resultのinvocation_evidenceに、文字列 mode=single-layer phase={phase} を必ず含めてください。
     前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
+    再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
     規則の原文が変わった場合だけ出典を更新: {changed_rule_source_identity}
     新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
     修正差分と予定した検証結果をまとめて（対象source・狭い参照先・限界を含む）: {fix_and_verification_evidence}
     通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
+  continuation_prompt_template: |
+    {prefix}: 未完了のレビューを続けてください。理由: {continuation_reason}
+    Workflow: codex-claude-review
+    Mode: single-layer {phase}
+    再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
+    保持済みの確認範囲・未解決事項・規則: {retained_record_reference}
+    追加証拠・専門回答・出典変更とその限界（なければ「なし」）: {new_evidence}
+    元の実childへSendMessageで戻してください。再開不能なら不足を報告してください。
   rereview: 同じ親子を再開して同phaseだけを再確認します。
   scope_priority: 単層のときは、qa_contract.assignmentの両agent必須とreview_gates.orderより優先し、該当phaseのみ実行します。単層のqa/e2eでも、その実agentへexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。単層のcr/advがqa/e2e/l2へ割り当てたhandoffは単層では閉じず、未了の義務として報告します。
   approval: 自層の全対象がCOMPLETEで、必要な証拠・必須相談がそろい、自層の指摘（🟢Lowを含む）・未回答質問・未確認義務がゼロ、native_verdictが当該phaseの受理条件を満たす場合は、担当自身がdecisionをAPPROVEにします。自層判断に依存しない他層の未了handoffだけを理由にREQUEST_CHANGESへ戻しません。CRのL1.5_APPROVE_WITH_NOTESも、残りがCR自身の根拠付きでqa/e2e/l2へ割り当てたhandoffだけなら受理します。承認はその層と現snapshotにだけ有効で、四層承認、引渡し可、最終承認ではありません。
@@ -117,20 +127,32 @@ claude_cli:
     {prefix}: {review_request}
     Workflow: codex-claude-review
     規則の出典（初回のみ、2資料のresolved pathとSHA-256）: {rule_source_identity}
+    比較元・現sourceと差分の読取先（review_entry.source_delivery）: {review_source_evidence}
     利用者のbase・除外・今回固有の制約があれば: {user_constraints}
   resume_prompt_template: |
     {prefix}: 再レビューしてください。
     Workflow: codex-claude-review
+    再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
     前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
     規則の原文が変わった場合だけ出典を更新: {changed_rule_source_identity}
     新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
     修正差分と予定した検証結果をまとめて（対象source・狭い参照先・限界を含む）: {fix_and_verification_evidence}
     通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
+  continuation_prompt_template: |
+    {prefix}: 未完了のレビューを続けてください。理由: {continuation_reason}
+    Workflow: codex-claude-review
+    Phase: {phase}
+    再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
+    保持済みの確認範囲・未解決事項・規則: {retained_record_reference}
+    追加証拠・専門回答・出典変更とその限界（なければ「なし」）: {new_evidence}
+    元の実childへSendMessageで戻してください。再開不能なら不足を報告してください。
   invocation:
   - 各phaseの初回は独立した実担当を起動し、親session_idと実child agent_idを保持します。
   - 同phaseは親を--resumeし、親からSendMessageで元の実childを再開します。同名の新規起動を再開にしません。
   - 例外: 新しいレビュー専用CLI制限を適用する前に起動した親/子、または初回の実行ツール設定を証明できない親/子は再開しません。Claudeの子は再開時に初回のツール構成を保持し得るためです。Codexが旧セッションを停止し、新制限で該当phaseの初回を起動し直します。過去の指摘と必要証拠はSuppliedとして引き継ぎ、旧承認を新承認として流用しません。新規起動できなければBLOCKEDです。
   - 親/子の再開や元の比較対象を利用できなければ、状態を保持し確認不能として報告します。
+  - 初回未完・利用上限後の復帰・追加証拠の受領・専門回答の統合はcontinuation_prompt_templateで同じ実担当へ戻します。初回完了後の一括修正と検証結果はresume_prompt_templateを使います。phaseをまたぐ再開はしません。
+  - 既存のinvocation_evidenceにmode/phase、親/子の実ID、許可tool設定、保持記録への参照を一度残します。親の--resumeだけでは子の再開証拠になりません。実際のSendMessage宛先を照合し、再開機能がない場合は新規Agentへの自動置換や再試行ループを行いません。上記の安全上の新規起動例外は維持します。
   - 上記model_policyを適用し、再開時も同じ親/子と役割modelを維持します。実際の委譲結果を使い、CLI成功だけを承認にしません。
   - qa/e2eの実担当へexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。短い親依頼から設定を読み、親が実委譲時に伝えます。
   - 初回/--resumeのいずれもレビュー専用CLI制限とCodex実行責務を保持し、子agentと専門担当にも明示します。Claudeのコマンド実行・編集・CI操作を実際に検出した場合は承認不可として記録し、Codexが対処します。
@@ -153,6 +175,7 @@ review_entry:
   identity: 担当がbase/HEADと確認した差分・untrackedの内容など、実際のworking sourceを識別できる情報を保持します。HEADだけで未コミット変更を同一と扱いません。
   comparison_basis: 利用者が許可したstaged-baseline方式ではCodex/HQが安全に固定した初回indexを使います。Codexは実baseに対する初回index差分と修正後のunstaged/untrackedを別々に取得し、元版・snapshot情報を渡します。ClaudeはRead等で現版を独立確認し、差分と過去の指摘を比較します。元内容や基準が失われたら確認不能です。
   no_packaging_gate: コマンド権限を持たないClaudeへCodexが必要なGit差分とsnapshotを一度渡すことは必須です。一方、レビューごとの巨大なmanifestや全文packet、未変更資料の再送や毎回のhash照合は行いません。必要な根拠だけ追加取得します。
+  source_delivery: 初回依頼のreview_source_evidenceには、実baseと出典、HEAD、現working sourceの識別情報、対象と除外、staged・unstaged・untrackedを区別した差分・必要な元版の読取先を短く渡します。rename/削除の元側と新規内容も含め、同一資料は参照します。Codexが取得した証拠をSuppliedとして渡すもので、Claudeの独立した現コード確認を代替しません。取得不能な項目は理由付きで未確認とし、可能な独立確認は続けます。読取専用を理由に差分を省略せず、巨大manifestや専用形式は必須にしません。
   fallback: Git/規則/元内容/認証/環境が取得不能なら正確な不足を返します。必要な部分だけ補い、同じ担当で続けます。任意の包装がないだけでは停止しません。
   git_inspection: Codexは--no-ext-diff/--no-textconv等でGit差分を安全に取得し、snapshotと出典を提示します。Claude親子はBash/gitコマンドを実行せず、Read/Glob/Grepで元の実コードを閲覧します。
 execution:
