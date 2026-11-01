@@ -255,3 +255,24 @@ cases:
     phase: L2
     input: 利用者が型検査を不要と指示し、別の検証は環境不備で途中停止しました。
     expected: NOT_RUNとPARTIALの理由・対象・未了義務を差分と共に渡します。利用者指示だけで具体的欠陥を免除せず、他層の承認やhandoff閉鎖を推測しません。
+
+  - id: single-layer-handoff-only-approve
+    phase: L1.5
+    input: 局所指摘・質問・必須証拠待ちはゼロで、全対象COMPLETEです。CRが他層へ分類した引継ぎ4件だけが未了です。
+    expected: L1.5_APPROVE_WITH_NOTESとdecision APPROVEを同じ担当が返し、引継ぎ4件を未了のまま保持します。全体承認にはしません。
+  - id: single-layer-dependent-evidence-pending
+    phase: L1.5
+    input: 他層からの回答が自層の判断に必要ですが、未回答の項目をhandoff_onlyへ移そうとしています。
+    expected: 自層の未確認として保留し、APPROVEにしません。担当が別でも自層判断の証拠待ちは消えません。
+  - id: single-layer-local-low-pending
+    phase: L1.5
+    input: 自層のLow指摘1件が未解消で、残りは他層への引継ぎです。
+    expected: Lowを引継ぎやInfoへ付け替えず、非承認を維持します。
+  - id: single-layer-result-correction-by-owner
+    phase: L1.5
+    input: nativeはAPPROVE_WITH_NOTES、全対象COMPLETE、局所openは空です。他層handoffだけを理由にdecision REQUEST_CHANGESと記録されています。
+    expected: Codexは元の担当へ整合確認と訂正を求め、自分で判定を書き換えません。
+  - id: cr-handoff-count-and-scope
+    phase: L1.5
+    input: 別の担当・根拠を持つ引継ぎ4件を保持して再開します。新しい根拠はありません。
+    expected: 4項目形式と全ID・状態を保持し、2件で打ち切ったり再開だけで範囲を広げたりしません。

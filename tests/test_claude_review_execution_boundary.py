@@ -145,6 +145,40 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             else:
                 self.assertIn("hand off browser and HTTP/module-boundary obligations", block)
 
+    def test_single_layer_separates_local_dependencies_from_other_handoffs(self):
+        workflow = read(".codex/workflows/claude-review.yml")
+        block = workflow.split("\nsingle_layer:\n", 1)[1].split("\nauthority:\n", 1)[0]
+        for required in ("handoff_policy:", "result_consistency:", "自層判断に依存しない", "自層の未了義務",
+                         "decisionをAPPROVE", "Codex自身が判定を書き換えません", "全必須handoffの解消"):
+            self.assertIn(required, block)
+        for profile in (".claude", ".claude-company"):
+            cr = read(f"{profile}/agents/code-quality-reviewer.md")
+            self.assertIn("report `decision: APPROVE`", cr)
+            self.assertIn("your own judgment depends on remains a local obligation", cr)
+            self.assertIn("never rewrites the verdict itself", cr)
+            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
+            self.assertIn("independent other-layer handoffs remain open", core)
+            self.assertIn("stays local", core)
+        cases = read("tests/agent-review-contract-cases.yml")
+        for case in ("single-layer-handoff-only-approve", "single-layer-dependent-evidence-pending",
+                     "single-layer-local-low-pending", "single-layer-result-correction-by-owner"):
+            self.assertEqual(1, cases.count("  - id: " + case + "\n"))
+
+    def test_cr_handoff_count_and_existing_four_fields_are_consistent(self):
+        codex = read(".codex/AGENTS.md")
+        self.assertNotIn("at most 2 L2+ handoff cues", codex)
+        self.assertIn("handoffs without a count limit", codex)
+        for path in (".claude/agents/code-quality-reviewer.md", ".claude-company/agents/code-quality-reviewer.md",
+                     ".codex/agents/code-quality-reviewer.toml"):
+            cr = read(path)
+            self.assertIn("without a count limit", cr)
+            self.assertIn("Owner/route | Question | Evidence | Required confirmation", cr)
+        for profile in (".claude", ".claude-company"):
+            governance = read(f"{profile}/knowledge/engineering-governance.md")
+            self.assertIn("CR handoffs have no count limit", governance)
+            self.assertIn("scope changes need new evidence", governance)
+        self.assertEqual(1, read("tests/agent-review-contract-cases.yml").count("  - id: cr-handoff-count-and-scope\n"))
+
     def test_reverse_workflow_still_has_its_own_owner(self):
         reverse = read(".codex/workflows/codex-review.yml")
         self.assertIn("claude-codex-review", reverse)

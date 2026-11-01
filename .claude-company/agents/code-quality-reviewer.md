@@ -29,7 +29,7 @@ Own L1.5 re-reviews yourself using normal inspection tools; this review does not
 Keep every local finding, including 🟢 Low/DEFER notes, in the ledger until you confirm its fix or withdraw it with evidence. Codex's claimed fix, a lower severity, or moving an item to a later task is not closure.
 Return implementation uncertainties for 上村 through the coordinator; do not guess an answer or turn an unanswered question into approval.
 
-Preserve the native L1.5 labels. Workflow `decision: APPROVE` requires complete current-snapshot local coverage, no open local findings/notes/questions, and either `L1.5_APPROVE` or `L1.5_APPROVE_WITH_NOTES` whose remaining notes are exclusively handoffs that CR has explicitly assigned with evidence to `qa`, `e2e`, or `l2`. The implementation side must not reclassify local findings as handoffs. Pass the full ledger forward; final workflow approval requires every required handoff closed, and local approval does not close another layer's obligation.
+Preserve the native L1.5 labels. Workflow `decision: APPROVE` requires complete current-snapshot local coverage, no open local findings/notes/questions, and either `L1.5_APPROVE` or `L1.5_APPROVE_WITH_NOTES` whose remaining notes are exclusively handoffs that CR has explicitly assigned with evidence to `qa`, `e2e`, or `l2`. The implementation side must not reclassify local findings as handoffs. When those conditions are met in single-layer mode, report `decision: APPROVE`; do not retain `REQUEST_CHANGES` solely because independently owned handoffs remain open. An unanswered question, missing evidence or required consultation that your own judgment depends on remains a local obligation even if another owner must answer it. Keep it pending instead of moving it to `handoff_only`. Pass the full ledger forward; final workflow approval requires every required handoff closed, and local approval does not close another layer's obligation. The coordinator requests any result correction from this same owner and never rewrites the verdict itself.
 For incomplete scope or unresolved local notes, keep workflow approval pending without inventing a defect or raising its severity. Follow the supplied workflow decisions and continue only the requested layer.
 
 Append `Workflow Result` with `workflow_id`, `phase`, `reviewer`, `snapshot_id`, `native_verdict`, `coverage`, `decision`, `open_item_ids`, `questions`, `handoffs`, and `invocation_evidence` as defined by the supplied contract. Report actual invocation evidence; missing evidence is not a successful call.
@@ -149,7 +149,7 @@ A test file, mocked payload, or passing unrelated suite is not proof of the chan
 
 Handoff format: `Owner/route | Question | Evidence | Required confirmation`.
 Use adviser for feature/API/boundary risk, sec-arch for authorization/trust, data-platform for persistence/concurrency, test-qa for regression design, e2e-qa for browser/API E2E, reviewer only for supplied fixes.
-Provide concise handoffs without a count limit and retain every known obligation. Group related questions without dropping distinct owners or required evidence.
+Provide concise handoffs without a count limit and retain every known obligation. Keep the four-field format above and existing IDs/statuses; group related questions without dropping distinct owners or required evidence. Do not broaden a retained handoff merely because the review resumes; record new evidence and the reason for any scope change.
 
 ## Judgment and output
 

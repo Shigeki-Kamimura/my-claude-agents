@@ -48,7 +48,9 @@ single_layer:
     通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
   rereview: 同じ親子を再開して同phaseだけを再確認します。
   scope_priority: 単層のときは、qa_contract.assignmentの両agent必須とreview_gates.orderより優先し、該当phaseのみ実行します。単層のqa/e2eでも、その実agentへexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。単層のcr/advがqa/e2e/l2へ割り当てたhandoffは単層では閉じず、未了の義務として報告します。
-  approval: 単層の承認は、その層と確認した現snapshotにだけ有効です。四層承認、引渡し可、最終承認を意味しません。
+  approval: 自層の全対象がCOMPLETEで、必要な証拠・必須相談がそろい、自層の指摘（🟢Lowを含む）・未回答質問・未確認義務がゼロ、native_verdictが当該phaseの受理条件を満たす場合は、担当自身がdecisionをAPPROVEにします。自層判断に依存しない他層の未了handoffだけを理由にREQUEST_CHANGESへ戻しません。CRのL1.5_APPROVE_WITH_NOTESも、残りがCR自身の根拠付きでqa/e2e/l2へ割り当てたhandoffだけなら受理します。承認はその層と現snapshotにだけ有効で、四層承認、引渡し可、最終承認ではありません。
+  handoff_policy: 自層判断に必要な未確認証拠・相談・質問は、担当が他層でも自層の未了義務として保持し、handoff_onlyへ移して承認しません。独立した他層handoffは元の担当・質問・根拠・未了状態を保持します。件数上限は設けず、同じ責務の問いをまとめても別の義務は落としません。CRは既存の4項目 Owner/route | Question | Evidence | Required confirmation を維持し、ID・状態も既存台帳に残します。再開だけで引継ぎ範囲を広げず、新しい根拠があれば変更理由を記録します。
+  result_consistency: native_verdict・coverage・decision・局所open項目・handoffの説明を一致させます。不整合や不足はCodexが元の担当へ訂正を求め、Codex自身が判定を書き換えません。他層の未了handoffは単層承認で閉じず、全体の引渡しは全必須handoffの解消を待ちます。
   promotion: 利用者が四層を明示して昇格する場合は、qa、e2e、cr、advを新規の初回として回します。単層の親子は再開しません。承認済みの単層の結論はSupplied証拠として添えるだけで、承認の代わりにしません。
   consultation: 単層のadvでも、該当するReact/Nestの独立相談は省略できません。
   result: Workflow Resultの11項目は維持します。単層であることは、invocation_evidenceに固定文字列 mode=single-layer phase=<phase> を含めて示します。decisionがAPPROVEでも四層の承認ではありません。
@@ -200,7 +202,7 @@ review_gates:
     上記model_policyに従います。同じ実装モデルへの置換や架空のtraceは不可です。
     別モデルでの実呼び出しを確認できなければ、承認を保留します。
   approval: 各層の全対象と必要な証拠を確認し、自層の🟢Lowを含む指摘・質問がゼロの場合のみ承認します。
-  handoffs: 別担当のhandoffは担当・根拠を保持し、自層の未確認を付け替えて承認しません。最終引渡しでは全handoffも解消します。
+  handoffs: 別担当のhandoffは担当・根拠・状態を全件保持し、件数で打ち切りません。自層判断に依存しない引継ぎは層としての承認を妨げません。自層の未確認を付け替えて承認しません。最終引渡しでは全必須handoffも解消します。
   snapshot_change: source/テスト/要件/規則の変更で旧四承認は失効します。一括修正後、既存担当がqa→e2e→cr→advの順で修正差分と未変更証拠の現版での有効性を確認し、同じ最終source snapshotへ自分の承認を更新します。Codexが旧承認を付け替えません。まだ開始していない層を先行起動せず、通常の順序で独立確認します。各層は、snapshot変更後も承認の更新を必ず行います。影響しない義務の判定は各層の担当が行い、修正が呼び出し元・共有helper・テスト対象のコードに直接または呼び出し経路を通じて届く義務は再確認します。再利用は、前回の証拠が現版でも有効と自層が確認した場合に限り、「証拠再利用：<ID>, <前回Checked/Executedしたsnapshot_id>, <影響しないと判断した根拠(変更したパス・シンボルと当該義務の対応)>」と1行で記録します。テスト変更はqaとe2eの全義務、要件・仕様・規則の変更はその出典を根拠にする全層の全義務を再確認し、判定した層と根拠を記録します。
   coverage: COMPLETEは累積した当該phaseの全対象・必須確認の完了です。今回sliceだけや未確認の証拠を含めて承認せず、PARTIALは元の同じ担当が続けます。
   native_approval:

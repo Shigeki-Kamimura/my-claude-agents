@@ -300,6 +300,10 @@ When a rule source is missing, mark the affected judgment unconfirmed, not the r
 Final approval requires complete evidence for the requested layer, completed required consultation, and no unresolved blocker affecting that judgment.
 A scoped clean result is not full PR approval. A single-layer approval is valid only for that layer and snapshot, is not four-layer or final approval, and joins a later four-layer run only as Supplied evidence. Confirmed open blockers keep overall merge readiness at `REQUEST_CHANGES`; missing blocking evidence keeps it deferred.
 
+For `codex-claude-review` single-layer results, apply the workflow's `single_layer.approval`, `handoff_policy` and `result_consistency`. With complete current-snapshot local coverage, required evidence/consultation, no local findings (including Low), questions or unchecked obligations, and an accepted native verdict, the owner reports `decision: APPROVE` even when independent other-layer handoffs remain open. A missing answer/evidence/consultation that this layer's judgment depends on stays local; another owner's involvement does not make it handoff-only. Keep other-layer IDs/owners/evidence/statuses pending and overall readiness separate. Required handoffs still block final workflow handoff until closed. Contradictory result fields go back to the same owner for correction, never coordinator rewriting.
+
+CR handoffs have no count limit. Keep the existing four fields `Owner/route | Question | Evidence | Required confirmation` and the existing ledger IDs/statuses. Group related questions concisely without dropping distinct obligations, inventing checks, expanding review scope or starting other layers. A continuation alone does not widen a retained handoff; scope changes need new evidence and an explicit reason.
+
 ## Enforcement boundary
 
 These are agent instructions. They do not modify company policy, setup scripts, CI parsers, branch protection, or merge automation.

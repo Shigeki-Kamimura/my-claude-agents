@@ -198,7 +198,7 @@ Owns L1.5 only:
 - local maintainability hazards with concrete evidence
 - explicit locally-checkable project rules
 - review readiness
-- at most 2 L2+ handoff cues
+- concise evidence-backed handoffs without a count limit; retain every known obligation and the existing four-field CR handoff format
 
 CR does not escalate models directly.
 A broader concern goes to adviser/security/data through the normal handoff.
