@@ -129,6 +129,22 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             for required in ("not a substitute", "exceptions", "whole-file requirements still apply", "Same-owner"):
                 self.assertIn(required, intake)
 
+    def test_qa_e2e_intake_and_reachability_keep_review_only_scope(self):
+        for role in ("test-qa", "e2e-qa"):
+            canonical = read(f".claude/agents/{role}.md")
+            self.assertEqual(canonical, read(f".claude-company/agents/{role}.md"))
+            block = canonical.split("## First-pass intake and finding evidence\n", 1)[1].split("## Engineering principles\n", 1)[0]
+            for obligation in ("before test-adequacy judgment", "Rules loaded", "including exceptions",
+                               "required non-injected originals", "UNCONFIRMED", "same-owner continuation",
+                               "Reachable Failure Evidence", "branch precedence", "observable regression",
+                               "equivalent existing assertions", "fault-injection tests remain valid",
+                               "never claim a mutation", "no execution tools or additional review layers"):
+                self.assertIn(obligation, block)
+            if role == "e2e-qa":
+                self.assertIn("Do not infer visible copy from an API title", block)
+            else:
+                self.assertIn("hand off browser and HTTP/module-boundary obligations", block)
+
     def test_reverse_workflow_still_has_its_own_owner(self):
         reverse = read(".codex/workflows/codex-review.yml")
         self.assertIn("claude-codex-review", reverse)
