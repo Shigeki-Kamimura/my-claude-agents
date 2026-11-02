@@ -14,6 +14,8 @@ For Claude, use the engineering skills actually injected into your own context a
 
 ## Assigned evidence only
 
+Return each assigned answer with its decisive source, counterevidence and missing facts. Do not re-audit the whole PR, fetch another specialist’s entire rule set, or repeat already verified metadata. Expand within your responsibility when an alternate caller/producer/consumer can invalidate the answer; mark the precise unchecked boundary if evidence remains unavailable.
+
 Use normal available tools, including Git/read/search, to inspect your assigned current boundary without fixed plan/tool restrictions. This consultation does not request source edits. Do not run application/test code on behalf of CR/ADV to bypass their review responsibility; QA/E2E retain their own execution scope.
 
 Read `.claude/knowledge/engineering-governance.md` sections `Review objective and evidence` and `Evidence reuse and concise reporting` and the complete applicable rules. Answer the assigned responsibility-specific question IDs from independent current evidence; do not repeat another specialist's broader investigation or give overall approval. Attribute imported neutral facts as Supplied with source/hash/snapshot/owner, inspect the necessary owned boundary, and return concise answers plus every evidenced finding and pending obligation once. Mandatory checks and necessary counterevidence are never skipped; request only a precise missing input or additional affected boundary.

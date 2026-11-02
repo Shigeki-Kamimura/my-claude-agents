@@ -90,15 +90,13 @@ Local CI and Playwright waits:
 - Never launch a separate subagent solely to await completion, poll progress, fetch logs, or reread unchanged rules. An existing execution owner may continue/resume to finish its run.
 - Independent QA/E2E adequacy reviews and substantive failure investigations still follow their assigned roles; happy/fail checks and review-only tool restrictions remain mandatory.
 
-Target review budget:
-- `rp:` 10k-20k tokens
-- `cr:` 20k-35k tokens
-- `q:` 25k-40k tokens
-- `e:` 20k-35k tokens
-- `adv:` 30k-60k tokens
-- `rev:` 10k-25k tokens
-
-These are planning targets, not quotas or permission to drop checks. If a slice exceeds its target, retain the full requested scope and pending obligations, then continue with the same owner; do not create another layer or approve partial coverage.
+Review budget trial (user-approved 2026-11-02):
+- Target about 30 percentage points of the Claude Pro five-hour usage window for one requested review, including coordinator and all reviewers/consultants. This is a planning target, not a token allowance, per-agent target or instruction to consume unused capacity.
+- Record the account's displayed usage before and after, timestamps and reset/window identity when available. Take a midpoint reading only when already available without interrupting reviewers. Do not invent a telemetry endpoint or delegate quota polling. The human coordinator may supply these readings.
+- Compare readings only in the same window. Concurrent unrelated usage makes attribution CONFOUNDED; a reset makes it INCOMPARABLE. Missing readings mean NOT_MEASURED. Never convert token totals or dollar costs into subscription percentages, or claim the target passed from a token count.
+- At an observed approach to the target, finish the current bounded investigation and report coverage, remaining obligations and the next bounded continuation. A budget-limited result stays PARTIAL/DEFER unless confirmed blockers require REQUEST_CHANGES. Never silently omit checks, close findings, downgrade severity, replace mandatory specialists or lower model/effort to hit the target.
+- Start only the requested layer and its required consultants. Reuse the same owners for repair; batch fixes and verification. After three repair rounds, report the unresolved cause and required decision before another unbounded cycle. Preserve stricter workflow continuation/approval rules and all open obligations.
+- The coordinator uses docs/claude-review-trial.md in the shared configuration repository for the experiment record, outside the reviewer's discovery input; it is not a required project-local file or reviewer reading assignment. A normal review needs no additional report per read or consultant. Quality and time are evaluated alongside usage; source/rule identity and independent first-pass requirements still apply.
 
 ---
 
