@@ -446,7 +446,11 @@ JSONLの`thread.started.thread_id`と、実際のagent委譲を確認します�
 
 `tools/review_efficiency_report.py` はClaude親/子のトークン・子起動・SendMessage・規則の読込みを集計し、本文を含まないHTMLを出します。別担当の初回確認、別の行範囲、検索、同じ範囲の再参照を区別します。再参照を直ちに無駄と判定しません。
 
-`tools/summarize_claude_session.py` はモデル別・層別のトークンをJSONで出します。いずれも親JSONLを入力し、子JSONLは同じセッション配下から自動的に取得します。
+`tools/summarize_claude_session.py` はClaudeのモデル別・層別トークンをJSONで出します。Claude用の集計ツールは、親JSONLと同じセッション配下から子JSONLを取得します。
+
+`tools/summarize_codex_session.py` は、明示したCodex親子ログと期間の使用量をJSONで出します。応答IDで重複を除き、遅れる場合がある累計イベントは合算しません。最終結果は `task_complete` を優先し、なければ `phase` または `channel` が `final` の発言を使います。使用量の欠落は `NOT_AVAILABLE`、壊れた行がある場合は `PARTIAL` です。実請求額や改善率は算出しません。既存のHTML変換と組み合わせ、案件ごとの集計スクリプト作成を避けます。
+
+`tools/read_review_source.py` は、一度の出力量を制限してソースをJSONで返します。本文は行番号付きで、行の途中では切りません。続きは `next_line` から読みます。上限にはJSON全体を含みます。`complete` は指定した開始行から末尾まで読めたことだけを表します。全文必読の場合は1行目から続けます。1行も収まらないときは失敗し、同じ行の再読を求めます。
 
 例（パスは各環境の実ログに置き換えてください）：
 
@@ -462,6 +466,12 @@ python3 -I -B "$AGENTS/tools/review_efficiency_report.py" \
   --out "$REPORTS/efficiency.html" "$CLAUDE_LOG"
 python3 -I -B "$AGENTS/tools/summarize_claude_session.py" \
   "$CLAUDE_LOG" > "$REPORTS/usage.json"
+python3 -I -B "$AGENTS/tools/summarize_codex_session.py" \
+  --parent "$CODEX_LOG" --child "cr=/absolute/path/to/codex-child.jsonl" \
+  --since "2026-11-02T01:10:45.846Z" --until "2026-11-02T01:20:06.962Z" \
+  --out "$REPORTS/codex-usage.json"
+python3 -I -B "$AGENTS/tools/read_review_source.py" \
+  /absolute/path/to/rule.md --start-line 1 --max-chars 6000
 ```
 
 `$REPORTS` はリポジトリ外を推奨します。Git作業ツリー内では、`setup.sh` が `.git/info/exclude` に登録した `.codex/review-records/` だけが出力可能です。既存の `.gitignore` は参照・変更しません。生成したHTMLは所有者のみ読み取り可能な権限（Unix: 0600）で保存します。
