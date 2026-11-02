@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `b0889c7690f2b2ae9385aa4a4b6bf5427da0151ae400eade9192c16de2c48987`
+SHA-256: `9dfe9782269467c73e3ddbc501a96b9c420da8f21478768f56d36e9702d57aad`
 Included sections: Pinned source and reconciliation, Source coverage and role scope, User-directed execution permissions, Review objective and evidence, Independent review and reconciliation, Evidence and reporting
 
 
