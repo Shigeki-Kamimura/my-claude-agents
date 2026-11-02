@@ -285,6 +285,9 @@ Codexは、資料の版と読み済みの節を既存の確認記録に残しま
 同じ資料は初回の途中でも再利用し、引用のための全文再読を避けます。
 必読の設計書と規則、例外、専門担当自身の初回確認は残します。
 長い資料は節ごとに分け、各呼出しと集約結果の出力上限を守ります。
+独立した節は`read_review_source.py --batch`でまとめて取得します。
+既定の合計上限は12,000文字です。ファイルごとの上限ではありません。
+各結果の`next_line`を使い、不足した必読範囲だけを続けます。
 出力が切れた場合は、不足した範囲だけを取り直します。
 
 AdviserとReact/Nestは、通常経路と意味のある失敗経路を優先します。
@@ -297,6 +300,36 @@ AdviserとReact/Nestは、通常経路と意味のある失敗経路を優先し
 異なる役割の文言を一律にそろえたり、全画面を調べたりはしません。
 既存の確認記録へ結論をまとめ、資料の読み足しは必要な範囲に絞ります。
 モデルと権限は維持します。効果は次の実行ログで確認します。
+
+Adviserは最小限の経路確認後、専門担当ごとの質問をまとめます。
+質問ID、期待する契約、対象範囲、担当、足りない証拠を台帳へ残します。
+Reactは状態・再取得・表示、Nestは認可・応答契約を担当します。
+他担当の確認は出典付きの提供証拠として扱います。
+矛盾や未確認の契約があれば、必要な原本と反証を確認します。
+必須相談、各担当の初回確認、未解決事項の保持は続けます。
+
+初回レビューは、短い依頼文から新規の親を起動できます。
+`tools/start_codex_review.py`は新規の読取り専用`codex exec`を使います。
+長い実装チャットの履歴を引き継ぎません。
+依頼文はそのまま渡し、モデルとeffortを上書きしません。
+親は指定された実reviewerと必須専門担当へ委譲します。
+依頼文には役割、実際の依頼、base/head、未コミットの版を記します。
+対象・除外、規則の参照先、提供された未解決事項も含めます。
+既存担当への継続・再レビューには、この起動方法を使いません。
+逆方向のworkflowでは、従来どおり毎回新規execを使います。
+Desktopチャットの自動作成や、現在の履歴削除は行いません。
+
+```bash
+python3 -I -B /absolute/path/to/my-claude-agents/tools/start_codex_review.py \
+  --project /absolute/path/to/project \
+  --request-file /tmp/review-request.txt --out-dir /tmp/new-codex-review
+```
+
+このコマンドは実際にCodexを起動します。記録保存用とは別です。
+出力先には未使用のフォルダーを指定します。
+依頼文、JSONL、最終返答、終了コードを保存します。
+JSONLはCLIの出力です。応答別使用量がなければ集計は不明です。
+完全な使用量記録には、明示した親子のネイティブログを使います。
 
 ### 初回の資料確認と内部advisor
 
@@ -446,9 +479,18 @@ JSONLの`thread.started.thread_id`と、実際のagent委譲を確認します�
 
 `tools/review_efficiency_report.py` はClaude親/子のトークン・子起動・SendMessage・規則の読込みを集計し、本文を含まないHTMLを出します。別担当の初回確認、別の行範囲、検索、同じ範囲の再参照を区別します。再参照を直ちに無駄と判定しません。
 
-`tools/summarize_claude_session.py` はClaudeのモデル別・層別トークンをJSONで出します。Claude用の集計ツールは、親JSONLと同じセッション配下から子JSONLを取得します。
+`tools/summarize_claude_session.py` はClaudeのモデル別・層別トークンをJSONで出します。Claude用の集計ツールは、親JSONLと同じセッション配下から子JSONLを取得します。`context_inputs_by_compaction` には記録済み圧縮境界ごとの入力統計とcache read/writeを出します。分割応答は応答IDの初出区間へまとめ、重複境界は除きます。空区間から削減効果を推定しません。`source_reads_by_transcript` はReadの明示的な開始行・行数の有無を、ツールIDで重複を除いて数えます。範囲指定の欠落は調査候補であり、不具合や無駄と自動判定しません。
 
 `tools/summarize_codex_session.py` は、明示したCodex親子ログと期間の使用量をJSONで出します。応答IDで重複を除き、遅れる場合がある累計イベントは合算しません。最終結果は `task_complete` を優先し、なければ `phase` または `channel` が `final` の発言を使います。使用量の欠落は `NOT_AVAILABLE`、壊れた行がある場合は `PARTIAL` です。実請求額や改善率は算出しません。既存のHTML変換と組み合わせ、案件ごとの集計スクリプト作成を避けます。
+
+`tools/capture_codex_review.py` は、同じ集計とHTML変換を1コマンドで行います。
+明示した親子ログと期間を一度だけ採取します。ログ探索やレビューは行いません。
+使用量JSON・Markdown、担当別の最終返答と会話、会話HTML、入口を保存します。
+内部推論とsystem/developer発言は出力しません。
+元ログを保ち、既存フォルダーへの上書きを拒否します。
+壊れた行や使用量不足は、不完全・不明として残します。
+保存結果をLLMへ読み戻して整形する必要はありません。
+差分、ソースの版、相談の呼出し証拠は従来どおり保持します。
 
 `tools/read_review_source.py` は、一度の出力量を制限してソースをJSONで返します。本文は行番号付きで、行の途中では切りません。続きは `next_line` から読みます。上限にはJSON全体を含みます。`complete` は指定した開始行から末尾まで読めたことだけを表します。全文必読の場合は1行目から続けます。1行も収まらないときは失敗し、同じ行の再読を求めます。
 
@@ -472,6 +514,23 @@ python3 -I -B "$AGENTS/tools/summarize_codex_session.py" \
   --out "$REPORTS/codex-usage.json"
 python3 -I -B "$AGENTS/tools/read_review_source.py" \
   /absolute/path/to/rule.md --start-line 1 --max-chars 6000
+python3 -I -B "$AGENTS/tools/read_review_source.py" \
+  --batch /tmp/review-reads.json --max-chars 12000
+python3 -I -B "$AGENTS/tools/capture_codex_review.py" \
+  --parent "$CODEX_LOG" --child "adviser=/absolute/path/to/adviser.jsonl" \
+  --child "react=/absolute/path/to/react.jsonl" --child "nest=/absolute/path/to/nest.jsonl" \
+  --since "2026-11-02T01:10:45.846Z" --until "2026-11-02T01:20:06.962Z" \
+  --out-dir "$REPORTS/new-codex-record" --redact-personal
+```
+
+`review-reads.json`は、次の形式で必要な範囲を指定します。
+終了行を省くと、出力上限まで読みます。行番号は両端を含みます。
+
+```json
+[
+  {"path": "/absolute/path/to/rule.md", "start_line": 40, "end_line": 85},
+  {"path": "/absolute/path/to/component.tsx", "start_line": 20, "end_line": 70}
+]
 ```
 
 `$REPORTS` はリポジトリ外を推奨します。Git作業ツリー内では、`setup.sh` が `.git/info/exclude` に登録した `.codex/review-records/` だけが出力可能です。既存の `.gitignore` は参照・変更しません。生成したHTMLは所有者のみ読み取り可能な権限（Unix: 0600）で保存します。

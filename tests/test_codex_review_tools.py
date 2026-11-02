@@ -184,6 +184,35 @@ class ReviewToolsTests(unittest.TestCase):
         source.write_text("", encoding="utf-8")
         self.assertTrue(json.loads(self.cli("read_review_source.py", source).stdout)["complete"])
 
+    def test_batch_bounds_combined_output_and_resumes_every_range(self):
+        source = self.root / "rules.txt"
+        source.write_text("".join(f"section {i}\n" for i in range(100)), encoding="utf-8")
+        manifest = self.root / "reads.json"
+        manifest.write_text(json.dumps([{"path": str(source), "start_line": 1, "end_line": 30},
+                                        {"path": str(source), "start_line": 60, "end_line": 90}]))
+        result = self.cli("read_review_source.py", "--batch", manifest, "--max-chars", 900)
+        self.assertLessEqual(len(result.stdout), 900)
+        reads = json.loads(result.stdout)["reads"]
+        self.assertEqual([1, 60], [r["start_line"] for r in reads])
+        for value, end in zip(reads, (30, 90)):
+            self.assertLessEqual(value["end_line"], end)
+            self.assertEqual(value["end_line"] + 1, value["next_line"])
+            self.assertFalse(value["complete"])
+        entire = json.loads(self.cli("read_review_source.py", "--batch", manifest).stdout)
+        self.assertEqual([30, 90], [r["end_line"] for r in entire["reads"]])
+
+    def test_batch_failure_emits_no_partial_source_and_validates_requests(self):
+        source = self.root / "rules.txt"
+        source.write_text("private source\n", encoding="utf-8")
+        manifest = self.root / "reads.json"
+        for requests in ([], {}, [{"path": str(source)}, {"path": "missing"}],
+                         [{"path": str(source), "start_line": True}],
+                         [{"path": str(source), "end_line": 0}],
+                         [{"path": str(source), "unknown": 1}]):
+            manifest.write_text(json.dumps(requests))
+            result = self.cli("read_review_source.py", "--batch", manifest, code=2)
+            self.assertEqual("", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

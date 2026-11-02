@@ -109,6 +109,16 @@ def review_boundary(paths: list[Path]) -> dict:
             "server_tool_calls": list(calls.values())}
 
 
+def input_statistics(inputs):
+    """重複除去済みの主応答入力から統計を求めます。"""
+    values = sorted(inputs)
+    count = len(values)
+    return {"samples": count,
+            "min_tokens": values[0] if count else None,
+            "median_tokens": ((values[(count - 1) // 2] + values[count // 2]) / 2) if count else None,
+            "max_tokens": values[-1] if count else None}
+
+
 def summarize(session_path: Path) -> dict:
     if not session_path.is_file() or session_path.suffix != ".jsonl":
         raise ValueError("親セッションの.jsonlを指定してください")
@@ -129,6 +139,8 @@ def summarize(session_path: Path) -> dict:
     messages_by_file = {}
     context_inputs_by_file = {}
     compaction_boundaries = {}
+    context_segments_by_file = {}
+    source_reads_by_file = {}
     send_recipients = set()
 
     for path in paths:
@@ -136,10 +148,15 @@ def summarize(session_path: Path) -> dict:
         layer_transcripts[layer] += 1
         responses = {}
         compact_ids = set()
+        segment_boundaries = [None]
+        reads = {"read_calls": 0, "explicit_range_calls": 0, "missing_range_calls": 0}
         for index, record in enumerate(read_records(path)):
             if record.get("type") == "system" and record.get("subtype") == "compact_boundary":
                 compact_id = record.get("uuid")
-                compact_ids.add(compact_id if isinstance(compact_id, str) and compact_id else index)
+                compact_key = compact_id if isinstance(compact_id, str) and compact_id else index
+                if compact_key not in compact_ids:
+                    compact_ids.add(compact_key)
+                    segment_boundaries.append(compact_id if isinstance(compact_id, str) and compact_id else None)
             if record.get("type") != "assistant":
                 continue
             message = record.get("message")
@@ -154,7 +171,8 @@ def summarize(session_path: Path) -> dict:
             model = str(message.get("model") or "unknown")
             usage = message.get("usage") or {}
             if isinstance(usage, dict):
-                prev = responses.setdefault(key, {"model": model, "usage": {}})
+                # 分割応答は最初に現れた区間へまとめます。
+                prev = responses.setdefault(key, {"model": model, "usage": {}, "segment": len(compact_ids)})
                 merge_response_usage(prev, usage)
 
             content = message.get("content")
@@ -169,6 +187,12 @@ def summarize(session_path: Path) -> dict:
                 unique_tool_ids.add((str(path), tool_id))
                 name = str(block.get("name") or "unknown")
                 tool_counts[name] += 1
+                if name == "Read":
+                    args = block.get("input") or {}
+                    bounded = isinstance(args, dict) and all(
+                        type(args.get(key)) is int and args[key] > 0 for key in ("offset", "limit"))
+                    reads["read_calls"] += 1
+                    reads["explicit_range_calls" if bounded else "missing_range_calls"] += 1
                 if path == session_path:
                     parent_tool_counts[name] += 1
                 if name == "SendMessage":
@@ -179,20 +203,26 @@ def summarize(session_path: Path) -> dict:
         messages_by_file[path.name] = len(responses)
         # 出力やadvisorの別入力を足さず、主応答の入力だけを数えます。
         inputs = []
+        segment_inputs = [[] for _ in segment_boundaries]
+        segment_usage = [Counter() for _ in segment_boundaries]
         input_keys = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
         for response in responses.values():
             usage = response.get("components", {}).get("main", {}).get("usage", {})
             count = sum(usage.get(name, 0) for name in input_keys)
             if count > 0:
                 inputs.append(count)
-        inputs.sort()
-        count = len(inputs)
-        context_inputs_by_file[path.name] = {
-            "samples": count,
-            "min_tokens": inputs[0] if count else None,
-            "median_tokens": ((inputs[(count - 1) // 2] + inputs[count // 2]) / 2) if count else None,
-            "max_tokens": inputs[-1] if count else None,
-        }
+                segment = response["segment"]
+                segment_inputs[segment].append(count)
+                segment_usage[segment].update({key: usage.get(key, 0) for key in input_keys})
+        context_inputs_by_file[path.name] = input_statistics(inputs)
+        context_segments_by_file[path.name] = [
+            {"segment": index, "boundary_uuid": boundary, **input_statistics(values),
+             "first_tokens": values[0] if values else None,
+             "last_tokens": values[-1] if values else None,
+             "total_input_tokens": sum(values),
+             **{key: segment_usage[index][key] for key in input_keys}}
+            for index, (boundary, values) in enumerate(zip(segment_boundaries, segment_inputs))]
+        source_reads_by_file[path.name] = reads
         compaction_boundaries[path.name] = len(compact_ids)
         for key, response in responses.items():
             response_ids.add(key)
@@ -221,6 +251,8 @@ def summarize(session_path: Path) -> dict:
         "api_responses_by_transcript": messages_by_file,
         "context_inputs_by_transcript": context_inputs_by_file,
         "recorded_compaction_boundaries": compaction_boundaries,
+        "context_inputs_by_compaction": context_segments_by_file,
+        "source_reads_by_transcript": source_reads_by_file,
         "tokens_by_layer": {
             layer: {
                 "transcripts": layer_transcripts[layer],
