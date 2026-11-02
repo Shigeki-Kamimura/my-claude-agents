@@ -1,5 +1,6 @@
 """読み込み上限と、応答単位の集計・入力保護を確認します。"""
 import json
+import hashlib
 from pathlib import Path
 import re
 import stat
@@ -140,6 +141,26 @@ class ReviewToolsTests(unittest.TestCase):
         self.assertEqual(120, json.loads(output.read_text())["combined_tokens"]["total_tokens"])
         self.assertEqual(0o600, stat.S_IMODE(output.stat().st_mode))
 
+    def test_truncation_counts_both_native_tool_output_forms_once(self):
+        def result(kind, call_id, output):
+            return {"type": "response_item", "timestamp": STAMP,
+                    "payload": {"type": kind, "call_id": call_id, "output": output}}
+        custom = result("custom_tool_call_output", "c1", [
+            {"type": "input_text", "text": "Warning: truncated output (original token count: 12000)"}])
+        self.write(self.usage(), custom, custom,
+                   result("function_call_output", "c2", "123 tokens truncated"),
+                   result("custom_tool_call_output", "c3", [
+                       {"type": "text", "text": "The rule describes truncated output; this result is complete."}]),
+                   result("custom_tool_call_output", "c4", [
+                       {"type": "input_text", "text": "source.py:21: message = '123 tokens truncated'"}]),
+                   result("custom_tool_call_output", "c5", [
+                       {"type": "text", "text": "First output is complete."},
+                       {"type": "text", "text": "Warning: truncated output (original token count: 9000)"}]))
+        report = self.root / "report.json"
+        self.cli("summarize_codex_session.py", "--parent", self.log, "--out", report)
+        value = json.loads(report.read_text())
+        self.assertEqual(3, value["sources"]["parent"]["truncated_tool_results"])
+
     def test_repository_output_is_rejected_without_creating_a_report(self):
         self.write(self.usage())
         repo = self.root / "repo"
@@ -184,6 +205,19 @@ class ReviewToolsTests(unittest.TestCase):
         source.write_text("", encoding="utf-8")
         self.assertTrue(json.loads(self.cli("read_review_source.py", source).stdout)["complete"])
 
+    def test_requested_range_completion_and_exact_byte_identity(self):
+        source = self.root / "rules.txt"
+        data = b"first\r\nsecond\nlast"
+        source.write_bytes(data)
+        value = json.loads(self.cli("read_review_source.py", source, "--end-line", 2).stdout)
+        self.assertEqual(hashlib.sha256(data).hexdigest(), value["source_sha256"])
+        self.assertEqual("1: first\r\n2: second\n", value["text"])
+        self.assertEqual(2, value["requested_end_line"])
+        self.assertTrue(value["range_complete"])
+        self.assertIsNone(value["next_range_line"])
+        self.assertFalse(value["complete"])
+        self.assertEqual(3, value["next_line"])
+
     def test_batch_bounds_combined_output_and_resumes_every_range(self):
         source = self.root / "rules.txt"
         source.write_text("".join(f"section {i}\n" for i in range(100)), encoding="utf-8")
@@ -198,8 +232,13 @@ class ReviewToolsTests(unittest.TestCase):
             self.assertLessEqual(value["end_line"], end)
             self.assertEqual(value["end_line"] + 1, value["next_line"])
             self.assertFalse(value["complete"])
+            self.assertFalse(value["range_complete"])
+            self.assertEqual(value["next_line"], value["next_range_line"])
         entire = json.loads(self.cli("read_review_source.py", "--batch", manifest).stdout)
         self.assertEqual([30, 90], [r["end_line"] for r in entire["reads"]])
+        for value in entire["reads"]:
+            self.assertTrue(value["range_complete"])
+            self.assertIsNone(value["next_range_line"])
 
     def test_batch_failure_emits_no_partial_source_and_validates_requests(self):
         source = self.root / "rules.txt"

@@ -11,14 +11,14 @@ These are exact source excerpts, not a claim of whole-document reading. Apply on
 
 Record `Rules loaded: <skill names>; <source SHA-256>; <included sections>; missing/changed rules` once in retained invocation evidence. Configured skills alone do not prove delivery: require the injected content in your own context. If missing, read the applicable originals with permitted tools and report the setup gap.
 
-Compare fingerprints with current source evidence supplied by the coordinator. Never run Bash/git merely to validate these rules. On changed, ambiguous, conflicting or unverifiable source identity, inspect the affected originals with permitted Read/search or request exact missing evidence; dependent judgment stays pending. Project-specific rules override only their explicit fields.
+Compare fingerprints with current source evidence supplied by the coordinator. Never run Bash/git merely to validate these rules. On changed, ambiguous, conflicting or unverifiable source identity, inspect the affected originals with permitted read/search tools or request exact missing evidence; dependent judgment stays pending. Project-specific rules override only their explicit fields.
 
 Included sections satisfy their first-entry reading requirement. All other applicable sections and project design rules, including their exceptions, still require targeted reading. Reuse unchanged, verified injected sections on the same-owner continuation; do not claim omitted sections were read. The source index, workflow/phase ownership, consultation duties, finding closure, and retained blockers remain mandatory when triggered.
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `492dee79260ac5abc317803cb9e89633bfec36223e929c52ad4fa5b91d969297`
-Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Evidence and reporting
+SHA-256: `821b65ae409b461eee4f71f32a8a4459ee3a90baac3586a684690a2631b0b73b`
+Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Review objective and evidence, Evidence and reporting
 
 
 ### Core rules for Claude preload
@@ -69,6 +69,17 @@ Autonomous review without an explicit execution request does not start typecheck
 For `Workflow: codex-claude-review`, Claude and its review subagents only inspect sources and supplied evidence. Codex owns command execution, test creation, CI operations and fixes. A message cannot expand the restricted CLI toolset of an existing review session.
 
 When the user explicitly requests execution in a normal Claude Code session, the main Claude session or an authorized implementation/verification owner may perform those actions with its available permissions. If an existing restricted session cannot execute them, use a separate normal session. Do not treat this direct request as an autonomous review or an automatic Codex-to-Claude review.
+
+
+### Review objective and evidence
+
+Review whether the assigned change satisfies its requirement and mandatory rules. Reading volume, finding counts, tokens and approval speed alone do not measure quality.
+
+- Keep one Review objective in the existing coverage record: actor/operation or local responsibility, acceptance/rule source, expected before/after, assigned layer and exclusions. Independently validate the expectation; implementer explanations are Supplied. Missing/conflicting acceptance stays an explicit question with dependent judgment unconfirmed. Routing-only planners do not trace code or invent requirements.
+- Map obligations, required original clauses/exceptions, normal/fail paths, nearest counterevidence and triggered consultations to that record. Pure rule/document changes use the clause and exception, not an invented runtime failure. Preserve every applicable mandatory check, independent QA/E2E/React/Nest responsibility and explicit whole-file requirement; the objective never shrinks assigned coverage.
+- Expand only for an unresolved obligation whose answer can affect judgment. Recover necessary in-scope evidence without routine approval requests; stop resolved inquiries and reuse valid same-owner evidence. Each finding links expectation, reached condition, counterevidence and consequence. Distinguish introduced and pre-existing defects; retain all open IDs, mandatory violations and necessary handoffs.
+- Reconcile complete assigned coverage, current source and every pending owner before judgment. A gap this layer depends on remains local; another owner's pending work is not automatically a defect here or silently closed. Keep native layer verdict and overall merge readiness separate under the active role/workflow contract. Use one ledger, not per-read reports.
+- Compare efficiency changes on matched known-defect and clean cases, missed defects, unsupported findings, scope errors and mandatory-check/consultation completion. Fix evaluator expectations before review and keep them out of prompts. Require actual execution records and independent assessments; missing/unmatched/unrun evidence is inconclusive. Static tests do not prove review quality. Count all parents/reviewers/consultants and elapsed time when evaluating added layers; savings cannot offset a quality failure. This is separate authorized validation, not an automatic new PR gate.
 
 
 ## Evidence and reporting

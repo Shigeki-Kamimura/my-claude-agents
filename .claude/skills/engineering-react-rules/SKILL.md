@@ -11,13 +11,13 @@ These are exact source excerpts, not a claim of whole-document reading. Apply on
 
 Record `Rules loaded: <skill names>; <source SHA-256>; <included sections>; missing/changed rules` once in retained invocation evidence. Configured skills alone do not prove delivery: require the injected content in your own context. If missing, read the applicable originals with permitted tools and report the setup gap.
 
-Compare fingerprints with current source evidence supplied by the coordinator. Never run Bash/git merely to validate these rules. On changed, ambiguous, conflicting or unverifiable source identity, inspect the affected originals with permitted Read/search or request exact missing evidence; dependent judgment stays pending. Project-specific rules override only their explicit fields.
+Compare fingerprints with current source evidence supplied by the coordinator. Never run Bash/git merely to validate these rules. On changed, ambiguous, conflicting or unverifiable source identity, inspect the affected originals with permitted read/search tools or request exact missing evidence; dependent judgment stays pending. Project-specific rules override only their explicit fields.
 
 Included sections satisfy their first-entry reading requirement. All other applicable sections and project design rules, including their exceptions, still require targeted reading. Reuse unchanged, verified injected sections on the same-owner continuation; do not claim omitted sections were read. The source index, workflow/phase ownership, consultation duties, finding closure, and retained blockers remain mandatory when triggered.
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `492dee79260ac5abc317803cb9e89633bfec36223e929c52ad4fa5b91d969297`
+SHA-256: `821b65ae409b461eee4f71f32a8a4459ee3a90baac3586a684690a2631b0b73b`
 Included sections: ASYNC-1: Promise aggregation does not cancel work, HTTP-1: Distinguish authentication and forbidden access
 
 

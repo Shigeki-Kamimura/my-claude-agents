@@ -37,6 +37,7 @@
 - 観点: {focus}
 
 前提
+- 最初に、対象操作・責務、受入条件・規則の出典、期待する変更前後を、既存の確認台帳へ`Review objective`として短く記録してください。確認項目と専門相談は、その目的または必須規則・未解決IDに対応させます。目的が未確認でも必須確認を落とさず、依存する判断を保留します。
 - 承認を前提にせず、壊れる条件を探してください。
 - 担当層の確認範囲に限り、「通る」と判断した箇所について、反証のために壊れる入力・状態を一度考えてください。
   考えた入力はそのまま報告しないでください。反証できず筋道もない場合のみ、「未確認」に1行で記録してください。
@@ -79,7 +80,7 @@
 
 `.claude/knowledge/engineering-governance.md` の次の節です。
 - `Pinned source and reconciliation`、`Principle application`、`Source coverage and role scope`、`User-approved technical supplements`
-- `Scope, budgets, and stop conditions`、`Independent review and reconciliation`
+- `Review objective and evidence`、`Scope, budgets, and stop conditions`、`Independent review and reconciliation`
 - `Evidence reuse and concise reporting`、`Rule loading across continuations`
 - `Autonomous Claude review`(Claude 向けの節です。Codex で準用するのは、既定の `{scope}`(ステージ済み・未ステージ・未追跡)だけです。Claude 固有の full access と staged-baseline の手順は準用しません)
 

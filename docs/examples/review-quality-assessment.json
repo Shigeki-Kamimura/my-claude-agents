@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "status": "NOT_RUN",
+  "cases": [
+    {
+      "id": "known-regression",
+      "kind": "defect",
+      "expected_defects": ["D1"],
+      "expected_verdict": "REQUEST_CHANGES",
+      "required_checks": ["objective", "normal", "failure", "counterevidence", "mandatory_rules", "required_consultations"],
+      "oracle": null
+    },
+    {
+      "id": "guarded-clean-control",
+      "kind": "clean",
+      "expected_defects": [],
+      "expected_verdict": "APPROVE",
+      "required_checks": ["objective", "normal", "failure", "counterevidence", "mandatory_rules", "required_consultations"],
+      "oracle": null
+    },
+    {
+      "id": "missing-required-evidence",
+      "kind": "hold",
+      "expected_defects": [],
+      "expected_verdict": "DEFER",
+      "required_checks": ["objective", "pending_items_retained", "no_false_approval"],
+      "oracle": null
+    }
+  ],
+  "baseline": {"configuration": null, "runs": []},
+  "candidate": {"configuration": null, "runs": []}
+}

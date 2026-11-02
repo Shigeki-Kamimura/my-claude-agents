@@ -4,6 +4,7 @@
 import argparse
 import importlib.util
 import json
+import re
 import sys
 from collections import Counter
 from datetime import datetime
@@ -38,6 +39,7 @@ def checked_usage(values):
 
 def summarize(path, since=None, until=None):
     responses, calls, malformed = {}, Counter(), 0
+    truncated_results = set()
     completed, final = None, None
     last_record = None
     with path.open(encoding="utf-8") as stream:
@@ -70,6 +72,19 @@ def summarize(path, since=None, until=None):
             elif kind == "response_item":
                 if subkind in ("function_call", "custom_tool_call"):
                     calls[str(payload.get("name", "unknown"))] += 1
+                elif subkind in ("function_call_output", "custom_tool_call_output"):
+                    output = payload.get("output", "")
+                    outputs = ([output] if isinstance(output, str) else
+                               [item["text"] for item in output
+                                if isinstance(item, dict) and isinstance(item.get("text"), str)]
+                               if isinstance(output, list) else [])
+                    # 本文中の引用を誤算せず、ツール出力先頭の警告を数えます。
+                    if any(re.match(
+                            r"Warning: truncated output \(original token count: \d+\)|"
+                            r"\b\d+ tokens truncated\b|"
+                            r"Output exceeded the available model context and was truncated", text.lstrip())
+                           for text in outputs):
+                        truncated_results.add(payload.get("call_id") or row.get("ordinal") or stamp.isoformat())
                 elif (subkind == "message" and payload.get("role") == "assistant"
                       and (payload.get("phase") == "final" or payload.get("channel") == "final")
                       and payload.get("phase") not in ("analysis", "summary")
@@ -84,6 +99,7 @@ def summarize(path, since=None, until=None):
         totals["uncached_input_tokens"] = totals["input_tokens"] - totals["cached_input_tokens"]
     return {"tokens": totals, "model_responses": len(responses),
             "top_level_tool_calls": dict(calls),
+            "truncated_tool_results": len(truncated_results),
             "final_message": completed if completed is not None else final,
             "malformed_lines": malformed,
             "status": "PARTIAL" if malformed else ("AVAILABLE" if responses else "NOT_AVAILABLE"),

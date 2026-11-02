@@ -2,20 +2,26 @@
 """規則やソースを、出力量と行境界を守って読みます。"""
 
 import argparse
+import hashlib
+import io
 import json
 import sys
 from pathlib import Path
 
 
 def read_chunk(path, start_line=1, max_chars=12000, end_line=None):
-    with path.open(encoding="utf-8", newline="") as stream:
-        lines = stream.readlines()
+    data = path.read_bytes()
+    lines = io.StringIO(data.decode("utf-8"), newline="").readlines()
     if start_line < 1 or start_line > max(1, len(lines)):
         raise ValueError("開始行がファイルの範囲外です")
     if end_line is not None and (end_line < start_line or end_line > len(lines)):
         raise ValueError("終了行がファイルの範囲外です")
     result = {"path": str(path), "start_line": start_line,
               "end_line": start_line - 1, "total_lines": len(lines),
+              "source_sha256": hashlib.sha256(data).hexdigest(),
+              "requested_end_line": end_line,
+              "range_complete": not lines,
+              "next_range_line": start_line if lines else None,
               "next_line": start_line if lines else None,
               "complete": not lines, "text": ""}
     encoded = json.dumps(result, ensure_ascii=False) + "\n"
@@ -23,6 +29,8 @@ def read_chunk(path, start_line=1, max_chars=12000, end_line=None):
         raise ValueError("出力上限がメタ情報より小さいです")
     for number in range(start_line, (end_line or len(lines)) + 1):
         candidate = {**result, "end_line": number,
+                     "range_complete": number == (end_line or len(lines)),
+                     "next_range_line": number + 1 if number < (end_line or len(lines)) else None,
                      "next_line": number + 1 if number < len(lines) else None,
                      "complete": number == len(lines),
                      "text": result["text"] + f"{number}: {lines[number - 1]}"}

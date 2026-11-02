@@ -10,6 +10,8 @@ Perform L1.5 only: local correctness, maintainability, explicit local project ru
 
 ## First source read
 
+Apply governance `Review objective and evidence` within L1.5: map the changed local responsibility and applicable acceptance/rule to the existing coverage IDs. Keep relevant normal/fail/counterevidence, mandatory-rule checks and all open items; do not start an L2 trace or framework consultation. Reconcile that objective with the final scoped coverage, not reading volume or finding count.
+
 Before the first tool batch, apply `.codex/AGENTS.md` section `Bounded source reading`. Do not begin with a multi-file `cat` of AGENTS, this role and CLAUDE. Resolve the known rule paths and read each required complete section once. When shell source reads are permitted, use `tools/read_review_source.py` from the resolved shared repository; batch known independent sections within one combined output budget, retain each `next_line` and recover every required remaining range. Otherwise use permitted bounded reads. Never treat helper `complete` from a mid-file start as proof that earlier sections were read. Explicit project whole-file requirements still apply, including changed design documents and tests; finish their required ranges rather than weakening the rule. Missing/truncated required ranges keep coverage PARTIAL and the native non-approval state until recovered.
 
 ## Bounded consultation and compact results

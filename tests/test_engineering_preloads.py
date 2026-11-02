@@ -1,10 +1,12 @@
 """規則の抜粋保持、更新検知、両profileへの配布を確認します。"""
 
 import importlib.util
+import hashlib
 from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -16,6 +18,57 @@ SPEC.loader.exec_module(preloads)
 
 
 class PreloadTests(unittest.TestCase):
+    def test_isolated_generation_refuses_output_symlinks_before_any_write(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / "candidate"
+            self.copy_sources(root)
+            outside = Path(folder) / "active-skills"
+            outside.mkdir()
+            sentinel = outside / "keep.txt"
+            sentinel.write_text("active configuration")
+            (root / ".agents").mkdir()
+            (root / ".agents/skills").symlink_to(outside, target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "root外"):
+                preloads.sync(root, write=True)
+            self.assertEqual(sentinel.read_text(), "active configuration")
+            self.assertEqual(list(outside.iterdir()), [sentinel])
+            self.assertFalse((root / ".claude/skills").exists())
+            self.assertFalse((root / ".claude-company/skills").exists())
+
+    def test_cli_generates_isolated_copy_without_touching_active_rules(self):
+        active = {p: p.read_bytes() for p in ROOT.glob(".agents/skills/*/SKILL.md")}
+        active.update({ROOT / profile / relative: (ROOT / profile / relative).read_bytes()
+                       for profile in preloads.PROFILES for relative in preloads.SOURCES.values()})
+        with tempfile.TemporaryDirectory(prefix="isolated rules ") as folder:
+            root = Path(folder)
+            self.copy_sources(root)
+            command = [sys.executable, "-I", "-B", str(ROOT / "tools/sync_engineering_preloads.py"),
+                       "--root", str(root)]
+            check = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(check.returncode, 1, check.stderr)
+            self.assertFalse((root / ".agents").exists())
+            write = subprocess.run(command + ["--write"], capture_output=True, text=True)
+            self.assertEqual(write.returncode, 0, write.stderr)
+            self.assertEqual(preloads.sync(root), [])
+            self.assertEqual(len(list(root.glob(".agents/skills/*/SKILL.md"))), 3)
+        for path, before in active.items():
+            self.assertEqual(path.read_bytes(), before, str(path))
+
+    def test_codex_excerpts_keep_actual_source_paths_bytes_and_permissions(self):
+        for name, sources in preloads.CODEX_SECTIONS.items():
+            rendered = preloads.render(ROOT, name, "codex")
+            self.assertNotIn(".Codex", rendered)
+            self.assertNotIn("codex-Codex-review", rendered)
+            self.assertNotIn("Never run Bash/git merely", rendered)
+            for source, titles in sources.items():
+                relative = preloads.SOURCES[source]
+                data = (ROOT / ".claude" / relative).read_bytes()
+                self.assertIn(f"`.claude/{relative}`", rendered)
+                self.assertIn(hashlib.sha256(data).hexdigest(), rendered)
+                for title in titles:
+                    self.assertIn(preloads.section(data.decode(), title), rendered)
+        self.assertIn("Never run Bash/git merely", preloads.render(ROOT, "engineering-nest-rules"))
+
     def test_nested_conditions_and_exceptions_are_preserved(self):
         source = "## Rule\nRequired.\n### Exception\nConditional.\n## Next\nUnrelated.\n"
         self.assertEqual(preloads.section(source, "Rule"),
@@ -50,6 +103,10 @@ class PreloadTests(unittest.TestCase):
             self.assertFalse((root / ".claude/skills").exists())
             preloads.sync(root, write=True)
             self.assertEqual(preloads.sync(root), [])
+            codex = root / ".agents/skills/engineering-nest-rules/SKILL.md"
+            codex.write_text(codex.read_text().replace(".claude/knowledge", ".Codex/knowledge"))
+            self.assertEqual(preloads.sync(root), [str(codex.relative_to(root))])
+            preloads.sync(root, write=True)
             output = root / ".claude/skills/engineering-review-core/SKILL.md"
             before = output.read_bytes()
             for profile in preloads.PROFILES:

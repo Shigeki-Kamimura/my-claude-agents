@@ -58,7 +58,9 @@ python3 -I -B "$AGENTS/tools/summarize_claude_session.py" \
 
 ## 比較と合格条件
 
+- 目的の保持と品質比較には、[レビュー目的と品質の比較](review-quality-validation.md)と`tools/review_quality_report.py`を使います。既知欠陥と正常例、独立採点、必須確認、実行証拠が不足する間は品質維持を確定しません。
 - `review_efficiency_report.py` の「同じ範囲への再アクセス」は**無駄の候補**です。規則が変更された場合や、元の履歴が失われた場合の再確認は正当です。
+- Codexの`truncated_tool_results`は、文字列とテキスト配列の両形式から切断警告を数えます。同じcall_idは重複計上せず、本文中の引用は数えません。0件だけで必須範囲の読了とは判定しません。
 - 別担当の初回規則確認や、同じ担当の別の行範囲の読み込みは、重複として数えません。検索と本文読込みも区別します。
 - 新規Agent起動数、SendMessage数、モデル別input/output/cache read/cache writeを確認します。
 - 消費量の比較では差分・プロンプト・CLI・モデル・baseを固定し、同条件で複数回試します。以前の「23子起動、540応答」は直接比較に使いません。
