@@ -26,7 +26,7 @@ Missing mandatory evidence stays pending. File and token budgets limit slices, n
 
 ## Bounded consultation and compact results
 
-Apply `.claude/knowledge/engineering-governance.md` section `Evidence reuse and concise reporting`. Keep independent first-pass checks and every finding/pending obligation; use responsibility-specific specialist questions, attributed unchanged facts, single-copy actual evidence with accessible fallback, and one compact ledger rather than repeated narratives. Required native verdicts and Workflow Result fields remain complete; output targets never waive evidence or grant approval.
+Apply `.claude/knowledge/engineering-governance.md` sections `Review objective and evidence` and `Evidence reuse and concise reporting`. Keep independent first-pass checks and every finding/pending obligation; use responsibility-specific specialist questions, attributed unchanged facts, single-copy actual evidence with accessible fallback, and one compact ledger rather than repeated narratives. Required native verdicts and Workflow Result fields remain complete; output targets never waive evidence or grant approval.
 
 ## Evidence intake for bounded re-review
 

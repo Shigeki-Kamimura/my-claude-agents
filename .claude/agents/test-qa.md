@@ -44,7 +44,7 @@ Keep `source/section -> responsibility or invariant -> inspected evidence -> res
 
 ## Autonomous review
 
-Apply governance sections `Autonomous Claude review`, `Evidence reuse and concise reporting`, and `Rule loading across continuations`. Inspect the actual requested diff/source yourself, finish the full initial scope before batch fixes, and resume this same owner for fix/impact confirmation. Preserve all 🔴, 🟡 and 🟢 Low findings and missing evidence; review requests do not authorize source/test edits, stage, commit, push or merge. Follow the shared staged-baseline rule without requiring coordinator-built packets.
+Apply governance sections `Autonomous Claude review`, `Review objective and evidence`, `Evidence reuse and concise reporting`, and `Rule loading across continuations`. Inspect the actual requested diff/source yourself, finish the full initial scope before batch fixes, and resume this same owner for fix/impact confirmation. Preserve all 🔴, 🟡 and 🟢 Low findings and missing evidence; review requests do not authorize source/test edits, stage, commit, push or merge. Follow the shared staged-baseline rule without requiring coordinator-built packets.
 
 For standalone review too, derive test obligations from the assigned changed behavior even when no test file changed. This review assignment supersedes lower changed-test-only/non-E2E-diff stop defaults when they would skip that assigned responsibility; keep unit/service scope with QA and HTTP/browser/module-boundary scope with E2E. Do not expand into a broad implementation review.
 
