@@ -349,7 +349,7 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertTrue(intake.strip() in core, "原文の節本文が生成物に保持されていません")
             self.assertNotIn("## Mandatory framework consultation\n", core)
 
-    def test_foreground_consultation_requires_real_results_without_widening_tools(self):
+    def test_consultation_requires_real_results_without_widening_tools(self):
         workflow = read(".codex/workflows/claude-review.yml")
         consultation = workflow.split("\nconsultation:\n", 1)[1].split("\nqa_contract:\n", 1)[0]
         for required in ("最小限の実境界", "依頼を遅らせません", "run_in_background", "false",
@@ -359,15 +359,20 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertIn(required, consultation)
         for profile in (".claude", ".claude-company"):
             adviser = read(f"{profile}/agents/adviser.md")
-            for required in ("Immediately batch", "Do not finish the full framework investigation",
-                             "exposed Agent schema", "`false`", "actual replies", "same owner",
+            for required in ("Batch triggered React/Nest questions", "Do not finish the full framework investigation",
+                             "Independent consultations may run concurrently", "dependent questions wait",
+                             "missing run_in_background parameter does not make Agent unavailable",
+                             "direct invocation is unavailable", "SPECIALIST_REQUEST",
+                             "Await actual results before judgment", "no waiting agents, tool expansion", "reuse this owner",
                              "precise missing capability", "adoption/rejection reasons"):
-                self.assertIn(required, adviser)
+                self.assertIn(required, adviser, required)
             parent = read(f"{profile}/CLAUDE.md")
-            for required in ("foreground Agent", "only when exposed", "actual replies",
-                             "do not add tools or waiting agents", "eleven `Workflow Result` fields",
-                             "For active `codex-claude-review` only", "does not activate a workflow"):
-                self.assertIn(required, parent)
+            for required in ("permitted tool supports it", "dependent questions wait",
+                             "Preserve role model/effort and restrictions", "absent from the schema",
+                             "Launch acknowledgement is not evidence", "unavailable capability and pending obligations",
+                             "never status polling or waiting agents", "required native/Workflow Result fields",
+                             "For active codex-claude-review", "Preserve reverse-workflow rules"):
+                self.assertIn(required, parent, required)
 
     def test_ci_playwright_wait_ownership_needs_no_waiting_agent(self):
         codex = read(".codex/AGENTS.md")
