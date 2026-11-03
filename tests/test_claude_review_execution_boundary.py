@@ -1,145 +1,47 @@
 #!/usr/bin/env python3
-"""Codex→Claudeレビュー専用の実行禁止設定を静的に検証します。"""
-
+"""MD方式へ移行したレビュー契約と、継続する独立確認義務を検証します。"""
 import re
 import json
 import unittest
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parent.parent
-
-
-def read(relative: str) -> str:
+ROOT = Path(__file__).resolve().parents[1]
+def read(relative):
     return (ROOT / relative).read_text(encoding="utf-8")
 
-
 class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
-    def test_review_compaction_is_process_local_and_preserves_evidence(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        cli = workflow.split("\nclaude_cli:\n", 1)[1].split("\nreview_entry:\n", 1)[0]
-        settings = json.loads(re.search(r"(?m)^  - '(\{.*\})'$", cli)[1])
-        self.assertEqual(200000, settings["autoCompactWindow"])
-        self.assertNotIn("CLAUDE_CODE_AUTO_COMPACT_WINDOW", settings["env"])
-        environment = cli.split("  environment:\n", 1)[1].split("  context_policy:", 1)[0]
-        self.assertNotIn("CLAUDE_CODE_AUTO_COMPACT_WINDOW", environment)
-        self.assertNotIn("DISABLE_PROMPT_CACHING", cli)
-        for required in ("初回と--resume", "managed", "未適用", "全open ID/質問/handoff",
-                         "要約だけで既読・解消・承認を作らず", "削除・改変せず",
-                         "context_inputs_by_transcript", "cache write増加"):
-            self.assertIn(required, cli)
-        for profile in (".claude", ".claude-company"):
-            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
-            self.assertIn("A compaction summary alone is not proof", core)
-            self.assertIn("all open findings/questions/handoffs", core)
+    def test_directions_share_md_contract_and_user_selected_layers(self):
+        common = read(".codex/workflows/md-review.md")
+        for path, direction in (("claude-review.yml", "codex-claude-review"), ("codex-review.yml", "claude-codex-review")):
+            workflow = read(".codex/workflows/" + path)
+            self.assertIn("workflow_id: " + direction, workflow)
+            self.assertIn("common_contract: md-review.md", workflow)
+            self.assertIn("既定層も自動昇格もありません", workflow)
+            self.assertIn("利用者が選択した実agentだけ", workflow)
+            fields = workflow.split("response_contract:\n", 1)[1].split("pause_and_resume:\n", 1)[0]
+            self.assertEqual({"workflow_id", "phase", "reviewer", "snapshot_id", "native_verdict", "coverage", "decision", "open_item_ids", "questions", "handoffs", "invocation_evidence"}, set(re.findall(r"(?m)^    ([a-z_]+):", fields)))
+        for text in ("Infoは本文にもMDにも記載しません", "Ready for review", "gitignore", "全必須handoff", "REQUIRES_OWNER_RESULT_CHECK"):
+            self.assertIn(text, common)
 
-    def test_cli_forbids_execution_tools(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        section = workflow.split("\nclaude_cli:\n", 1)[1].split("\nreview_entry:\n", 1)[0]
-        match = re.search(r"(?m)^  argv:\n((?:  - [^\n]*\n)+)", section)
-        self.assertIsNotNone(match, "CLI引数が見つかりません")
-        args = [line[4:] for line in match.group(1).splitlines()]
-        mode = args.index("--permission-mode")
-        self.assertEqual(args[mode + 1], "dontAsk")
-        tools = args.index("--tools")
-        self.assertEqual(set(args[tools + 1].split(",")), {"Read", "Glob", "Grep", "Agent", "SendMessage"})
-        allowed = args[args.index("--allowedTools") + 1:args.index("--disallowedTools")]
-        self.assertEqual(set(allowed), {"Read", "Glob", "Grep", "Agent", "SendMessage"})
-        denied = args[args.index("--disallowedTools") + 1:]
-        self.assertTrue({"Bash", "Edit", "Write", "NotebookEdit", "mcp__*"}.issubset(set(denied)))
-        self.assertNotIn("bypassPermissions", section)
+    def test_pipeline_preserves_actual_owners_and_human_ready(self):
+        common = read(".codex/workflows/md-review.md")
+        for text in ("実装担当がprojectの実Local-ci手順を実行", "実際のCodex `ci-reviewer`", "**draft**", "AIは`gh pr ready`や同等APIを呼びません", "全対象blob/mode", "終了コード0やMD本文のApproveという文字だけ"):
+            self.assertIn(text, common)
+        for path in ("AGENTS.md", ".codex/AGENTS.md", ".claude/CLAUDE.md", ".claude-company/CLAUDE.md"):
+            self.assertIn("md-review.md", read(path))
 
-    def test_workflow_assigns_every_execution_to_codex(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        self.assertIn("codex_execution_owner:", workflow)
-        self.assertIn("qa_e2e:", workflow)
-        self.assertIn("QA/E2EもRead/Glob/Grep", workflow)
-        self.assertIn("初回と--resumeの全回", workflow)
-        self.assertNotIn("必要な検証を判断・実行できます", workflow)
-        self.assertIn("新しいレビュー専用CLI制限を適用する前に起動した親/子", workflow)
-        self.assertIn("旧承認を新承認として流用しません", workflow)
-
-    def test_both_profiles_inherit_review_only_contract(self):
-        for profile in (".claude", ".claude-company"):
-            with self.subTest(profile=profile):
-                parent = read(f"{profile}/CLAUDE.md")
-                governance = read(f"{profile}/knowledge/engineering-governance.md")
-                self.assertIn("codex-claude-review", parent)
-                self.assertIn("Codex exclusively runs typecheck", parent)
-                self.assertIn("codex-claude-review", governance)
-                self.assertIn("Codex/HQ alone gathers Git", governance)
-                for name in ("code-quality-reviewer", "adviser", "test-qa", "e2e-qa"):
-                    owner = read(f"{profile}/agents/{name}.md")
-                    self.assertIn("codex-claude-review", owner)
-                    self.assertIn("Codex", owner)
-                    self.assertTrue("Never" in owner or "forbidden" in owner)
-
-    def test_both_resume_templates_deliver_fix_and_verification_together(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        for name, end in (("single_layer", "authority"), ("claude_cli", "review_entry")):
-            with self.subTest(template=name):
-                block = workflow.split("\n" + name + ":\n", 1)[1].split("\n" + end + ":\n", 1)[0]
-                initial = block.split("  prompt_template: |\n", 1)[1].split("  resume_prompt_template: |\n", 1)[0]
-                resume = block.split("  resume_prompt_template: |\n", 1)[1]
-                self.assertNotIn("{fix_and_verification_evidence}", initial)
-                self.assertIn("{fix_and_verification_evidence}", resume)
-                self.assertIn("{new_answers_or_constraints}", resume)
-                self.assertIn("{rereview_exception}", resume)
-                self.assertIn("review_entry.rule_delta_delivery", resume)
-                self.assertIn("指摘ID→変更箇所→再確認する義務", resume)
-                if name == "single_layer":
-                    self.assertIn("Mode: single-layer {phase}", resume)
-
-    def test_batched_delivery_keeps_verifier_scope_and_incomplete_states(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        cycle = workflow.split("\nreview_cycle:\n", 1)[1].split("\nconsultation:\n", 1)[0]
-        values = dict(re.findall(r"(?m)^  ([a-z_]+): (.+)$", cycle))
-        for field in ("fix", "rereview_inputs", "verification_evidence", "rereview_exceptions"):
-            self.assertIn(field, values)
-        for scope in ("staged", "unstaged", "untracked", "source", "終了コード"):
-            self.assertIn(scope, values["rereview_inputs"])
-        for obligation in ("assertion", "Read", "読み込んだ対象", "Codexの提示証拠"):
-            self.assertIn(obligation, values["verification_evidence"])
-        self.assertIn("失敗を含む", values["fix"])
-        self.assertIn("全テスト成功を一律の再依頼条件にはしません", values["fix"])
-        for state in ("NOT_RUN", "FAILED", "PARTIAL"):
-            self.assertIn(state, values["rereview_exceptions"])
-        self.assertIn("追加質問", values["rereview_exceptions"])
-        self.assertIn("単層", values["rereview_exceptions"])
-
-    def test_initial_continuation_and_fix_requests_keep_distinct_evidence(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        for name, end in (("single_layer", "authority"), ("claude_cli", "review_entry")):
-            with self.subTest(template=name):
-                block = workflow.split("\n" + name + ":\n", 1)[1].split("\n" + end + ":\n", 1)[0]
-                templates = {}
-                for key in ("prompt_template", "resume_prompt_template", "continuation_prompt_template"):
-                    match = re.search(r"(?m)^  " + key + r": \|\n((?:    [^\n]*\n)+)", block)
-                    self.assertIsNotNone(match, key)
-                    templates[key] = match[1]
-                self.assertIn("{review_source_evidence}", templates["prompt_template"])
-                self.assertIn("{fix_and_verification_evidence}", templates["resume_prompt_template"])
-                continuation = templates["continuation_prompt_template"]
-                for field in ("continuation_reason", "retained_record_reference", "new_evidence"):
-                    self.assertIn("{" + field + "}", continuation)
-                self.assertNotIn("{fix_and_verification_evidence}", continuation)
-                self.assertIn("SendMessage", continuation)
-                self.assertIn("再開不能", continuation)
-                for key in ("resume_prompt_template", "continuation_prompt_template"):
-                    for field in ("parent_session_id", "owner_agent_id"):
-                        self.assertIn("{" + field + "}", templates[key])
-                if name == "single_layer":
-                    self.assertIn("Mode: single-layer {phase}", continuation)
-
-    def test_diff_delivery_and_resume_failure_do_not_expand_permissions(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        delivery = re.search(r"(?m)^  source_delivery: (.+)$", workflow)[1]
-        for required in ("実base", "HEAD", "working source", "除外", "staged", "unstaged",
-                         "untracked", "rename/削除", "元版", "Supplied", "未確認", "巨大manifest"):
-            self.assertIn(required, delivery)
-        self.assertIn("親の--resumeだけでは子の再開証拠になりません", workflow)
-        self.assertIn("新規Agentへの自動置換や再試行ループを行いません", workflow)
-        self.assertIn("phaseをまたぐ再開はしません", workflow)
-        self.assertIn("安全上の新規起動例外は維持します", workflow)
+    def test_profiles_keep_source_read_only_and_finite_lifecycle(self):
+        common = read(".codex/workflows/md-review.md")
+        for text in ("Bash/Edit/Write/NotebookEditは禁止", "修正待ち、Local-ci待ち、Codex待ち", "NEW_UNRELATEDのLow", "NEEDS_USER_INPUT", "必須React/Nest相談", "実装時の相談は独立したL2相談の代わり"):
+            self.assertIn(text, common)
+        for role in ("hq-coder", "code-quality-reviewer", "adviser", "test-qa", "e2e-qa"):
+            a = read(".claude/agents/" + role + ".md")
+            self.assertEqual(a, read(".claude-company/agents/" + role + ".md"))
+            self.assertIn("## MD cross-model review", a)
+            self.assertIn("eleven Workflow Result fields", a)
+            self.assertIn("Omit Info entirely", a)
+            self.assertIn("never keep Claude AI waiting", a)
+        for text in ("毎roundで新しいexec", "exec resumeや--lastを使いません"):
+            self.assertIn(text, read(".codex/workflows/codex-review.yml"))
 
     def test_governance_has_no_conflicting_git_or_hash_execution_instruction(self):
         for profile in (".claude", ".claude-company"):
@@ -152,37 +54,6 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                 self.assertIn("Matching identity permits reuse only for complete sections", governance)
                 self.assertIn("independent first owners for new phases", governance)
                 self.assertIn("reverse `claude-codex-review` fresh-round contract", governance)
-
-    def test_rule_delta_reuse_requires_originals_and_preserves_recovery(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        delivery = re.search(r"(?m)^  rule_delta_delivery: (.+)$", workflow)[1]
-        for required in ("旧原文", "同じ種類のhash", "完全な節と例外", "追加/削除した義務",
-                         "旧原文が失われた", "未確認", "親の要約", "今回の現物確認"):
-            self.assertIn(required, delivery)
-        for profile in (".claude", ".claude-company"):
-            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
-            for required in ("retained old and current originals", "changed complete sections with exceptions",
-                             "added/removed obligations", "required cross-references",
-                             "Missing old text", "never freeze outdated rules"):
-                self.assertIn(required, core)
-
-    def test_delta_consultation_and_origin_keep_independence_and_open_items(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        mapping = re.search(r"(?m)^  impact_mapping: (.+)$", workflow)[1]
-        for required in ("独立に確かめ", "必要なら広げ", "テスト/仕様/規則変更", "全open ID", "他owner"):
-            self.assertIn(required, mapping)
-        questions = re.search(r"(?m)^  delta_questions: (.+)$", workflow)[1]
-        for required in ("前回確認範囲", "反証", "必須の独立初回相談", "未回答"):
-            self.assertIn(required, questions)
-        origin = re.search(r"(?m)^  origin_evidence: (.+)$", workflow)[1]
-        for required in ("元ID", "新旧の証拠", "既存Info", "不明", "既存Origin定義・上限は変更しません"):
-            self.assertIn(required, origin)
-        for profile in (".claude", ".claude-company"):
-            governance = read(f"{profile}/knowledge/engineering-governance.md")
-            for required in ("independently validates this mapping", "every open item",
-                             "scope overlap alone does not prove causation",
-                             "does not add a routine classification-only round"):
-                self.assertIn(required, governance)
 
     def test_batched_delivery_is_scoped_and_reaches_both_preloads(self):
         for profile in (".claude", ".claude-company"):
@@ -202,33 +73,6 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                      "batched-rereview-waived-or-interrupted"):
             self.assertEqual(cases.count("  - id: " + case + "\n"), 1)
 
-    def test_advisor_disabled_on_launch_and_resume_with_runtime_check(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        cli = workflow.split("\nclaude_cli:\n", 1)[1].split("\nreview_entry:\n", 1)[0]
-        self.assertIn("CLAUDE_CODE_DISABLE_ADVISOR_TOOL: '1'", cli)
-        settings = json.loads(re.search(r"(?m)^  - '(\{.*\})'$", cli)[1])
-        self.assertEqual("1", settings["env"]["CLAUDE_CODE_DISABLE_ADVISOR_TOOL"])
-        for expected in ("--check-review-boundary", "server_tool_use", "BLOCKED", "UNCONFIRMED", "--resume"):
-            self.assertIn(expected, cli)
-        for profile in (".claude", ".claude-company"):
-            agent = read(f"{profile}/agents/code-quality-reviewer.md")
-            self.assertIn("First-pass rule intake and bounded reading", agent)
-            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
-            self.assertIn("- Intake:", core)
-            self.assertIn("User/project whole-file requirements", core)
-
-    def test_intake_and_bounded_reading_keep_all_mandatory_obligations(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        entry = workflow.split("\nreview_entry:\n", 1)[1].split("\nexecution:\n", 1)[0]
-        for required in ("required_intake:", "Rules loaded", "例外込み", "Readで直接", "UNCONFIRMED",
-                         "reading_scope:", "変更hunk", "利用者やproject規則", "未確認の義務"):
-            self.assertIn(required, entry)
-        for profile in (".claude", ".claude-company"):
-            governance = read(f"{profile}/knowledge/engineering-governance.md")
-            intake = governance.split("### First-pass rule intake and bounded reading\n", 1)[1].split("\n### ", 1)[0]
-            for required in ("not a substitute", "exceptions", "whole-file requirements still apply", "Same-owner"):
-                self.assertIn(required, intake)
-
     def test_qa_e2e_intake_and_reachability_keep_review_only_scope(self):
         for role in ("test-qa", "e2e-qa"):
             canonical = read(f".claude/agents/{role}.md")
@@ -245,25 +89,6 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             else:
                 self.assertIn("hand off browser and HTTP/module-boundary obligations", block)
 
-    def test_single_layer_separates_local_dependencies_from_other_handoffs(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        block = workflow.split("\nsingle_layer:\n", 1)[1].split("\nauthority:\n", 1)[0]
-        for required in ("handoff_policy:", "result_consistency:", "自層判断に依存しない", "自層の未了義務",
-                         "decisionをAPPROVE", "Codex自身が判定を書き換えません", "全必須handoffの解消"):
-            self.assertIn(required, block)
-        for profile in (".claude", ".claude-company"):
-            cr = read(f"{profile}/agents/code-quality-reviewer.md")
-            self.assertIn("report `decision: APPROVE`", cr)
-            self.assertIn("your own judgment depends on remains a local obligation", cr)
-            self.assertIn("never rewrites the verdict itself", cr)
-            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
-            self.assertIn("independent other-layer handoffs remain open", core)
-            self.assertIn("stays local", core)
-        cases = read("tests/agent-review-contract-cases.yml")
-        for case in ("single-layer-handoff-only-approve", "single-layer-dependent-evidence-pending",
-                     "single-layer-local-low-pending", "single-layer-result-correction-by-owner"):
-            self.assertEqual(1, cases.count("  - id: " + case + "\n"))
-
     def test_cr_handoff_count_and_existing_four_fields_are_consistent(self):
         codex = read(".codex/AGENTS.md")
         self.assertNotIn("at most 2 L2+ handoff cues", codex)
@@ -279,61 +104,6 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertIn("scope changes need new evidence", governance)
         self.assertEqual(1, read("tests/agent-review-contract-cases.yml").count("  - id: cr-handoff-count-and-scope\n"))
 
-    def test_reverse_workflow_still_has_its_own_owner(self):
-        reverse = read(".codex/workflows/codex-review.yml")
-        self.assertIn("claude-codex-review", reverse)
-        self.assertIn("Claude Codeが修正と必要な検証を行い", reverse)
-
-
-    def test_entrypoints_keep_review_gates_and_bounded_waits(self):
-        root = read("AGENTS.md")
-        self.assertIn(".codex/AGENTS.md", root)
-        self.assertIn(".claude/CLAUDE.md", root)
-        self.assertIn("engineering-governance.md", root)
-        self.assertNotIn("## Opus Escalation", root)
-
-        codex = read(".codex/AGENTS.md")
-        for required in ("## Bounded subagent waiting", "wait_agent",
-                         "list_agents", "180000", "300000", "## Model Allocation"):
-            self.assertIn(required, codex)
-
-        for profile in (".claude", ".claude-company"):
-            parent = read(f"{profile}/CLAUDE.md")
-            for required in ("codex-claude-review", "claude-codex-review",
-                             "Codex exclusively runs typecheck",
-                             "qa -> e2e -> cr -> adv", "--resume"):
-                self.assertIn(required, parent)
-
-    def test_claude_role_sections_preserve_independent_original_reading(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        entry = workflow.split("\nreview_entry:\n", 1)[1].split("\nexecution:\n", 1)[0]
-        delivery = entry.split("  contract_delivery: ", 1)[1].split("\n  role_sections:", 1)[0]
-        for required in ("原本のpath/版", "自分で確認", "例外", "Rules loaded",
-                         "親の要約だけでは既読にしません", "切詰め", "承認を保留"):
-            self.assertIn(required, delivery)
-        roles = entry.split("  role_sections:\n", 1)[1].split("  required_intake:", 1)[0]
-        common = roles.split("    phase_common: ", 1)[1].splitlines()[0]
-        for required in ("authority", "ownership", "review_entry", "review_cycle", "review_gates",
-                         "findings", "questions", "response_contract", "handoff", "staged_baseline",
-                         "single_layer", "例外"):
-            self.assertIn(required, common)
-        for phase, extra in (("l1_5", "execution.cr_adv"), ("qa", "qa_contract"),
-                             ("e2e", "qa_contract"), ("l2", "consultation")):
-            line = roles.split(f"    {phase}: ", 1)[1].splitlines()[0]
-            self.assertIn("phase_common", line)
-            self.assertIn(extra, line)
-        self.assertIn("11項目の代理作成はしません", roles)
-        for profile in (".claude", ".claude-company"):
-            for role in ("adviser", "code-quality-reviewer", "test-qa", "e2e-qa"):
-                owner = read(f"{profile}/agents/{role}.md")
-                self.assertIn("review_entry.role_sections", owner)
-                self.assertIn("including direct invocation, apply `Claude role-scoped intake`", owner)
-                self.assertNotIn("including direct invocation, read `.claude/knowledge/engineering-governance.md`", owner)
-            for role in ("react-ui-flow", "nestjs-backend"):
-                owner = read(f"{profile}/agents/{role}.md")
-                self.assertIn("Read only missing applicable governance sections", owner)
-                self.assertIn("Stay read-only", owner)
-
     def test_injected_self_definition_reuse_keeps_missing_rules_pending(self):
         for profile in (".claude", ".claude-company"):
             governance = read(f"{profile}/knowledge/engineering-governance.md")
@@ -348,31 +118,6 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertIn("### Claude role-scoped intake\n", core)
             self.assertTrue(intake.strip() in core, "原文の節本文が生成物に保持されていません")
             self.assertNotIn("## Mandatory framework consultation\n", core)
-
-    def test_consultation_requires_real_results_without_widening_tools(self):
-        workflow = read(".codex/workflows/claude-review.yml")
-        consultation = workflow.split("\nconsultation:\n", 1)[1].split("\nqa_contract:\n", 1)[0]
-        for required in ("最小限の実境界", "依頼を遅らせません", "run_in_background", "false",
-                         "model/effortや許可toolは変更しません", "SPECIALIST_REQUEST",
-                         "同じadviser", "起動確認や回答待ちは未完了", "tool追加",
-                         "取得不能", "承認しません", "実回答の受領後", "11項目"):
-            self.assertIn(required, consultation)
-        for profile in (".claude", ".claude-company"):
-            adviser = read(f"{profile}/agents/adviser.md")
-            for required in ("Batch triggered React/Nest questions", "Do not finish the full framework investigation",
-                             "Independent consultations may run concurrently", "dependent questions wait",
-                             "missing run_in_background parameter does not make Agent unavailable",
-                             "direct invocation is unavailable", "SPECIALIST_REQUEST",
-                             "Await actual results before judgment", "no waiting agents, tool expansion", "reuse this owner",
-                             "precise missing capability", "adoption/rejection reasons"):
-                self.assertIn(required, adviser, required)
-            parent = read(f"{profile}/CLAUDE.md")
-            for required in ("permitted tool supports it", "dependent questions wait",
-                             "Preserve role model/effort and restrictions", "absent from the schema",
-                             "Launch acknowledgement is not evidence", "unavailable capability and pending obligations",
-                             "never status polling or waiting agents", "required native/Workflow Result fields",
-                             "For active codex-claude-review", "Preserve reverse-workflow rules"):
-                self.assertIn(required, parent, required)
 
     def test_ci_playwright_wait_ownership_needs_no_waiting_agent(self):
         codex = read(".codex/AGENTS.md")
@@ -390,7 +135,6 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                 for required in ("CI", "Playwright", "exit status",
                                  "Never launch a separate subagent", "QA/E2E"):
                     self.assertIn(required, cost)
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,12 @@ description = "Implements scoped, design-correct changes with principle evidence
 model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 developer_instructions = """
+## MD cross-model review
+
+For an explicitly active `codex-claude-review` or `claude-codex-review`, apply `.codex/workflows/md-review.md` resolved beside the selected workflow. The user selects the qa/e2e/cr/adv subset; never add layers or automatic progression. Keep source/tests read-only on the receiver. Inspect the actual diff independently; Claude uses the fixed `md_review` Git MCP, not Bash. Return your native verdict and eleven Workflow Result fields; the host appends the actual response to the shared MD. Omit Info entirely; preserve Low IDs, closure, Origin rules, mandatory evidence and applicable independent React/Nest consultations. This MD contract supersedes old prompt packet, all-four-phase, automatic initial-stage and human-only-final-commit wording only within this workflow. The implementation owner runs Local-ci after selected approvals; actual Codex ci-reviewer follows; only a clean result permits a draft PR. The user alone marks Ready for review. End the review invocation; never keep Claude AI waiting for fixes, CI or Codex.
+
+
+
 ## UI/UX quality
 
 Apply governance `Mandatory UI consistency and task usability` before a user-facing edit. Establish both UI consistency and task-usability acceptance in the existing preflight, use approved shared patterns, obtain matched framework advice and collect only the authorized evidence needed for the changed operation. Do not declare rendered/interaction quality from source or screenshots beyond what they prove.

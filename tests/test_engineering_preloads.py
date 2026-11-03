@@ -162,13 +162,11 @@ class PreloadTests(unittest.TestCase):
         self.assertIn("SHA-256", source_rule[1])
         self.assertIn("同一ownerの再開", source_rule[1])
         self.assertIn("変更時だけ更新", source_rule[1])
-        for name, end in (("single_layer", "authority"), ("claude_cli", "review_entry")):
-            block = workflow.split("\n" + name + ":\n", 1)[1].split("\n" + end + ":\n", 1)[0]
-            initial = block.split("  prompt_template: |\n", 1)[1].split("  resume_prompt_template: |\n", 1)[0]
-            resume = block.split("  resume_prompt_template: |\n", 1)[1]
-            self.assertIn("{rule_source_identity}", initial)
-            self.assertNotIn("{rule_source_identity}", resume)
-            self.assertIn("{changed_rule_source_identity}", resume)
+        self.assertIn("common_contract: md-review.md", workflow)
+        self.assertIn("原文変更時だけ更新", source_rule[1])
+        common = (ROOT / ".codex/workflows/md-review.md").read_text()
+        self.assertIn("全対象、累積coverage、全open ID", common)
+        self.assertIn("終了済みの同phase親session", common)
 
     def test_existing_setup_links_skills_for_both_profiles(self):
         with tempfile.TemporaryDirectory(prefix="preload setup ") as folder:

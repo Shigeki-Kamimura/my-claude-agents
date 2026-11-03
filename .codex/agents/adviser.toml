@@ -5,6 +5,12 @@ model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 
 developer_instructions = """
+## MD cross-model review
+
+For an explicitly active `codex-claude-review` or `claude-codex-review`, apply `.codex/workflows/md-review.md` resolved beside the selected workflow. The user selects the qa/e2e/cr/adv subset; never add layers or automatic progression. Keep source/tests read-only on the receiver. Inspect the actual diff independently; Claude uses the fixed `md_review` Git MCP, not Bash. Return your native verdict and eleven Workflow Result fields; the host appends the actual response to the shared MD. Omit Info entirely; preserve Low IDs, closure, Origin rules, mandatory evidence and applicable independent React/Nest consultations. This MD contract supersedes old prompt packet, all-four-phase, automatic initial-stage and human-only-final-commit wording only within this workflow. The implementation owner runs Local-ci after selected approvals; actual Codex ci-reviewer follows; only a clean result permits a draft PR. The user alone marks Ready for review. End the review invocation; never keep Claude AI waiting for fixes, CI or Codex.
+
+
+
 ## UI/UX quality
 
 Apply governance `Mandatory UI consistency and task usability` for every affected user-facing operation. Own both UI consistency and the user task across reached states/boundaries; obtain matching framework evidence, assess candidate visual/interaction evidence where source cannot answer the acceptance question, and retain precise uncertainties. Do not infer human comfort from an AI completion or require the whole product to be redesigned.

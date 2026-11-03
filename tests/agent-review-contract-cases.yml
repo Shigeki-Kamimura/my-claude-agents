@@ -90,15 +90,15 @@ cases:
   - id: single-layer-approval-scope
     phase: L1.5
     input: 単層のcrがAPPROVEを返しました。
-    expected: 承認は、その層と確認したsnapshotにだけ有効です。terminal_stateはsingle_layer_approvedで、四層承認、引渡し可、最終承認として扱いません。
+    expected: 承認は指定層と確認snapshotだけです。最終引渡しには選択層の現snapshot承認、全必須残件解消、実装側Local-ci、実Codex ci判定が必要です。未選択層を自動起動しません。
   - id: single-layer-promotion
     phase: L2
     input: 単層のcr承認のあとで、四層レビューを依頼します。
-    expected: qa、e2e、cr、advを新規の初回として回します。単層の親子を再開せず、単層の結論はSupplied証拠として添えるだけで、承認の代わりにしません。
+    expected: 追加指定された層の独立初回を実施します。既存層の結論も現snapshotとの一致と未了を実担当が確認します。過去承認を親が付け替えません。
   - id: single-layer-ambiguous
     phase: L1.5
     input: Claude Codeにcrとadvを別々にレビューしてもらって
-    expected: 列挙は定義のない指定のため、どちらのモードにも決めず、上村さんへ1つ質問します。
+    expected: crとadvだけを選択してMDへ記録します。qaとe2eは自動起動しません。列挙だけを理由に聞き返しません。
   - id: rereview-cap
     phase: L1.5
     input: 再レビューで、前回指摘と無関係な新規の🟢Lowが2回続けて出ました。
@@ -118,7 +118,7 @@ cases:
   - id: single-layer-resume
     phase: L2
     input: 単層のadvの修正後に再レビューを依頼します。
-    expected: single_layerのresume_prompt_templateを使い、Mode single-layer l2の行を付けて、同じ親子を再開します。四層のテンプレートを使いません。
+    expected: 修正と必要な検証をMDへ追記し、終了済みの同phase親sessionを実IDで再開します。元の実childへ戻し、結果を追記して再び終了します。
   - id: mode-line-not-marker
     phase: L1.5
     input: 単層の依頼にMode single-layerの行が付いています。
@@ -126,31 +126,31 @@ cases:
   - id: single-layer-literal
     phase: L2
     input: 単層のadvがAPPROVEを返しました。
-    expected: invocation_evidenceにmode=single-layer phase=l2を含みます。この文字列を含む結果は、引渡し可・最終承認として受理しません。
+    expected: 実担当のphase=l2と現snapshot、native判定、全対象coverage、実委譲/必要相談をMDで確認します。旧mode文字列を承認の必須条件にしません。
   - id: single-layer-qa-only
     phase: QA
     input: Claude Codeにqaでレビューしてもらって
-    expected: 単層モードで、Mode single-layer qaを付けて送ります。test-qaだけを起動し、external_test_adequacy_reviewerを割り当てます。他層を起動せず、e2eへも進みません。Bare review requestsへ展開しません。
+    expected: 利用者が選んだtest-qaだけをexternal_test_adequacy_reviewerとして呼び、MDへ結果を追記します。e2eへ自動進行せず、終了します。
   - id: single-layer-no-layer-name
     phase: L1.5
     input: Claude Codeにレビューしてもらって修正入れようか
-    expected: 層名がないため、既定のqaとcrを対象にします。qaを単層で実行し、続けてcrを単層で実行します(並列にしません)。qaのAPPROVE確認後にe2e、crのAPPROVE確認後にadvを、それぞれ単層で実行します。四層モードにしません。
+    expected: 層を1つ質問します。qa/crや他層を既定で起動せず、利用者の回答を待ちます。
   - id: single-layer-generic-words
     phase: L1.5
     input: Claude Codeにコードレビューをローカルでしてもらって
-    expected: コードレビューとローカルは層名ではありません。層名なしとして既定のqaとcrを対象にし、Bare review requestsの語彙でcr単独にもadv単独にもしません。
+    expected: 一般語から層を推測しません。層を1つ質問し、自動起動しません。
   - id: four-layer-explicit
     phase: L2
     input: Claudeレビューをcrからadvまで回して修正してください
-    expected: 範囲を示す表現のため、明示された四層モードです。qa、e2e、cr、advの順で、新規の初回として実行します。
+    expected: crからadvまでに含まれるcrとadvだけを対象にします。qaとe2eを足しません。全層は全層またはqaからadvまで等の明示指定時だけです。
   - id: single-layer-progression-confirmed
     phase: L2
     input: 層名なしの依頼で、crの単層APPROVEがチャットにあります(invocation_evidenceにmode=single-layer phase=l1_5、decisionがAPPROVE、coverageがCOMPLETE、snapshot_idが現在と一致)。
-    expected: Codexが同じチャットの記録を探して確認し、advを単層で実行します(mode=single-layer phase=l2)。qaのAPPROVEが確認できれば、e2eも同様に進みます(順はqa、e2e、cr、adv)。この連鎖は四層承認にも最終承認にもなりません。
+    expected: 過去のcr承認からadvやe2eを自動起動しません。今回の利用者指定層を確認します。
   - id: single-layer-progression-not-confirmed
     phase: L2
     input: 層名なしの依頼で、crの単層APPROVEがチャットで見つからない、またはsnapshot_idが現在と一致しません。承認後に修正も入っています。
-    expected: advへ進みません。不足を報告し、上村さんへ1つ質問します。推測や要約で承認とみなしません。
+    expected: 自動進行しません。今回選んだ層と現snapshotを確認し、不明な層だけ質問します。過去承認を推測しません。
   - id: single-layer-named-no-progression
     phase: L2
     input: Claude CodeにL2レイヤーでレビューしてもらって(層名が明示されています)
@@ -158,7 +158,7 @@ cases:
   - id: single-layer-literal-missing
     phase: L1.5
     input: 単層で起動したcrがAPPROVEを返しましたが、invocation_evidenceにmode=single-layer phase=l1_5が含まれません。
-    expected: decisionがAPPROVEでも未承認として扱い、四層承認にもしません。同じ担当に不足の補完を求めます。
+    expected: 旧mode文字列の有無では判断しません。MDの実担当11項目、選択したphase、現snapshot、全対象、実委譲と必要相談を確認します。不足は未承認です。
   - id: rereview-origin-missing
     phase: L1.5
     input: 再レビューの🟢LowにOriginの分類欄がありません。
@@ -166,11 +166,11 @@ cases:
   - id: four-layer-range-expressions
     phase: L2
     input: Claude Codeに四層でレビューしてもらって(全層、qaからadvまで、も同じ扱いです)
-    expected: 範囲を示す表現のため、四層モードです。qa、e2e、cr、advの順で、新規の初回として実行します。crとadvのような列挙は四層にせず、上村さんへ1つ質問します。
+    expected: 全層を明示したのでqa、e2e、cr、advを実行します。crとadvの列挙ならその2層だけです。未選択層は起動しません。
   - id: reverse-snapshot-change-order
     phase: L2
     input: 逆方向(claude-codex-review)で、L2の修正によりsnapshotが変わりました。
-    expected: qa、e2e、cr、advの順で、最新snapshotへの承認を取り直します。接頭辞と担当(crはcode-quality-reviewer、qaはtest-qa、eはe2e-qa、advはadviser)は変わりません。委任、fresh round、台帳、Workflow Resultの11欄の規則も変わりません。
+    expected: qa→e2e→cr→advの順から利用者の選択層だけを取り出し、現snapshotへの承認を実担当が更新します。fresh round、累積台帳と11項目は維持します。
   - id: codex-claude-cr-review-only
     phase: L1.5
     input: Claude Code CRレビューで型チェックとlintも実行してください。
@@ -190,7 +190,7 @@ cases:
   - id: codex-claude-review-resume-tool-boundary
     phase: L2
     input: Claude Code ADVのレビューを同じ子agentで再開し、CIも再実行してください。
-    expected: Codexは--resumeでもdontAsk、Read/Glob/Grep/Agent、Bash/編集/MCP拒否を設定します。再開した親子もコマンド実行せず、CodexがCI再実行と証拠提出を行います。
+    expected: 同run/phaseの新方式で終了した親IDだけを再開します。dontAskと読取tool、固定Git MCP、限定Backlog読取を保ち、Bash/編集/未許可MCPは拒否します。CI実行はCodexへ返します。
   - id: codex-claude-review-evidence-gap
     phase: QA
     input: 現在のsource snapshotでテスト成功ログがなく、Claude QAが承認を求められています。
@@ -202,11 +202,11 @@ cases:
   - id: minor-info-not-tracked
     phase: L1.5
     input: 担当レビュアーが、指摘とするほどでない軽微な所見を🟢Infoとして1行書きました。
-    expected: Infoは指摘ではありません。IDを振らず、台帳・open_item_idsに入れず、追跡も修正も再レビューも不要です。承認を妨げません。省略しても構いません。
+    expected: このMD方式ではInfoを記載しません。ID/追跡/修正も不要です。根拠付きLowだけを既存定義で起票します。
   - id: minor-low-max-five
     phase: L1.5
     input: 1回のレポートに、軽微な指摘が8件あります。
-    expected: 重要度の高いものから最大5件を🟢Lowにし、残りの重要度の低い3件は🟢Infoにします。
+    expected: 重要度の高い最大5件をLowとして追跡します。このMD方式ではInfoを記載しません。重大な指摘や必須義務は件数で落としません。
   - id: minor-info-not-promoted
     phase: L2
     input: 初回で🟢Infoと分類した所見があります。再レビューの時点で、🟢Lowは5件に満たず、枠が空いています。
@@ -218,11 +218,11 @@ cases:
   - id: minor-reverse-direction-low-info
     phase: L2
     input: 逆方向(claude-codex-review)で、Codexの担当レビュアーが軽微な所見を返します。
-    expected: 逆方向も、🟢Lowは指摘として最大5件まで追跡して閉鎖し、🟢Infoは指摘ではなく、ID・追跡・修正・再レビューが不要です。Infoを🟢Lowへ格上げせず、🔴🟡、質問、handoff、必須証拠の欠落をLow/Infoへ下げません。
+    expected: 逆方向でもInfoを記載しません。Lowは既存上限でID付き追跡し、元担当だけが解消/撤回を確認します。必須証拠をLow/Infoへ下げません。
   - id: minor-specialist-low-info
     phase: L2
     input: sec-arch、data-platform、req-plが軽微な所見を返します。
-    expected: 🔴🟡は件数上限なく報告します。🟢Lowは1回に最大5件、残りは🟢Infoで、指摘ではありません。Infoは🟢Lowへ格上げせず、🔴🟡、質問、handoff、必須証拠の欠落をLow/Infoへ下げません。
+    expected: 両方向のMD方式では専門担当もInfoを記載しません。重大な指摘と必須義務は維持し、Lowの既存上限を適用します。
   - id: minor-low-tracked-until-closed
     phase: L1.5
     input: 🟢Lowが1件残ったまま、Codexが修正を完了したと申告しました。
@@ -312,3 +312,11 @@ cases:
     phase: L2
     input: 共通処理の変更が別の入力元にも及びますが、既存の一般規則がその出力条件を定義しています。入力元の個別名は書かれていません。
     expected: その入力と出力が一般規則の範囲に入るか確認します。個別名の欠落だけでLowや文書更新義務を作らず、実際の矛盾や未確認を区別します。
+  - id: md-review-no-ai-wait
+    phase: L2
+    input: レビューが終わり、実装側の修正とLocal-ciを待ちます。
+    expected: Claude printプロセスを終了します。session IDを保存し、修正結果が用意された時だけ同じphaseを再開します。heartbeatや待機用agentを起動しません。
+  - id: md-review-draft-only
+    phase: CI
+    input: 選択層の現snapshot承認とLocal-ci、実Codex ci判定がすべて完了しました。
+    expected: 対象を限定したcommit/pushと最終内容の対応を確認してdraft PRを作成します。Ready for reviewは利用者が押します。AIはgh pr readyを実行しません。

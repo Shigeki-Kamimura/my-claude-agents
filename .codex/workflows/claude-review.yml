@@ -1,317 +1,93 @@
-# CodexとClaudeの自律レビューを調整する指示契約です。実行エンジンではありません。
-# このレビュー専用CLI制限はCodexからのレビュー委譲に適用します。
-# ユーザーが通常のClaudeへ直接指示するCI・テスト実行は対象外です。
-# 既存の制限付きセッションの権限は拡張しません。
-schema_version: 1
+# 利用者指定のMDレビュー契約です。実行エンジンではありません。
+schema_version: 2
 workflow_id: codex-claude-review
 runtime_validation: NOT_RUN
-goal: 短い依頼からClaudeが自分で差分をレビューし、Codexが全指摘を一括修正して同じ担当へ再確認を依頼します。
+goal: MDを共有し、利用者が選んだ層を確認後、Local-ci、Codex ciレビュー、draft PRへ進みます。
+common_contract: md-review.md
 activation:
-  examples:
-  - Claude Codeにレビューしてもらって修正入れようか
-  - Claudeレビューをcrからadvまで回して修正してください
-  - Claude CodeにL1.5レイヤーでレビューしてもらって
-  - Claude CodeにL2レイヤーでレビューしてもらって
-  - Claude Codeにqaでレビューしてもらって
   marker: 'Workflow: codex-claude-review'
-  rule: Claude/Claude Codeを名指しした依頼で起動し、基本は単層モードです(single_layer参照)。層名が依頼に書かれていれば、その層だけを実行します。層名は次の語に限ります。cr(l1_5)はcr、L1.5、code-quality-reviewer。qaはqa、test-qa。e2eはe2e、E2E、e2e-qa。adv(l2)はadv、L2、L2+、adviser。Latin文字の語は前後がLatin文字・数字でないときだけ一致します(FAQやL2TPは不一致、日本語文中のQAは一致)。「コードレビュー」「ローカル」「品質」のような一般語は層名ではなく、.codex/AGENTS.mdのBare review requestsの語彙も使いません。層名がない依頼は、qaとcrを対象にします(single_layerのdefault_layers)。四層モードは、依頼が範囲を示す表現で明示した場合だけです。範囲を示す表現(〜から〜まで、四層、全層)は四層モード、列挙(crとadvなど)は定義がないため、上村さんへ1つ質問します。Claudeを名指ししないcr単独の依頼には適用しません。逆方向(Codexにレビューしてもらう依頼)に単層モードはありません。
-  locate:
-  - 対象プロジェクトの.codex/workflows/claude-review.ymlを読みます。
-  - なければ.codex/AGENTS.mdのリンク先を解決し、その隣のworkflows/claude-review.ymlを読みます。
-  - どちらにもなければ設定不足を報告します。別の設定を推測しません。
-  exception: 四層モードが明示された依頼では、qa、e2e、cr、advの順の連続実行と、各担当自身による再レビューを許可します。単層モードでは、single_layer.progressionの条件を満たす進行(qa→e2e、cr→adv)と、各担当自身による同phaseの再レビューだけを許可し、それ以外の層は自動起動しません。
-single_layer:
-  start: 単層モードは、activation.ruleの条件を満たす依頼で起動し、該当phaseの担当だけを起動します。他層は、progressionの条件を満たす進行以外では起動しません。
-  phase_values: '{phase}の取り得る値は、l1_5(cr)、qa、e2e、l2(adv)です。ownership.reviewersのキーと同じです。'
-  default_layers: 層名がない依頼は、qaを、続けてl1_5(cr)を、それぞれ単層で順に実行します(並列にしません)。qaのAPPROVEを確認したらe2eを、crのAPPROVEを確認したらadvを、それぞれ直後に実行します。実行順はqa、e2e、cr、advで、四層の順と同じです。各層は自分の親子とWorkflow Resultを持ちます。
-  progression:
-    pairs: qaのAPPROVEを確認したらe2eへ、crのAPPROVEを確認したらadv(l2)へ進みます。対象は層名なしの既定の進行だけです。層名を明示した依頼は、その層だけを実行し先へ進みません。
-    confirmation: Codexは同じチャットの記録から、直前の層のWorkflow Resultを探して確認します。次をすべて満たす記録だけを承認とします。invocation_evidenceにmode=single-layer phase=<直前のphase>を含む。native_verdictがL1.5_APPROVE(handoffだけのL1.5_APPROVE_WITH_NOTESを含む)またはAPPROVEで、decisionがAPPROVE。coverageがCOMPLETE。snapshot_idが現在のworking sourceと一致し、承認後にsource・テスト・要件・規則の変更がない。
-    not_confirmed: 記録が見つからない、読めない、条件を満たさない、承認後に変更があった場合は、次の層へ進まず、不足を報告して上村さんへ1つ質問します。推測や要約で承認とみなしません。
-    next_layer: 進んだ先も単層モードで、mode=single-layer phase=<次のphase>を使います。進行の連鎖は、承認がいくつそろっても四層承認、引渡し可、最終承認になりません。
-  prompt_template: |
-    {prefix}: {review_request}
-    Workflow: codex-claude-review
-    規則の出典（初回のみ、2資料のresolved pathとSHA-256）: {rule_source_identity}
-    比較元・現sourceと差分の読取先（review_entry.source_delivery）: {review_source_evidence}
-    Mode: single-layer {phase}
-    Workflow Resultのinvocation_evidenceに、文字列 mode=single-layer phase={phase} を必ず含めてください。
-    利用者のbase・除外・今回固有の制約があれば: {user_constraints}
-  resume_prompt_template: |
-    {prefix}: 再レビューしてください。
-    Workflow: codex-claude-review
-    Mode: single-layer {phase}
-    Workflow Resultのinvocation_evidenceに、文字列 mode=single-layer phase={phase} を必ず含めてください。
-    前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
-    再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
-    規則変更時だけ新旧出典と変更節の参照（review_entry.rule_delta_delivery）: {changed_rule_source_identity}
-    新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
-    指摘ID→変更箇所→再確認する義務と検証結果（対象source・狭い参照先・限界）: {fix_and_verification_evidence}
-    通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
-  continuation_prompt_template: |
-    {prefix}: 未完了のレビューを続けてください。理由: {continuation_reason}
-    Workflow: codex-claude-review
-    Mode: single-layer {phase}
-    再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
-    保持済みの確認範囲・未解決事項・規則: {retained_record_reference}
-    追加証拠・専門回答・出典変更とその限界（なければ「なし」）: {new_evidence}
-    元の実childへSendMessageで戻してください。再開不能なら不足を報告してください。
-  rereview: 同じ親子を再開して同phaseだけを再確認します。
-  scope_priority: 単層のときは、qa_contract.assignmentの両agent必須とreview_gates.orderより優先し、該当phaseのみ実行します。単層のqa/e2eでも、その実agentへexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。単層のcr/advがqa/e2e/l2へ割り当てたhandoffは単層では閉じず、未了の義務として報告します。
-  approval: 自層の全対象がCOMPLETEで、必要な証拠・必須相談がそろい、自層の指摘（🟢Lowを含む）・未回答質問・未確認義務がゼロ、native_verdictが当該phaseの受理条件を満たす場合は、担当自身がdecisionをAPPROVEにします。自層判断に依存しない他層の未了handoffだけを理由にREQUEST_CHANGESへ戻しません。CRのL1.5_APPROVE_WITH_NOTESも、残りがCR自身の根拠付きでqa/e2e/l2へ割り当てたhandoffだけなら受理します。承認はその層と現snapshotにだけ有効で、四層承認、引渡し可、最終承認ではありません。
-  handoff_policy: 自層判断に必要な未確認証拠・相談・質問は、担当が他層でも自層の未了義務として保持し、handoff_onlyへ移して承認しません。独立した他層handoffは元の担当・質問・根拠・未了状態を保持します。件数上限は設けず、同じ責務の問いをまとめても別の義務は落としません。CRは既存の4項目 Owner/route | Question | Evidence | Required confirmation を維持し、ID・状態も既存台帳に残します。再開だけで引継ぎ範囲を広げず、新しい根拠があれば変更理由を記録します。
-  result_consistency: native_verdict・coverage・decision・局所open項目・handoffの説明を一致させます。不整合や不足はCodexが元の担当へ訂正を求め、Codex自身が判定を書き換えません。他層の未了handoffは単層承認で閉じず、全体の引渡しは全必須handoffの解消を待ちます。
-  promotion: 利用者が四層を明示して昇格する場合は、qa、e2e、cr、advを新規の初回として回します。単層の親子は再開しません。承認済みの単層の結論はSupplied証拠として添えるだけで、承認の代わりにしません。
-  consultation: 単層のadvでも、該当するReact/Nestの独立相談は省略できません。
-  result: Workflow Resultの11項目は維持します。単層であることは、invocation_evidenceに固定文字列 mode=single-layer phase=<phase> を含めて示します。decisionがAPPROVEでも四層の承認ではありません。
-  terminal_state: single_layer_approved
-  terminal_state_note: 四層承認は未了です。
+  rule: 現在の利用者の実依頼で向きを確認します。引用は起動しません。層は利用者が指定し、未指定なら1つ質問します。既定層も自動昇格もありません。
+  locate: 対象projectの.codex/workflows、なければ解決済み.codex/AGENTS.mdの隣のworkflowsを使います。Claude入口しかない場合は解決済み.claude/CLAUDE.mdまたは.claude-company/CLAUDE.mdの兄弟.codex/workflowsを使います。md-review.mdも同じ場所で解決します。見つからなければ設定不足です。
+  selection: qa/e2e/cr/advの指定した部分集合だけをqa→e2e→cr→advの順で実行します。列挙は有効です。全層は明示指定時だけです。
+  direction: 両方向の混在や実依頼との不一致はBLOCKEDです。通常の単独reviewコマンドは変更しません。
 authority:
-  required_sources:
-  - .claude/knowledge/engineering-governance.md
-  - .claude/knowledge/human-review-patterns.md
-  - 対象プロジェクトの指示、要件、適用される規則です。
-  rules:
-  - 西口さんの原則、適用するproject規則、独立レビューを維持します。
-  - このClaudeレビュー方向だけを更新し、逆方向のread-only Codex契約を変更しません。
-  - 単独cr/qa/e/advは他レイヤを自動起動しません。
+  required_sources: [.claude/knowledge/engineering-governance.md, .claude/knowledge/human-review-patterns.md, projectの適用規則と要件]
+  rules: 原本と例外、独立レビュー、必須React/Nest相談、既存roleのmodel/effort、実行権限を維持します。
 ownership:
-  coordinator: Codexです。Claudeの初回レビューが完了するまで横やりの調査依頼や実装修正を挟みません。
-  preloaded_rule_sources: Codexは各phaseの初回に、対象projectの.claude/knowledge/engineering-governance.mdと.claude/knowledge/human-review-patterns.mdについて、解決済み絶対パスと現在内容のSHA-256を2件だけ取得して親へ一度渡します。Claude親は同じ出典情報を実担当・専門担当へ渡し、実際の注入内容に記載された出典と照合させます。同一ownerの再開では保持済みの値を再利用し、原文変更時だけ更新します。全文の再送、巨大manifest、毎回のhash gateやClaudeへのhashコマンド実行依頼は不要です。取得不能・不一致は必要な原文の許可された読取りか正確な不足証拠要求へ戻します。
-  implementation: CodexのHQが🔴🟡と🟢Lowの全指摘をまとめて修正します。🟢Infoは指摘ではなく、修正対象にしません。
-  reviewers:
-    l1_5: code-quality-reviewer
-    qa: test-qa
-    e2e: e2e-qa
-    l2: adviser
-  review_only: Claudeの親とcr・qa・e2e・adv、相談先の全agentは、ソース/要件/既存結果の読取り、証拠評価、指摘、質問、不足証拠の要求だけを行います。Claude自身と相談先は型チェック・lint・format・build・unit/integration/E2E/Playwright・CI/CDの実行/再実行/操作、アプリやサーバーの起動、依存導入、migration、スクリプト実行、source/test/fixture編集、stage/commit/push/mergeを行いません。
-  codex_execution_owner: Codexのみがコードとテストの作成/修正、必要な検証コマンドの選定と実行、CIの再実行・ログ取得、環境準備、差分とsnapshot証拠の取得、HTMLログ生成を担当します。Claudeが検証不足を見つけたら実行せず、必要なコマンド/ケース/期待結果/根拠をCodexに返します。Codexは実際の実行コマンド・終了コード・対象source snapshot・CI run識別子を返し、Claudeがレビューします。
-claude_cli:
-  environment:
-    CLAUDE_CODE_DISABLE_ADVISOR_TOOL: '1'
-  context_policy: このレビュー委譲の初回と--resumeだけに、--settingsのautoCompactWindow=200000を渡し、親子に適用します。優先順位の高い設定を上書きする圧縮用env/--autocompactは追加しません。約20万tokensを目安に履歴を自動圧縮する設定で、応答数の上限やmodel/effortの変更ではありません。キャッシュは無効にしません。全体設定やproject設定は変更せず、managed制限・既存env・明示的な圧縮無効設定を迂回しません。有効値が異なるか確認できない場合も未適用/未確認として報告します。無効・未対応なら効率設定は未適用と報告し、承認の根拠にしません。公式仕様は https://code.claude.com/docs/en/model-config#context-window-and-auto-compaction と https://code.claude.com/docs/en/sub-agents#auto-compaction です。
-  context_retention: 圧縮後も同じownerで、base/前回と現source、確認済みの義務・境界と根拠参照、全open ID/質問/handoff、専門回答の実IDと採否、規則の版/既読節、検証結果と未了を既存記録から復元します。圧縮要約だけで既読・解消・承認を作らず、失われた必要証拠だけ許可された原本から回収します。ログと原文を削除・改変せず、新規担当へ置き換えません。
-  context_measurement: 起動設定だけで効いたと判断せず、tools/summarize_claude_session.pyのcontext_inputs_by_transcriptで、重複除去した各応答の入力（inputとcache read/writeを含む）の件数・中央値・最大値を確認します。context_inputs_by_compactionで、記録済み圧縮境界ごとの先頭・末尾入力、中央値、最大値とcache read/writeを確認します。分割応答は応答IDの初出区間へまとめ、重複境界を除きます。source_reads_by_transcriptで、Readの明示的offset/limit有無をツールIDで重複除去して確認します。境界のない区間や空区間から圧縮成功・削減率を推定しません。recorded_compaction_boundariesはJSONLに記録された圧縮境界だけを数え、0件だけで無効と断定しません。圧縮直後のcache write増加も含め総量と義務の保持を比較し、利用枠の消費率へ換算しません。
-  advisor_policy: 初回と--resumeの全回で、この環境値をClaudeプロセスへ渡します。CLIの--settingsでも同じenvを指定し、子にも継承させます。内部advisorは通常のadviser Agentと別で、この方向では無効です。通常のadviserのmodel/effortと必須相談は変更しません。managed設定を変更・迂回せず、無効化できなければBLOCKEDです。公式仕様は https://code.claude.com/docs/en/advisor#turn-the-advisor-off を参照します。
-  runtime_check: Codexは起動後の親/子JSONLをtools/summarize_claude_session.py --check-review-boundaryで確認します。api-request-shapeとadvisor_tool等の追加、通常tool_useとserver_tool_useを分けて確認します。CLI引数だけで制限済みとしません。禁止ツールの追加・呼出しはBLOCKED、記録不足はUNCONFIRMEDです。検出時はCodexがその実行を止め、承認や通常の再開に進みません。この検査は起動前の通信防止やOSの隔離を保証しません。
-  cwd: 必ずレビュー対象projectを保ちます。
-  argv:
-  - claude
-  - --print
-  - --output-format
-  - json
-  - --model
-  - sonnet
-  - --effort
-  - medium
-  - --settings
-  - '{"env":{"CLAUDE_CODE_DISABLE_ADVISOR_TOOL":"1"},"autoCompactWindow":200000}'
-  - --permission-mode
-  - dontAsk
-  - --tools
-  - Read,Glob,Grep,Agent,SendMessage
-  - --allowedTools
-  - Read
-  - Glob
-  - Grep
-  - Agent
-  - SendMessage
-  - --disallowedTools
-  - Bash
-  - Edit
-  - Write
-  - NotebookEdit
-  - mcp__*
-  model_policy: 親の調整はSonnet/medium、各実agentは自身のmodel/effortです。adviserはclaude-opus-5-5/high、他の既定担当はSonnetです。Agent呼出のmodel/effort上書きで役割設定を変えず、明示された利用者指定を優先します。必要なL2モデルが利用不能なら承認を保留します。
-  permission_basis: 利用者の最新指示に従いレビュー専用です。--toolsで読取りとAgent委譲/SendMessage再開だけを残し、--disallowedToolsでBash/編集/MCPを明示的に拒否します。dontAskで未許可の操作を拒否します。既存settingsのallowや子agentが制限を緩めたと扱いません。
-  limits: OS/Codex/managed設定と実際の利用者制約は守ります。上位制限を迂回せず、止まる場合は確認不能として報告します。
-  tools: 初回と--resumeの全回で同じ--tools/--allowedTools/--disallowedTools/--permission-modeを指定します。Claude親・子・専門担当はRead/Glob/Grepで資料を読み、Agent/SendMessageでレビュー相談と同じ子agentの再開だけを行います。Git差分、型チェック、CI等のコマンドはCodex側で実行してから証拠を渡します。起動側でこの制限を適用できない場合はBLOCKEDとし、権限を広げません。
-  prompt_template: |
-    {prefix}: {review_request}
-    Workflow: codex-claude-review
-    規則の出典（初回のみ、2資料のresolved pathとSHA-256）: {rule_source_identity}
-    比較元・現sourceと差分の読取先（review_entry.source_delivery）: {review_source_evidence}
-    利用者のbase・除外・今回固有の制約があれば: {user_constraints}
-  resume_prompt_template: |
-    {prefix}: 再レビューしてください。
-    Workflow: codex-claude-review
-    再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
-    前回読んだgovernanceのhash(任意、12桁以上): {governance_hash}
-    規則変更時だけ新旧出典と変更節の参照（review_entry.rule_delta_delivery）: {changed_rule_source_identity}
-    新しい利用者回答・今回固有の制約があれば: {new_answers_or_constraints}
-    指摘ID→変更箇所→再確認する義務と検証結果（対象source・狭い参照先・限界）: {fix_and_verification_evidence}
-    通常と異なる追補が必要な場合だけ、その根拠と未了義務: {rereview_exception}
-  continuation_prompt_template: |
-    {prefix}: 未完了のレビューを続けてください。理由: {continuation_reason}
-    Workflow: codex-claude-review
-    Phase: {phase}
-    再開先（同じphaseの実ID）: parent={parent_session_id}, child={owner_agent_id}
-    保持済みの確認範囲・未解決事項・規則: {retained_record_reference}
-    追加証拠・専門回答・出典変更とその限界（なければ「なし」）: {new_evidence}
-    元の実childへSendMessageで戻してください。再開不能なら不足を報告してください。
-  invocation:
-  - 各phaseの初回は独立した実担当を起動し、親session_idと実child agent_idを保持します。
-  - 同phaseは親を--resumeし、親からSendMessageで元の実childを再開します。同名の新規起動を再開にしません。
-  - 例外: 新しいレビュー専用CLI制限を適用する前に起動した親/子、または初回の実行ツール設定を証明できない親/子は再開しません。Claudeの子は再開時に初回のツール構成を保持し得るためです。Codexが旧セッションを停止し、新制限で該当phaseの初回を起動し直します。過去の指摘と必要証拠はSuppliedとして引き継ぎ、旧承認を新承認として流用しません。新規起動できなければBLOCKEDです。
-  - 親/子の再開や元の比較対象を利用できなければ、状態を保持し確認不能として報告します。
-  - 初回未完・利用上限後の復帰・追加証拠の受領・専門回答の統合はcontinuation_prompt_templateで同じ実担当へ戻します。初回完了後の一括修正と検証結果はresume_prompt_templateを使います。phaseをまたぐ再開はしません。
-  - 既存のinvocation_evidenceにmode/phase、親/子の実ID、許可tool設定、保持記録への参照を一度残します。親の--resumeだけでは子の再開証拠になりません。実際のSendMessage宛先を照合し、再開機能がない場合は新規Agentへの自動置換や再試行ループを行いません。上記の安全上の新規起動例外は維持します。
-  - 上記model_policyを適用し、再開時も同じ親/子と役割modelを維持します。実際の委譲結果を使い、CLI成功だけを承認にしません。
-  - qa/e2eの実担当へexternal_test_adequacy_reviewer、phase、実際の利用者依頼を割り当てます。短い親依頼から設定を読み、親が実委譲時に伝えます。
-  - 初回/--resumeのいずれもレビュー専用CLI制限とCodex実行責務を保持し、子agentと専門担当にも明示します。Claudeのコマンド実行・編集・CI操作を実際に検出した場合は承認不可として記録し、Codexが対処します。
+  implementation: Codexが実装、修正、検証、Local-ciを担当します。
+  coordinator: 実装担当がMDと必要な証拠を保ち、reviewerの判定を書き換えません。
+  reviewers: {qa: test-qa, e2e: e2e-qa, l1_5: code-quality-reviewer, l2: adviser}
+  receiver: Claude Codeは指定した実agentへ委譲します。主セッションだけの代読は不可です。
+  preloaded_rule_sources: .claude/knowledge/engineering-governance.mdと.claude/knowledge/human-review-patterns.mdの解決済み原本とSHA-256をMDへ一度記録します。同一ownerの再開は保持値を使い、原文変更時だけ更新します。未注入の原文を要約で代用しません。
+  execution: reviewerはsource/testを編集せず、アプリ、テスト、lint、型確認、build、CIを実行しません。必要な実行は実装担当へ返します。
+  git: 開始時と修正中のindexを変更しません。最終承認とLocal-ciとCodex ci判定後だけ、実装担当が対象を限定してstage/commit/pushしdraft PRを作ります。対象外と既存indexを保全できなければ保留します。
 review_entry:
-  platform_scope: Claude担当はClaude側の規則を使います。.codex/AGENTS.mdの全文を既定の必読にしません。workflowの所在確認はリンク先の解決だけで足ります。明示されたproject共通指示と直接適用される原文・例外は確認します。
-  contract_delivery: Claude親はworkflow全文を一度確認し、実担当には解決済み原本のpath/版、mode/phase、role_sectionsの該当キーを渡します。各担当はその完全な原文部分と例外・必要な相互参照を自分で確認し、Rules loadedへ記録します。本人の文脈に全文が注入済みで原本との対応を確認できる自己定義・規則の節は再Readしません。名前やskills指定、親の要約だけでは既読にしません。欠落・版違い・省略・切詰めは必要部分だけ原本から回収し、承認を保留します。新しいmanifestや規則一式は作りません。
+  contract_delivery: md-review.mdの原本のpath/版を渡し、各担当が自分で完全な適用節と例外を確認します。Rules loadedへ注入済み/Read/未確認を記録します。親の要約だけでは既読にしません。切詰めは不足を回収し、依存する承認を保留します。
   role_sections:
-    phase_common: authority、ownership、review_entry、review_cycle、review_gates、findings、questions、response_contract、handoff、staged_baselineの完全な節です。single-layerではsingle_layerも例外込みで確認します。
-    l1_5: phase_commonとexecution.cr_advです。
-    qa: phase_common、qa_contract、execution.qa_e2eです。
-    e2e: phase_common、qa_contract、execution.qa_e2eです。
-    l2: phase_common、consultation、execution.cr_advです。
-    consultants: ownership、review_entry、consultation、execution.cr_advと、割り当てられた責務に直接適用される節・例外です。phase担当の承認や11項目の代理作成はしません。
-  required_intake: Claudeの各実担当は実コードの判断前に、Rules loadedを1回記録します。必須資料ごとに注入済みの節・自分でReadした節・未確認を分け、出典の同一性と適用するproject設計/規約の節（例外込み）を確認します。親の既読やagent定義の要約を未注入の原文の代わりにしません。既知の絶対パスはReadで直接確認し、Globの0件だけで不存在としません。必須資料が不明なら正確なINPUT_REQUESTを返し、依存する判断はUNCONFIRMEDにします。独立した範囲は続けられます。
-  batched_reads: 独立したRead/Glob/Grepは、各toolと合計の出力上限に収まる単位でまとめます。切詰め時は見えた完全な範囲だけを既読とし、文脈を保って不足・不明範囲だけ回収します。既読の不変な節は同じpassでも再取得しません。全文確認を求めるproject規則は維持し、テストの読取義務とQA/E2Eの妥当性判断を分けます。
-  reading_scope: 全対象の変更hunkと変更した関数/責務、必要な直接caller/calleeを確認します。全ファイル・全テスト・全設計書の全文読了を一律に要求しません。影響や例外を判断できなければ必要箇所へ広げ、理由と範囲を記録します。利用者やproject規則が全文確認を明示する場合は従います。coverageは担当の義務を確認した範囲で示し、全文読了の意味でCOMPLETEを使いません。未確認の義務は残します。
-  autonomy: Codexが確定したbase/HEAD、staged・unstaged・untrackedとrenameを含むGit差分・必要な元版の証拠を取得します。Claudeはその証拠をSuppliedとして扱い、Read/Glob/Grepで現ソース、要件、テスト、関連境界を独立に確認します。実装者の結論を根拠にチェックを省かず、不足があればCodexへ特定の証拠を要求します。
-  scope: 明示base/除外を優先します。狭い指定がなければstaged・unstaged・untrackedを含め、index/worktreeの打消しや新規/削除/renameを落としません。
-  base: Codexが実PRやproject規則から実baseを取得して出典とともに渡します。Claudeはproject規則と照合し、main等を推測しません。不明なbranch範囲は承認しません。
-  identity: 担当がbase/HEADと確認した差分・untrackedの内容など、実際のworking sourceを識別できる情報を保持します。HEADだけで未コミット変更を同一と扱いません。
-  comparison_basis: 利用者が許可したstaged-baseline方式ではCodex/HQが安全に固定した初回indexを使います。Codexは実baseに対する初回index差分と修正後のunstaged/untrackedを別々に取得し、元版・snapshot情報を渡します。ClaudeはRead等で現版を独立確認し、差分と過去の指摘を比較します。元内容や基準が失われたら確認不能です。
-  no_packaging_gate: コマンド権限を持たないClaudeへCodexが必要なGit差分とsnapshotを一度渡すことは必須です。一方、レビューごとの巨大なmanifestや全文packet、未変更資料の再送や毎回のhash照合は行いません。必要な根拠だけ追加取得します。
-  source_delivery: 初回依頼のreview_source_evidenceには、実baseと出典、HEAD、現working sourceの識別情報、対象と除外、staged・unstaged・untrackedを区別した差分・必要な元版の読取先を短く渡します。rename/削除の元側と新規内容も含め、同一資料は参照します。Codexが取得した証拠をSuppliedとして渡すもので、Claudeの独立した現コード確認を代替しません。取得不能な項目は理由付きで未確認とし、可能な独立確認は続けます。読取専用を理由に差分を省略せず、巨大manifestや専用形式は必須にしません。
-  rule_delta_delivery: 規則変更時は、Codexが保持済みの旧原文と現原文を比較し、新旧の出典・同じ種類のhash、変更した完全な節と例外の参照、追加/削除した義務を一度渡します。新hashだけで全員へ全文再読を依頼しません。各担当は自分に適用される変更節・必要な相互参照を確認し、不変な既読節を再利用します。旧原文が失われた場合や変更範囲を特定できない場合は、必要範囲の回収を省かず未確認を残します。更新規則を無視・固定して承認せず、原本の代わりに親の要約を使いません。リンク不在等の設定事実は今回の現物確認だけを伝え、古い記録を現在の事実として転記しません。
-  fallback: Git/規則/元内容/認証/環境が取得不能なら正確な不足を返します。必要な部分だけ補い、同じ担当で続けます。任意の包装がないだけでは停止しません。
-  git_inspection: Codexは--no-ext-diff/--no-textconv等でGit差分を安全に取得し、snapshotと出典を提示します。Claude親子はBash/gitコマンドを実行せず、Read/Glob/Grepで元の実コードを閲覧します。
+    phase_common: authority、ownership、review_entry、execution、review_cycle、review_gates、findings、questions、response_contract、handoffとmd-review.mdの開始条件、1、2、3–6、待機、Backlogの完全な節です。
+    l1_5: phase_commonです。md-review.mdのCRのnative判定、局所とhandoffの条件も適用します。
+    qa: phase_commonとqa_contractです。
+    e2e: phase_commonとqa_contractです。
+    l2: phase_commonとconsultationです。
+    consultants: authority、ownership、execution、consultationと担当質問の適用原文だけです。全体Approveや11項目の代理作成はしません。
+  required_intake: 原本/例外込みの適用project規則を確認し、Rules loadedへ残します。既知pathはReadで直接確認します。未確認はUNCONFIRMEDです。
+  reading_scope: 全変更hunk、変更責務、必要な直接caller/calleeを確認します。利用者やproject規則の全文確認義務を維持し、未確認の義務を残します。
+  source_delivery: MDへ実base/HEAD、working source、staged/unstaged/untracked、rename/削除両端と元版、対象/除外、規則の版を記録します。サマリーはSuppliedです。reviewerが独立にgit_diffと現ソースを確認します。
+  rule_delta_delivery: 旧原文と現原文を同じ種類のhashで対応させ、変更した完全な節と例外、追加/削除した義務をMDへ追記します。旧原文が失われた場合は未確認です。親の要約で置換せず、今回の現物確認で出典を更新します。
 execution:
-  cr_adv: CR/ADVはRead/Glob/Grepでレビューします。型チェック、lint、build、テスト、CI/CD、アプリ/サーバー起動、スクリプト実行は一切行いません。Claudeの親や専門相談先にも代理実行させません。Codexの実行記録と元コードを評価します。
-  qa_e2e: QA/E2EもRead/Glob/Grepでテストケースと既存実行証拠の過不足をレビューするだけです。happy/fail両面を評価しますが、テスト/Playwright/型チェック/CIの実行や再実行、テスト生成・修正は一切しません。検証が必要ならCodexに正確な要求を返し、Codex実行結果をSuppliedとして対象snapshotと照合します。
+  cr_adv: Git読取とsource/規則/既存証拠の確認だけです。検証コマンドは実装担当です。
+  qa_e2e: 正常系（happy path）と異常系（fail path）のテスト過不足と提示証拠を確認します。実行やテスト作成は実装担当です。
 review_cycle:
-  initial: 全対象と必須相談を初回で確認し、🔴🟡と🟢Lowの全指摘と未確認を出します。🟢Lowは1回のレポートで重要度の高いものから最大5件です。それを超える軽微な所見と、指摘とするほどでない所見は🟢Infoとして、1行ずつ簡潔に書くか省略します。途中終了は同じ担当で続けます。
-  fix: 初回レビュー完了後にCodexが全指摘を一括修正し、必要な予定済み検証を行います。その結果（失敗を含む）がそろってから、修正差分と検証結果を一度に元の同じ親子へ渡します。ファイル/テスト編集ごとの再起動、修正だけの先行依頼、結果だけの不要な後送を避けます。全テスト成功を一律の再依頼条件にはしません。
-  rereview_inputs: 対象の修正差分（staged/unstaged/untrackedの区別、新規内容、実source identityを含む）、正確な利用者回答と出典・制約、実コマンド・ケース・終了コード・検証対象source、結果と限界を一緒に渡します。既知の未変更範囲は再利用し、既読の不変資料や全logは再送しません。短い依頼と狭い参照先または必要な抜粋で満たせます。巨大manifest、全差分・全テスト本文の転送、毎回のhash照合は必須にしません。
-  rereview: 短く再依頼し、元の子が前回確認したsource/指摘と現在の実差分・影響範囲を比較します。無関係な全面再探索を繰り返しません。
-  impact_mapping: Codexは既存の依頼/台帳に、指摘IDまたは変更義務→変更hunk/責務→影響するcaller/consumer・テスト・規則→検証と未了を短く対応づけます。担当が実差分と旧確認範囲から独立に確かめ、必要なら広げます。新しい報告書や全ファイル一覧は作りません。未変更の保留は再列挙・再調査せずID参照で保持し、新証拠や依存変更がある場合だけ再確認します。テスト/仕様/規則変更時の既存の再確認義務、全open ID、他ownerの義務は省略しません。
-  origin_evidence: 担当は返答前にOriginと根拠を照合します。PRIOR_FINDINGは元ID、FIX_INDUCEDは修正による発生か修正範囲/consumerとの関連かを、新旧の証拠で区別して一言添えます。後者だけで「修正が発生させた」と断定しません。新しくLowを付ける場合は新たな義務/証拠を示し、既存Infoの付け替えをしません。不明なら不明のまま保持し、指摘や必須義務を削りません。分類権限と既存Origin定義・上限は変更しません。
-  verification_evidence: 検証に使ったtest/scriptの狭い参照先、または判断に必要なassertionと読み込み対象を、再依頼時にClaudeの許可されたRead範囲で同時参照できるようにします。ケース名やPASS表示だけで検証内容を証明せず、verifierが実際に読み込んだ対象と検証sourceの対応を示します。除外されたreports全体の許可や無関係なログ公開は行わず、必要箇所だけ参照可能にします。Claudeは実行せず、Codexの提示証拠として評価します。
-  rereview_exceptions: 利用者が検証不要と明示した場合、検証不能・失敗・未実行・部分中断は、NOT_RUN/FAILED/PARTIAL等の実状態・理由と未了義務を保持します。成功や閉鎖に読み替えません。レビュー判断が先に必要な追加質問、利用者の明示指示など根拠のある例外は、通常の一括提供と区別して理由と残りを示し、必要な同じ担当へ先に確認できます。単層のhandoffや他層の独立承認を代替しません。
-  rereview_cap: 再レビューは前回指摘の解消確認と、修正が導入した問題を中心にします。担当レビュアー(cr/qa/e2e/adviser。convergence専用のagentであるreviewerではありません)は、再レビューの各指摘に出力欄Origin(PRIOR_FINDING、FIX_INDUCED、NEW_UNRELATED)を付けます。分類は担当レビュアーだけが行い、Codexは推測も変更もしません。Originの定義は、cr(code-quality-reviewer)、qa(test-qa)、e2e(e2e-qa)、adviserの各agent定義にあります。Originがない指摘には上限を適用せず、通常どおり修正します。Origin NEW_UNRELATEDの🟢Lowは、層(phase)ごとに、四層昇格や新しい初回、単層の進行をまたいで通算1回だけ追加で受けて修正します。通算1回のカウンタは、Codexの調整状態として、phase(l1_5、qa、e2e、l2)ごとに1つずつ、Codexの親sessionが持つ指摘台帳のphase別項目に保持します。担当レビュアーのWorkflow Resultには持たせません。それ以降のNEW_UNRELATEDの🟢は自動修正せず一覧にして、そのphaseのCodexの調整状態をNEEDS_USER_INPUTとします。担当レビュアーのWorkflow ResultはREQUEST_CHANGESとopen IDのままで、Codexは書き換えません。上村さんの判断まで閉じず、承認しません。新規の🔴🟡は上限の対象外です。先送りではなく、上限到達時の判断依頼です。上村さんが対応しないと明示した場合は、新しい状態を作らず、その出典付きの指示を根拠に、担当レビュアーが取り下げを確認してreviewer_withdrawnとします。
-  closure: 修正者の申告だけで閉じません。元担当の解消確認か根拠付き撤回まで、🟢Lowを含め全IDを保持します。🟢InfoはIDを持たず、保持も閉鎖確認も不要です。
-  unknown: 比較する元内容、仕様、必須証拠が未確認なら確認不能/非承認です。推測で解消・実行成功にしません。
+  initial: 指定した層の全対象と必須相談を独立確認します。途中終了は未確認を保持します。
+  fix: 全指摘を一括修正し、失敗を含む予定済み検証結果と修正の対応を同じMDへ一度に追記します。全テスト成功を一律の再依頼条件にはしません。
+  rereview_inputs: staged/unstaged/untrackedの修正、新規内容、実source、正確な利用者回答、実コマンド/ケース/終了コード、結果と限界をMDから参照します。
+  verification_evidence: assertionと読み込んだ対象の狭いRead参照を示します。実装担当の提示証拠をSuppliedとして確認します。
+  rereview_exceptions: NOT_RUN/FAILED/PARTIAL、明示的な検証免除、追加質問、未了義務は維持します。単層承認で代替しません。
+  impact_mapping: 指摘ID→変更責務→caller/consumer/テスト/規則→検証をMDで対応させ、担当が独立に確かめ必要なら広げます。テスト/仕様/規則変更の義務、全open ID、他ownerを落としません。
+  origin_evidence: 元IDと新旧の証拠でOriginを確認します。既存Infoの付替えは禁止です。不明は保持します。既存Origin定義・上限は変更しません。
+  closure: 実装担当のfix_candidateでは閉じません。元担当のreviewer_confirmed_fixedまたは根拠付きreviewer_withdrawnだけです。
 consultation:
-  required: L2の該当React/Nest境界は初回に必要な独立相談を行います。実装時の相談を流用せず、単層のadvでも省略しません。
-  batch: adviserは最小限の実境界・規則・phase/snapshotが分かった時点で、ReactのUI/state/render、Nestのproducer/validation/serializationへ責務別の質問をまとめます。全frameworkの詳細調査や指摘の確定まで依頼を遅らせません。相談はframework・phase・同じ証拠ごとに一度とし、変更・未回答だけ再開します。
-  delta_questions: 再相談は、同じ専門担当へ質問ID・前回確認範囲・今回の変更hunkと責務・必要な検証/規則変更だけを渡します。PR全体や他担当の全文回答を一律に再送しません。専門担当は自分の境界と反証を確認し、追加範囲が必要なら理由を示して広げます。必須の独立初回相談、変更で再開する義務、未回答の問いは省略しません。現証拠で依存変更がない未回答の仕様は保持し、答えを探索し直しません。
-  completion: 前景のAgent呼出しを優先します。実schemaにrun_in_backgroundがあればfalseを使い、親のphase起動にも同じ方針を使います。model/effortや許可toolは変更しません。直接相談が使えなければSPECIALIST_REQUESTをまとめて親へ返し、親が実回答を受領してアクセス可能な原文・実IDを一度に同じadviserへ戻します。起動確認や回答待ちは未完了です。許可された完了通知・待機機能を使い、状態照会・原文再投入・統合催促を繰り返しません。待機のためのtool追加、全体設定変更、待機専用agentは作りません。取得不能なら実IDと途中証拠、正確な不足機能と未了義務を残し、承認しません。
-  integration: 実回答の受領後にadviserが一度で統合します。必要な追加相談は変更・未回答の問いに限ります。親は担当の判定・変更点・残件を短く伝え、詳細回答を再説明しません。全未解決・native verdict・11項目は維持し、同じ台帳を参照します。
-  scope: 専門担当は担当境界に限定し、出典・版・元担当のある未変更事実は活用します。未解決や変更箇所以外の重複調査を避けます。
-  record: 実相談ID/回答原本、重要な未解決、adviserの採否と根拠は保持します。指摘数や専門家名だけで完了にしません。
+  required: L2のReact/Nest条件が該当すれば独立相談が必須です。実装時の相談で代用しません。
+  completion: 最小限の実境界で質問をまとめ、依頼を遅らせません。可能なら前景Agent、run_in_background対応時はfalseです。model/effortや許可toolは変更しません。SPECIALIST_REQUESTは同じadviserへ返します。起動確認や回答待ちは未完了です。tool追加や待機agentで埋めません。取得不能は未承認です。実回答の受領後に統合し、必要な11項目を保持します。
+  delta_questions: 前回確認範囲、変更責務、未回答と反証を同じ専門担当へまとめます。必須の独立初回相談は省略しません。
 qa_contract:
-  assignment: qaとe2eはexternal_test_adequacy_reviewerとして割り当て、両方の実agentを必ず呼びます。
-  scope:
-    qa: unit、service、controller等の局所契約と、担当する結合テストの過不足を確認します。
-    e2e: ブラウザーの利用導線、API、HTTP・module境界をまたぐ検証の過不足を確認します。
-  checks:
-  - テストの変更がゼロでも、変更した責務と要件から必要な検証を確かめます。
-  - controllerの直接呼び出しとHTTP経由の検証など、実際に通る境界で担当を分けます。
-  - qaとe2eは、正常系（happy path）と異常系（fail path）それぞれの不足・過剰を確認し、義務・根拠・状態を累積台帳に残します。
-  - 正常な成功・状態変更と、対象責務で適用される入力拒否・権限拒否・依存先失敗等を確かめます。例の網羅を目的に範囲を広げません。
-  - 正常系の成功で異常系の未確認を代用しません。片面に適用義務がなければ、実reviewerが対象なしの根拠を台帳に残します。
-  - 期待する動作、入力・失敗条件、assertion、fixture、mock、実行結果を必要な範囲で照合します。
-  - 不足は未検証の契約と影響を示します。過剰は不要な理由と削除後も残る検証を示します。
-  - 過剰の例は、意味のない重複、実装細部への過剰依存、変更範囲外、効果のないケースです。
-  - 件数、行数、coverage率だけを減らすために削除しません。別の責務と正常系・異常系の両面で必要な検証を保ちます。
-  - 不足・過剰の全指摘を台帳に残します。上位3件などの表示目安で残りを捨てません。
-  - 対象なしは実agentが変更内容から根拠付きで判断します。ファイルなしだけで承認しません。
-  - 実装側の自己点検、既存の同名QA出力、未実行のテストを実行証拠に置き換えません。
-  ownership:
-  - Claude QA/E2Eはテストの不足・過剰とCodex実行証拠の妥当性だけをレビューします。テスト実行・再実行、Playwright/CI操作、source/test/fixtureの作成・修正・削除はCodexのみが行います。
-  - 各担当は自分の指摘を確認し、他層の未解決と区別します。必要な根拠が欠ければ承認しません。
-  verdicts:
-    APPROVE: 担当する全範囲の正常系・異常系の過不足確認を完了し、不足・過剰の指摘、質問、必要な証拠待ちがゼロです。適用なしは根拠を台帳に残します。
-    REQUEST_CHANGES: 根拠のある不足・過剰の指摘が残っています。🟢Lowも対象です。
-    DEFER: 必要な証拠、委譲、別モデルの確認、環境の確認が不足しています。
-  clean_output: 指摘がなければ短いAPPROVEと必須のWorkflow Resultで足ります。問題を作りません。
+  assignment: qa/e2eのうち利用者が選択した実agentだけをexternal_test_adequacy_reviewerとして呼びます。
+  checks: テスト変更ゼロでも、担当する責務の正常系・異常系、要件/assertion/fixture/mock/既存結果を照合します。適用なしは実担当が根拠を残します。欠落も不要な重複も確認し、必要な保証を消しません。
 review_gates:
-  order:
-  - qa
-  - e2e
-  - l1_5
-  - l2
-  independence: |
-    実装側はCodex、外部レビュー側はClaude Codeです。
-    qaとe2eは実装者と別モデルの実agentへ委譲します。実装側の同名QAで代用しません。
-    実装担当と外部reviewerのプラットフォーム、モデル設定と実呼び出しを記録します。
-    上記model_policyに従います。同じ実装モデルへの置換や架空のtraceは不可です。
-    別モデルでの実呼び出しを確認できなければ、承認を保留します。
-  approval: 各層の全対象と必要な証拠を確認し、自層の🟢Lowを含む指摘・質問がゼロの場合のみ承認します。
-  handoffs: 別担当のhandoffは担当・根拠・状態を全件保持し、件数で打ち切りません。自層判断に依存しない引継ぎは層としての承認を妨げません。自層の未確認を付け替えて承認しません。最終引渡しでは全必須handoffも解消します。
-  snapshot_change: source/テスト/要件/規則の変更で旧四承認は失効します。一括修正後、既存担当がqa→e2e→cr→advの順で修正差分と未変更証拠の現版での有効性を確認し、同じ最終source snapshotへ自分の承認を更新します。Codexが旧承認を付け替えません。まだ開始していない層を先行起動せず、通常の順序で独立確認します。各層は、snapshot変更後も承認の更新を必ず行います。影響しない義務の判定は各層の担当が行い、修正が呼び出し元・共有helper・テスト対象のコードに直接または呼び出し経路を通じて届く義務は再確認します。再利用は、前回の証拠が現版でも有効と自層が確認した場合に限り、「証拠再利用：<ID>, <前回Checked/Executedしたsnapshot_id>, <影響しないと判断した根拠(変更したパス・シンボルと当該義務の対応)>」と1行で記録します。テスト変更はqaとe2eの全義務、要件・仕様・規則の変更はその出典を根拠にする全層の全義務を再確認し、判定した層と根拠を記録します。
-  coverage: COMPLETEは累積した当該phaseの全対象・必須確認の完了です。今回sliceだけや未確認の証拠を含めて承認せず、PARTIALは元の同じ担当が続けます。
-  native_approval:
-    l1_5: L1.5_APPROVEを受理します。L1.5_APPROVE_WITH_NOTESはCR自身が根拠付きでqa/e2e/l2へ分類したhandoffだけの場合です。局所の🟢Lowや未確認を付け替えません。
-    qa_e2e: native APPROVE、全対象COMPLETE、happy/fail両面の不足・過剰確認と必要証拠が完了していることが必要です。適用なしは実担当が根拠を残します。
-    l2: native APPROVE、全対象COMPLETE、必要な独立相談・検証証拠と自層の全指摘・質問の解消が必要です。最終引渡しでは全層の未解決handoffもゼロです。
-  new_prior_finding: snapshotが同じでも、新しい根拠で前段の指摘が再開したら、その担当と依存する後段の承認をpendingへ戻し、同じ担当で必要範囲を再確認します。
+  order: [qa, e2e, l1_5, l2]
+  selection: この順から利用者の選択層だけを取り出します。未選択層を起動しません。
+  coverage: COMPLETEは当該層の全対象と必須確認の完了です。slice終了や指摘ゼロだけでは不可です。
+  snapshot_change: source/テスト/要件/規則の変更で古い選択層の承認を失効させます。影響確認と未変更証拠の現版での有効性を担当が確認し、新承認を返します。親は付け替えません。
+  handoffs: 自層判断に必要な未確認をhandoffへ移して承認しません。独立した他層の義務は残せます。最終引渡しには全必須handoffの解消が必要です。
 findings:
-  scope: 🟢Lowを含め、依頼範囲で提示された改善・修正指摘をすべて対応対象にします。
-  rules:
-  - 各指摘にIDと担当を付け、修正前後と再確認結果を対応させます。
-  - Codexの修正完了はfix_candidateです。担当レビュアーが確認するまで閉じません。
-  - fix_candidateごとに、ID、修正前後の要点、変更ファイルを上村さんへ返します。
-  - 無関係な新規🟢Lowの上限は、review_cycle.rereview_capに従います。
-  - 軽微、任意、DEFER、Follow-upという分類だけでは先送りしません。
-  - 誤検知は根拠を示し、担当レビュアーが撤回した記録を残します。
-  - Codex単独で却下、取り下げ、対応不要、解消済みにしません。
-  - 良い点の紹介や状態表示の🟢は、修正指摘として数えません。
-  - 軽微な所見は🟢Lowと🟢Infoに分けます。🟢Lowは指摘で、IDを付けて閉鎖まで追跡し、1層・1回のレポートで重要度の高いものから最大5件です。🟢Infoは指摘ではなく、ID・追跡・修正・再レビューが不要で、1行ずつ簡潔に書くか省略できます。5件を超える軽微な所見は重要度の低いものを🟢Infoにし、一度🟢Infoと分類した所見は、再レビューでも、🟢Lowが5件に満たなくても、🟢Lowへ格上げも付け替えもしません。再レビューで新たに見つけた根拠付きの🟢Lowは、新しい指摘として出せます(その回の最大5件に含まれ、再レビューの上限規則の対象です)。🟢Lowになるのは、新たな根拠付きで🟢Lowと分類した所見だけです。
-  - 🔴🟡の指摘、質問、handoff、必須証拠の欠落、必須規則の違反を、🟢Low/Infoへ下げたり省いたりして承認条件を避けません。分類を下げても承認の条件は満たされません。reviewer_confirmed_fixedとreviewer_withdrawnの閉じ方は変わりません。
-  - 範囲外の変更や根拠のない好みを自動実装せず、判断に迷えば上村さんへ質問します。
-  - 表示件数や読取予算を理由に指摘を捨てません。未確認部分は同層で続行します。
-  closed_statuses:
-  - reviewer_confirmed_fixed
-  - reviewer_withdrawn
+  severity: 🔴重、🟡中、🟢Lowです。Infoは記載しません。既存Low上限とOrigin/再レビュー上限を維持します。
+  closure: 全IDを担当と根拠付きで保持します。実装担当の判断で解消/却下しません。MD内の起票をBacklog課題作成の許可にしません。
 questions:
-  recipient: 上村さんです。
-  rules:
-  - 実装、仕様、修正方針の疑問点はすべて記録し、上村さんへ質問します。
-  - Claudeは質問を応答へ返します。Codexが上村さんへ伝え、回答を同じ担当へ返します。
-  - AI同士の合意を本人の回答として扱わず、推測で仕様を決めません。
-  - 関連する疑問をまとめ、判断対象、根拠、選択肢を簡潔に示します。
-  - 回答に依存する編集と承認を止め、NEEDS_USER_INPUTで待ちます。
-  - 取得可能な事実や資料の確認は続けます。回答を受けたら停止地点から再開します。
-  - 回答で要件や対象が変わった場合はsnapshotと必要な承認を更新します。
+  recipient: 上村さんです。実際の質問と出典付き回答をMDへ追記します。依存する判断はNEEDS_USER_INPUTです。推測で閉じません。
 response_contract:
   block_name: Workflow Result
-  note: CLI標準のJSON項目ではありません。回答本文へ付ける補助のYAMLブロックです。
   fields:
-    workflow_id: codex-claude-review
-    phase: l1_5、qa、e2e、l2のいずれかです。
-    reviewer: 実際に呼び出したagent名です。
-    snapshot_id: 今回確認した値です。未確認ならnullにします。
-    native_verdict: 既存判定を記載します。qa/e2eはAPPROVE、REQUEST_CHANGES、DEFERです。
-    coverage: 当該phaseの全対象に対するCOMPLETE、PARTIAL、BLOCKEDです。今回sliceだけで判定しません。
-    decision: APPROVE、REQUEST_CHANGES、NEEDS_USER_INPUT、BLOCKED、CONTINUE_REVIEWのいずれかです。
-    open_item_ids: 未解決指摘のID一覧です。局所指摘と別担当のhandoffを区別します。🟢InfoはIDを持たないため含めません。
-    questions: 上村さんへの未回答質問です。
-    handoffs: 担当、質問、根拠、状態を含む引き継ぎ一覧です。
-    invocation_evidence: 外部review役割、プラットフォーム、実装者とreviewerのモデル設定、親session_id、実子agent_id、初回Agentまたは再開SendMessageの実行証拠、専門相談の識別子、phase、snapshotです。
-  acceptance: decisionがAPPROVEで、phaseの承認条件を満たす場合だけ受理します。項目欠落、本文との矛盾、snapshot不一致は未承認です。invocation_evidenceにmode=single-layerを含む結果は、引渡し可・最終承認として受理しません。Codexが単層モードで起動した依頼の結果で、invocation_evidenceに送信したphaseと一致するmode=single-layer phase=<phase>が欠けている、または別のphaseの場合は、decisionがAPPROVEでも未承認として扱い、四層承認にもしません。同じ担当に不足の補完を求めます。
-  compact_output: 判定と変わった結論を先に短く返します。全指摘・未確認・証拠台帳と必須11項目は保ち、同じ指摘・全diff・未変更規則・長いlogの繰り返しを避けます。短さは承認条件を緩めません。
+    workflow_id: md-review.mdの3–6で定義した実担当の値です。
+    phase: qa/e2e/l1_5/l2/ciです。ciはci-reviewerに対応します。
+    reviewer: md-review.mdの3–6で定義した実担当の値です。
+    snapshot_id: md-review.mdの3–6で定義した実担当の値です。
+    native_verdict: md-review.mdの3–6で定義した実担当の値です。
+    coverage: md-review.mdの3–6で定義した実担当の値です。
+    decision: md-review.mdの3–6で定義した実担当の値です。
+    open_item_ids: md-review.mdの3–6で定義した実担当の値です。
+    questions: md-review.mdの3–6で定義した実担当の値です。
+    handoffs: md-review.mdの3–6で定義した実担当の値です。
+    invocation_evidence: md-review.mdの3–6で定義した実担当の値です。
+  acceptance: 現snapshot、全対象COMPLETE、自層の指摘/質問/必要証拠ゼロ、実委譲と必要相談、既存native判定条件を満たすときだけAPPROVEです。欠落や本文との矛盾は未承認です。
+pause_and_resume:
+  failure: source変更、CLI失敗、利用上限、権限不足はBLOCKED/未確認です。結果と全未了をMDへ保持します。上限到達を承認へ読み替えません。
 handoff:
-  terminal_state: awaiting_kamimura_review
-  review_report_owner: adviserが統合した短い結果を返します。専門家の詳細回答を重複掲載しません。
-  conditions:
-  - 最終source snapshotへの四層承認と、全指摘・質問・handoff・必須相談・必要な検証の完了です。単層モードでは、その層の完了のみで、四層の引渡し可を意味しません(single_layer参照)。
-  - 変更は未コミットです。許可された初回基準のindexは固定し、修正は未stage、新規はuntrackedとし、対象外と既存stageを保全します。承認は現在working sourceに対応し、最終stage/commitは人間が行います。
-  audit_records: 実際の相談・判定・未解決を原本と識別子付きで保持します。利用者が全会話/HTMLを要求した場合、承認・非承認を問わず対象セッションの終了後にCodexはtools/render_review_record.pyでCodex/Claudeの実JSONLからHTMLを決定的に生成します。対象projectにtoolsがなければ解決済みの設定元リポジトリのtoolsを使用します。共有用は--redact-personal --omit-thinkingを付け、出力後も人が業務情報・認証情報を目視確認します。効率はtools/review_efficiency_report.pyとtools/summarize_claude_session.pyで別途測定します。出力先はリポジトリ外の$HOME/review-audit/を既定とし、プロジェクト側で明示された除外済み.codex/review-records/を使う場合はsetup.shが.git/info/excludeへ.codexを登録済みであることを確認します。.gitignoreに依存せず、原本が無ければ欠落を報告して成功としません。これらのスクリプトは実レビューや子agentの起動証拠を代用しません。
-  commit_owner: 上村さん本人です。
-staged_baseline:
-  authorization: この初回stage方式は、利用者が承認済みのHQ既定ルールです。対象のreview/修正サイクルでは毎回の再承認を求めず、HQが正確な初回対象だけをstageします。別の明示指示を優先し、既存indexを安全に保全できなければ保留します。一律stage禁止への対象内の例外であり、今回の設定修正をstageしない指示、上位権限、逆方向、commit/push禁止は変更しません。
-  preflight: HEAD、対象path/hunk/base、除外、既存indexのcontent/mode、working/untracked状態を確認します。対象外・環境・機密を含めず、元のstaged hunkと無関係なindex
-    entryを保存できるか判断します。
-  partial_index: 既存staged版とworking版が違う同じpathへ丸ごとgit addしません。全必要内容と旧stageを保全できなければ、正確な問題を報告して保留します。元indexを不変に保つ別review indexは、許可内でHQ、初回と再開したClaude親子の全Git処理に同じGIT_INDEX_FILEが一貫して適用できる実証がある場合だけ代替にできます。確認できなければ保留します。
-  initial: 初回対象だけを一度stageし、実際のindex identityとpath/contentを基準として保持します。追加・削除・rename両端と初回untracked内容を落とさず、無条件のgit add .や全体add/reset/stashは行いません。
-  first_review: 実際のbaseに対するgit diff --cachedと元コードを確認します。後続層の初回は固定基準に加え現在の修正も確認し、層ごとにstageし直しません。
-  fix: 修正は未stageに保ち、indexを更新しません。通常git diffで初回基準以後の追跡済み変更を確認し、git statusと未追跡の新規内容も別途確認します。削除・rename先も失いません。
-  integrity: 修正から戻った際に固定index identityと照合します。基準の変更・欠落は保留し、自動で復元・再stage・上書きしません。同じ担当が実際の修正前後と全指摘を確認します。
-  handoff: 承認対象は現在working sourceです。indexは初回基準、修正と新規は未stage/untrackedのままと伝えます。最終stageとcommitは人間が確認して行います。
+  terminal_state: draft_pr_awaiting_human_ready
+  conditions: md-review.mdの7–9に従い、選択層の現snapshot承認、実装側Local-ci成功、実Codex ci-reviewerの指摘なし判定、最終commitとの内容対応を確認します。
+  human_ready: draft PRまでです。Ready for reviewは上村さん本人だけが行います。
+claude_cli:
+  runner: tools/start_md_review.py
+  lifecycle: --printで指定1層を1回実行して終了します。修正・CI・他AIの待機、heartbeat、sleep用agentは禁止です。再レビュー時だけ終了済みの同phase親子を実IDで再開します。
+  restrictions: dontAsk、Read/Glob/Grep/Agent/SendMessage、固定Git読取MCP、限定Backlog読取を使用します。Bash/Edit/Write/NotebookEdit、未許可MCP呼出しをtool gateで拒否します。managed制限は解除しません。
+  resume: 安全な現tool構成を証明できない旧親子は再開せず、新規初回にします。過去の指摘はSuppliedです。親だけのresumeを子の再開証拠にしません。実IDが欠ける場合はBLOCKEDです。
+  advisor: CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1を初回と再開に設定し、autoCompactWindow=200000をprocess内だけに指定します。実行時の有効性は別途確認し、設定だけで効果や成功を断定しません。

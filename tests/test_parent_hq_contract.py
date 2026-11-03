@@ -24,11 +24,10 @@ def section(text: str, heading: str) -> str:
 
 
 def review_prompt(text: str) -> str:
-    body = text.split("  prompt_template: |\n", 1)[1].split("  result_handling:\n", 1)[0]
-    lines = body.splitlines()
-    if not all(line.startswith("    ") for line in lines):
-        raise ValueError("プロンプトの字下げが不正です")
-    return "\n".join(line[4:] for line in lines) + "\n"
+    match = re.search(r"(?m)^  prompt_template: \|\n((?:    [^\n]*\n)+)", text)
+    if not match:
+        raise ValueError("プロンプトがありません")
+    return "\n".join(line[4:] for line in match[1].splitlines()) + "\n"
 
 
 class ParentHqContractTests(unittest.TestCase):
@@ -128,13 +127,7 @@ class ParentHqContractTests(unittest.TestCase):
 
     def test_review_prompt_keeps_all_input_fields(self):
         fields = [name for _, name, _, _ in Formatter().parse(review_prompt(self.workflow)) if name]
-        expected = {
-            "prefix", "phase", "user_workflow_request", "project_root", "scope_and_base_head",
-            "snapshot_id", "review_role", "reviewer", "model_and_invocation_evidence",
-            "requirements_and_rules", "findings_fixes_and_answers", "phase_scope_and_coverage_ledger",
-            "verification_evidence", "authority_ownership_findings_questions_and_response_contracts",
-            "review_gates_qa_contract_and_current_phase_contract",
-        }
+        expected = {"prefix", "phase", "contract_path", "review_md_path", "snapshot_path"}
         self.assertEqual(set(fields), expected)
         self.assertEqual(len(fields), len(expected))
 
@@ -142,27 +135,20 @@ class ParentHqContractTests(unittest.TestCase):
         template = review_prompt(self.workflow)
         names = [name for _, name, _, _ in Formatter().parse(template) if name]
         values = {name: "fixed:" + name for name in names}
-        dynamic = {"user_workflow_request", "project_root", "scope_and_base_head", "snapshot_id",
-                   "model_and_invocation_evidence", "requirements_and_rules", "findings_fixes_and_answers",
-                   "phase_scope_and_coverage_ledger", "verification_evidence"}
+        dynamic = {"review_md_path", "snapshot_path"}
         a = template.format_map(values)
         b = template.format_map({**values, **{key: "changed:" + key for key in dynamic}})
         before_a, after_a = a.split("今回の入力:\n", 1)
         before_b, after_b = b.split("今回の入力:\n", 1)
         self.assertEqual(before_a, before_b)
         self.assertNotEqual(after_a, after_b)
-        self.assertIn("fixed:authority_ownership_findings_questions_and_response_contracts", before_a)
-        self.assertIn("Snapshot ID: changed:snapshot_id", after_b)
-        for key in dynamic:
-            self.assertNotIn("fixed:" + key, before_a)
-            self.assertIn("changed:" + key, after_b)
-        changed_rule = template.format_map({**values,
-            "authority_ownership_findings_questions_and_response_contracts": "updated rules"})
-        self.assertNotEqual(before_a, changed_rule.split("今回の入力:\n", 1)[0])
+        self.assertIn("fixed:contract_path", before_a)
+        self.assertIn("changed:snapshot_path", after_b)
+        self.assertNotIn("authority_ownership_findings_questions_and_response_contracts", template)
 
     def test_reverse_transport_approval_and_result_fields_remain(self):
         for required in ("- read-only", "毎roundで新しいexec", "exec resumeや--lastを使いません",
-                         "主セッションだけの代読は不可", "両方の実agentを必ず呼びます",
+                         "主セッションだけの代読は不可", "利用者が選択した実agentだけ",
                          "正常系（happy path）と異常系（fail path）", "[qa, e2e, l1_5, l2]"):
             self.assertIn(required, self.workflow)
         result = self.workflow.split("response_contract:\n", 1)[1].split("pause_and_resume:\n", 1)[0]
@@ -170,8 +156,8 @@ class ParentHqContractTests(unittest.TestCase):
         self.assertEqual(fields, {"workflow_id", "phase", "reviewer", "snapshot_id", "native_verdict",
                                   "coverage", "decision", "open_item_ids", "questions", "handoffs",
                                   "invocation_evidence"})
-        self.assertIn("古い4段階の承認を失効", self.workflow)
-        self.assertIn("キャッシュのために古い規則を維持しません", self.workflow)
+        self.assertIn("古い選択層の承認を失効", self.workflow)
+        self.assertIn("原文変更時だけ更新", self.workflow)
 
 
 if __name__ == "__main__":

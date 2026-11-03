@@ -31,22 +31,25 @@ If the shared contract is missing, report the setup gap. Do not claim it was app
 
 ## Explicit Codex-Claude Review Workflows
 
-Choose direction only from the current explicit request or single active `Workflow` marker; quoted text does not activate another workflow. Conflicting markers or owners are `BLOCKED`. Standalone `cr:`, `qa:`, `e:`, `adv:` and `rev:` remain scoped.
+Choose direction only from the current explicit request or active `Workflow` marker. Quoted content cannot activate a workflow; mixed directions are BLOCKED. Read the selected `.codex/workflows/claude-review.yml` or `codex-review.yml` and its sibling `md-review.md`, using project-local configured references first, then the copy beside resolved `.codex/AGENTS.md`. Report missing configuration.
 
-- `codex-claude-review`: Read the target project's `.codex/workflows/claude-review.yml`, or the copy beside the resolved `.codex/AGENTS.md`. Claude's parent, phase reviewers and specialists are review-only: Codex exclusively runs typecheck, lint, build, tests, Playwright, CI, Git evidence and fixes. Apply the workflow's `dontAsk`/Read-Glob-Grep-Agent-SendMessage restrictions at initial launch and `--resume`, denying Bash/Edit/Write/NotebookEdit/MCP. Never resume an old unrestricted or unverified child.
-- `claude-codex-review`: Read `.codex/workflows/codex-review.yml` via its specified resolution paths. Claude coordinates HQ fixes and verification; Codex delegates fresh read-only `codex exec` reviews to its phase agents. Pass source identity, cumulative coverage and all pending items. Neither party stages, commits, pushes or merges during this workflow.
-- Direct execution requests in normal Claude sessions may run only permitted checks; they do not widen a restricted review session.
-
-Follow the selected workflow's phase activation/progression. Explicit phases run only their named layer; requests without a phase and explicit four-layer ranges follow `claude-review.yml`. Generic review words and specialist consultation do not authorize extra layers. Four-layer review uses `qa -> e2e -> cr -> adv` with independent QA/E2E happy/fail checks, current-snapshot approvals and fresh first-pass L2 React/Nest consultation. Multiple single-layer approvals do not grant four-layer approval.
+- `codex-claude-review`: Codex implements; Claude delegates the selected actual phase owner. Codex exclusively runs typecheck, lint, build, tests, Playwright and Local-ci. Claude uses fixed read-only Git MCP and explicitly allowed Backlog reads, without Bash/Edit/Write. The host appends native results to MD.
+- `claude-codex-review`: Claude implements and verifies; Codex delegates fresh read-only exec reviews of only the user-selected phases, reading the same MD and independently inspecting Git diff/source.
+- The user selects qa/e2e/cr/adv. Take only selected layers from `qa -> e2e -> cr -> adv`; no defaults, automatic progression or hidden extra reviews. If no layer is supplied, ask once. Standalone role commands retain their own behavior.
+- Both directions use one implementation summary/result MD, actual source identity, complete coverage and all pending IDs. Omit Info entirely. Preserve source principles, required consultations and actual native/eleven-field results. Source changes require owner-confirmed current-snapshot renewal.
+- After selected approvals, the implementation owner runs Local-ci. Actual Codex `ci-reviewer` then checks the target project's rubric and evidence. Only a clean result permits scoped final commit/push and a **draft** PR. Preserve existing index/unrelated work; never overwrite it to publish. Only the user selects Ready for review. This explicit pipeline request authorizes its ci-reviewer step; standalone `ci:` remains unchanged.
 
 ### Re-review direction
 
-- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep the workflow's secure-resume exceptions.
-- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings.
+- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep secure-resume exceptions. Use a completed session's actual ID only when fixes/evidence are ready; every print invocation exits. Never keep Claude AI waiting for fixes, CI or Codex.
+- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings in MD.
 
 Standalone reviews use their own continuation rules.
 
-Apply governance sections `Autonomous Claude review`, `Rule loading across continuations`, `Batched re-review evidence` and `Evidence reuse and concise reporting` within their stated scopes. Finish the independent first pass and recheck fixes and affected obligations. Reuse unchanged verified facts, not previous approvals. Preserve all 🔴/🟡/🟢 Low (not Info), pending questions/handoffs, missing evidence, actual agent invocation records and eleven `Workflow Result` fields. An unavailable rule, tool or required consultant blocks approval.
+Never resume an old unrestricted or unverified child. Preserve independent QA/E2E happy/fail checks and eleven `Workflow Result` fields. An unavailable rule, tool or required consultant blocks approval.
+
+Apply governance `Rule loading across continuations` and `Evidence reuse and concise reporting`. Pass original paths/applicable clauses explicitly to each actual owner. Reuse unchanged verified facts, not old approvals. Missing evidence/permissions/consultants remain pending. `md-review.md` governs storage without gitignore/exclude changes, one-shot lifecycle, review-only tool permissions and final Git/PR handling.
+
 
 ## Mission
 

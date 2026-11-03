@@ -13,18 +13,24 @@ This root file provides the minimal common entry point. Load the platform contra
 
 Use the platform's agent model/effort definitions; do not infer a model from this file. A missing, conflicting or unreadable required rule stays pending; brevity never waives required checks.
 
-Choose `codex-claude-review` or `claude-codex-review` only from the current user request or active `Workflow` marker. Quoted requests do not activate workflows; conflicts are `BLOCKED`. Standalone `cr:`, `qa:`, `e:`, `adv:` and `rev:` retain their scoped behavior. Only expressly authorized four-layer review runs `qa -> e2e -> cr -> adv`; QA/E2E check happy/fail, L2 independently obtains relevant React/Nest consultation, and all approvals must cover the final snapshot.
+Choose direction only from the current explicit request or active `Workflow` marker. Quoted content cannot activate a workflow; mixed directions are BLOCKED. Read the selected `.codex/workflows/claude-review.yml` or `codex-review.yml` and its sibling `md-review.md`, using project-local configured references first, then the copy beside resolved `.codex/AGENTS.md`. Report missing configuration.
 
-In `codex-claude-review`, Claude reviewers/consultants remain read-only; Codex owns edits, tests, CI and Git evidence. In `claude-codex-review`, Codex reviewers/consultants remain read-only; Claude owns implementation and verification. The actual workflow governs CLI restrictions, single-layer progression, independent first passes and eleven-field results; never widen a restricted session through another agent.
+- `codex-claude-review`: Codex implements; Claude delegates the selected actual phase owner. Codex exclusively runs typecheck, lint, build, tests, Playwright and Local-ci. Claude uses fixed read-only Git MCP and explicitly allowed Backlog reads, without Bash/Edit/Write. The host appends native results to MD.
+- `claude-codex-review`: Claude implements and verifies; Codex delegates fresh read-only exec reviews of only the user-selected phases, reading the same MD and independently inspecting Git diff/source.
+- The user selects qa/e2e/cr/adv. Take only selected layers from `qa -> e2e -> cr -> adv`; no defaults, automatic progression or hidden extra reviews. If no layer is supplied, ask once. Standalone role commands retain their own behavior.
+- Both directions use one implementation summary/result MD, actual source identity, complete coverage and all pending IDs. Omit Info entirely. Preserve source principles, required consultations and actual native/eleven-field results. Source changes require owner-confirmed current-snapshot renewal.
+- After selected approvals, the implementation owner runs Local-ci. Actual Codex `ci-reviewer` then checks the target project's rubric and evidence. Only a clean result permits scoped final commit/push and a **draft** PR. Preserve existing index/unrelated work; never overwrite it to publish. Only the user selects Ready for review. This explicit pipeline request authorizes its ci-reviewer step; standalone `ci:` remains unchanged.
 
 ### Re-review direction
 
-- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep the workflow's secure-resume exceptions.
-- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings.
+- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep secure-resume exceptions. Use a completed session's actual ID only when fixes/evidence are ready; every print invocation exits. Never keep Claude AI waiting for fixes, CI or Codex.
+- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings in MD.
 
 Standalone reviews use their own continuation rules.
 
-Reuse verified unchanged rules and evidence only after checking the relevant source identity. New phase owners inspect their scope independently. Keep all unresolved 🔴/🟡/🟢 Low findings (not Info), questions, handoffs and missing checks open until their owner confirms closure.
+Never resume an old unrestricted or unverified child. Preserve independent QA/E2E happy/fail checks and eleven `Workflow Result` fields. An unavailable rule, tool or required consultant blocks approval.
+
+Apply governance `Rule loading across continuations` and `Evidence reuse and concise reporting`. Pass original paths/applicable clauses explicitly to each actual owner. Reuse unchanged verified facts, not old approvals. Missing evidence/permissions/consultants remain pending. `md-review.md` governs storage without gitignore/exclude changes, one-shot lifecycle, review-only tool permissions and final Git/PR handling.
 
 ## Core Priorities
 

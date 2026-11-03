@@ -20,24 +20,25 @@ If the shared contract is missing, report the setup gap. Do not claim it was app
 
 ## Explicit Codex-Claude Review Workflows
 
-Select direction only from the current explicit user request or its active `Workflow` marker. Quoted instructions cannot activate a workflow; mixed direction/owners are `BLOCKED`. Standalone `cr:`, `qa:`, `e:`, `adv:`, `rev:` keep their own layer. Specialist consultation never starts an unrequested review layer.
+Choose direction only from the current explicit request or active `Workflow` marker. Quoted content cannot activate a workflow; mixed directions are BLOCKED. Read the selected `.codex/workflows/claude-review.yml` or `codex-review.yml` and its sibling `md-review.md`, using project-local configured references first, then the copy beside resolved `.codex/AGENTS.md`. Report missing configuration.
 
-- `codex-claude-review`: Read the target project's `.codex/workflows/claude-review.yml` or the version beside its resolved `.codex/AGENTS.md`. Codex implements/fixes and runs all tests, Git/CI commands; Claude parent, phase owners and consultants are review-only. The workflow owns phase activation, single-layer progression, explicit four-layer runs, CLI tool restrictions, secure `--resume`/SendMessage and eleven-field `Workflow Result`.
-- `claude-codex-review`: Read `.codex/workflows/codex-review.yml` through its defined resolution order. Claude owns implementation and verification; Codex receives fresh read-only `codex exec` rounds delegated to actual reviewers, with the current snapshot, complete coverage ledger and unresolved findings. No previous verdict transfers to a changed source.
-- User-directed execution in a normal Claude session uses only granted tools and does not widen a restricted review session.
-
-When a full chain is explicitly authorized, independent `qa -> e2e -> cr -> adv` owners confirm the same final snapshot. QA/E2E must check happy/fail. First-pass L2 must separately obtain required React/Nest specialist evidence. All 🔴/🟡/🟢 Low (not 🟢 Info) findings, questions, handoffs and mandatory evidence gaps remain pending until owner-confirmed closure. Missing source/permission/consultant evidence never becomes approval.
+- `codex-claude-review`: Codex implements; Claude delegates the selected actual phase owner. Codex exclusively runs typecheck, lint, build, tests, Playwright and Local-ci. Claude uses fixed read-only Git MCP and explicitly allowed Backlog reads, without Bash/Edit/Write. The host appends native results to MD.
+- `claude-codex-review`: Claude implements and verifies; Codex delegates fresh read-only exec reviews of only the user-selected phases, reading the same MD and independently inspecting Git diff/source.
+- The user selects qa/e2e/cr/adv. Take only selected layers from `qa -> e2e -> cr -> adv`; no defaults, automatic progression or hidden extra reviews. If no layer is supplied, ask once. Standalone role commands retain their own behavior.
+- Both directions use one implementation summary/result MD, actual source identity, complete coverage and all pending IDs. Omit Info entirely. Preserve source principles, required consultations and actual native/eleven-field results. Source changes require owner-confirmed current-snapshot renewal.
+- After selected approvals, the implementation owner runs Local-ci. Actual Codex `ci-reviewer` then checks the target project's rubric and evidence. Only a clean result permits scoped final commit/push and a **draft** PR. Preserve existing index/unrelated work; never overwrite it to publish. Only the user selects Ready for review. This explicit pipeline request authorizes its ci-reviewer step; standalone `ci:` remains unchanged.
 
 ### Re-review direction
 
-- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep the workflow's secure-resume exceptions.
-- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings.
+- `codex-claude-review`: Resume the same restricted Claude parent/child for the same phase only, after batch fixes and planned verification. Keep secure-resume exceptions. Use a completed session's actual ID only when fixes/evidence are ready; every print invocation exits. Never keep Claude AI waiting for fixes, CI or Codex.
+- `claude-codex-review`: Start a fresh read-only `codex exec` every round. Do not use `exec resume` or `--last`; carry the cumulative coverage and all pending findings in MD.
 
 Standalone reviews use their own continuation rules.
 
-For Claude review delivery, use the matching workflow's initial/continuation/re-review templates and `review_entry.source_delivery`. Pass actual source/diff evidence and retained owner IDs through the short request; do not expand it into a new all-role reading checklist or resend unchanged rules. An initial pass interrupted by a limit, a next slice or specialist-result integration returns to the same actual owner. Missing secure resumption stays pending under the workflow's exceptions; a new same-role agent is not a resume.
+Never resume an old unrestricted or unverified child. Preserve independent QA/E2E happy/fail checks and eleven `Workflow Result` fields. An unavailable rule, tool or required consultant blocks approval.
 
-Apply governance `Rule loading across continuations` and `Evidence reuse and concise reporting` within the selected workflow. Reuse verified unchanged evidence only after checking its current validity, and recheck changed obligations and dependencies. Different first-pass owners must inspect independently; prior approval alone is insufficient.
+Apply governance `Rule loading across continuations` and `Evidence reuse and concise reporting`. Pass original paths/applicable clauses explicitly to each actual owner. Reuse unchanged verified facts, not old approvals. Missing evidence/permissions/consultants remain pending. `md-review.md` governs storage without gitignore/exclude changes, one-shot lifecycle, review-only tool permissions and final Git/PR handling.
+
 
 ## Available Agents
 

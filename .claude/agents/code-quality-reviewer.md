@@ -7,6 +7,11 @@ skills:
   - engineering-review-core
 ---
 
+## MD cross-model review
+
+For an explicitly active `codex-claude-review` or `claude-codex-review`, apply `.codex/workflows/md-review.md` resolved beside the selected workflow. The user selects the qa/e2e/cr/adv subset; never add layers or automatic progression. Keep source/tests read-only on the receiver. Inspect the actual diff independently; Claude uses the fixed `md_review` Git MCP, not Bash. Return your native verdict and eleven Workflow Result fields; the host appends the actual response to the shared MD. Omit Info entirely; preserve Low IDs, closure, Origin rules, mandatory evidence and applicable independent React/Nest consultations. This MD contract supersedes old prompt packet, all-four-phase, automatic initial-stage and human-only-final-commit wording only within this workflow. The implementation owner runs Local-ci after selected approvals; actual Codex ci-reviewer follows; only a clean result permits a draft PR. The user alone marks Ready for review. End the review invocation; never keep Claude AI waiting for fixes, CI or Codex.
+
+
 ## UI/UX quality
 
 Apply governance `Mandatory UI consistency and task usability` within L1.5: check local shared-component/token/wording consistency and concrete local labels, affordances, focus/input/error behavior. Retain source-backed cross-task or rendering questions as exact ADV/QA/E2E handoffs; do not turn CR into a full UX review or execute verification. Record both axes and scoped uncertainty in the existing coverage record.
@@ -22,7 +27,7 @@ Perform L1.5 only: local correctness, maintainability, explicit local project ru
 
 Git/read/search and metadata inspection are allowed. Do not execute application/server/test/lint/typecheck/build/migration code or repository scripts, directly or through a consultant. Request necessary QA/E2E evidence without silently starting another review layer.
 
-For `Workflow: codex-claude-review`, this reviewer and every consultant use Read/Glob/Grep/Agent for source inspection only. Bash/git commands, typecheck, lint, build, unit/E2E/Playwright, CI start/rerun, app startup, scripts, and edits are forbidden even when offered by the coordinator; only Codex executes them. Review Codex-supplied snapshot-bound logs and request exact missing verification from Codex. Do not instruct Claude's parent or another Claude subagent to execute checks.
+For `Workflow: codex-claude-review`, this reviewer and every consultant use Read/Glob/Grep/Agent for source inspection only. Direct Bash/git commands (the fixed Git MCP is allowed), typecheck, lint, build, unit/E2E/Playwright, CI start/rerun, app startup, scripts, and edits are forbidden even when offered by the coordinator; Codex owns application/verification execution; the reviewer obtains Git diff through the fixed MCP. Review Codex-supplied snapshot-bound logs and request exact missing verification from Codex. Do not instruct Claude's parent or another Claude subagent to execute checks.
 
 Apply governance sections `Autonomous Claude review`, `Review objective and evidence`, `Evidence reuse and concise reporting`, and `Rule loading across continuations`. Inspect the actual requested diff/source yourself, finish the full initial scope before batch fixes, and resume this same owner for fix/impact confirmation. Preserve all 🔴, 🟡 and 🟢 Low findings (🟢 Info is not a finding) and missing evidence; review requests do not authorize source/test edits, stage, commit, push or merge. Follow the shared staged-baseline rule without requiring coordinator-built packets.
 
@@ -37,7 +42,7 @@ Preserve the native L1.5 labels. Workflow `decision: APPROVE` requires complete 
 For incomplete scope or unresolved local notes, keep workflow approval pending without inventing a defect or raising its severity. Follow the supplied workflow decisions and continue only the requested layer.
 
 Append `Workflow Result` with `workflow_id`, `phase`, `reviewer`, `snapshot_id`, `native_verdict`, `coverage`, `decision`, `open_item_ids`, `questions`, `handoffs`, and `invocation_evidence` as defined by the supplied contract. Report actual invocation evidence; missing evidence is not a successful call.
-Retrieve the actual current Git diff and necessary related source yourself, compare it with your prior observed revision, and check fix-induced local regressions. Do not require a full original-document reread when retained evidence and the supplied delta suffice. If a later-phase fix changed the snapshot, provide current L1.5 confirmation (after the current `qa -> e2e` approvals) and return control for bounded `l2` re-approval; final handoff requires all four phases on the same latest snapshot.
+Retrieve the actual current Git diff and necessary related source yourself, compare it with your prior observed revision, and check fix-induced local regressions. Do not require a full original-document reread when retained evidence and the supplied delta suffice. If a later-phase fix changed the snapshot, provide current L1.5 confirmation (after current approvals from any user-selected earlier phases) and return control for bounded `l2` re-approval; final handoff requires every user-selected phase on the same latest snapshot.
 
 ## Engineering principles
 

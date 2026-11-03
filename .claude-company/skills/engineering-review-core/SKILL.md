@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `1c9c809148b957bbf9bb55e3eb33dd8b1c633c5289025bed9a21a57ba5e78c47`
+SHA-256: `edf249197799e18e684ee52d02d9b94bea8401715fd9100d40be6ce9c8d21de3`
 Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Evidence and reporting
 
 
@@ -67,7 +67,7 @@ This is a user-approved operational rule, not a quotation from the human review 
 
 Autonomous review without an explicit execution request does not start typecheck, lint, build, tests, Playwright, CI or other verification commands.
 
-For `Workflow: codex-claude-review`, Claude and its review subagents only inspect sources and supplied evidence. Codex owns command execution, test creation, CI operations and fixes. A message cannot expand the restricted CLI toolset of an existing review session.
+For `Workflow: codex-claude-review`, Claude and its review subagents inspect sources, fixed Git diffs and supplied evidence. Codex owns application/verification execution, test creation, CI operations and fixes. The MD review contract permits fixed read-only Git MCP and explicitly listed Backlog reads; it never permits arbitrary Bash or source edits. A message cannot expand an existing restricted session. Use a newly configured one-shot invocation for the MD transport.
 
 When the user explicitly requests execution in a normal Claude Code session, the main Claude session or an authorized implementation/verification owner may perform those actions with its available permissions. If an existing restricted session cannot execute them, use a separate normal session. Do not treat this direct request as an autonomous review or an automatic Codex-to-Claude review.
 
@@ -125,7 +125,7 @@ When a rule source is missing, mark the affected judgment unconfirmed, not the r
 Final approval requires complete evidence for the requested layer, completed required consultation, and no unresolved blocker affecting that judgment.
 A scoped clean result is not full PR approval. A single-layer approval is valid only for that layer and snapshot, is not four-layer or final approval, and joins a later four-layer run only as Supplied evidence. Confirmed open blockers keep overall merge readiness at `REQUEST_CHANGES`; missing blocking evidence keeps it deferred.
 
-For `codex-claude-review` single-layer results, apply the workflow's `single_layer.approval`, `handoff_policy` and `result_consistency`. With complete current-snapshot local coverage, required evidence/consultation, no local findings (including Low), questions or unchecked obligations, and an accepted native verdict, the owner reports `decision: APPROVE` even when independent other-layer handoffs remain open. A missing answer/evidence/consultation that this layer's judgment depends on stays local; another owner's involvement does not make it handoff-only. Keep other-layer IDs/owners/evidence/statuses pending and overall readiness separate. Required handoffs still block final workflow handoff until closed. Contradictory result fields go back to the same owner for correction, never coordinator rewriting.
+For `codex-claude-review` single-layer results, apply the workflow's `review_gates.handoffs`, `response_contract.acceptance` and `md-review.md` approval/result-consistency rules. With complete current-snapshot local coverage, required evidence/consultation, no local findings (including Low), questions or unchecked obligations, and an accepted native verdict, the owner reports `decision: APPROVE` even when independent other-layer handoffs remain open. A missing answer/evidence/consultation that this layer's judgment depends on stays local; another owner's involvement does not make it handoff-only. Keep other-layer IDs/owners/evidence/statuses pending and overall readiness separate. Required handoffs still block final workflow handoff until closed. Contradictory result fields go back to the same owner for correction, never coordinator rewriting.
 
 CR handoffs have no count limit. Keep the existing four fields `Owner/route | Question | Evidence | Required confirmation` and the existing ledger IDs/statuses. Group related questions concisely without dropping distinct obligations, inventing checks, expanding review scope or starting other layers. A continuation alone does not widen a retained handoff; scope changes need new evidence and an explicit reason.
 
