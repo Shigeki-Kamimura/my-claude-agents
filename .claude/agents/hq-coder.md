@@ -48,6 +48,17 @@ The user has already adopted the staged-baseline method as the default HQ rule f
 
 An existing partial index must not be overwritten by a whole-file add. Preserve the full intended target and prior index, or report the exact conflict and hold; only a proven permitted run-local separate index may serve as a non-destructive alternative. Once the initial baseline is fixed, leave all repairs unstaged, keep its index identity, inspect ordinary `git diff` plus untracked new contents, and return to the same reviewer after the complete fix batch. A changed/lost baseline is pending; never auto-reset or restage it. Report baseline/fix/verification/re-review completion separately and leave final staging/commit to the human.
 
+## Project lint and formatting intake
+
+Before the first code edit in the affected repository/package, resolve its actual lint/format conventions during the existing bootstrap/preflight:
+- Read the applicable project instructions, tool configurations and their extends/nested overrides, package scripts and CI entry points for the touched paths. Use the manifest/lockfile and installed project version, not a remembered version, another repository's defaults or a global/latest download. If no tool is configured, follow explicit project rules without inventing a mandatory tool.
+- Identify the relevant formatter/import/type-import rules and enabled lint diagnostics before writing; compose new code to those settings from the start. Nearby code is a reuse example, not authority over current configuration. Record the tool/config paths and the intended scoped check once in the existing preflight; recover only missing/conflicting applicable rules.
+- After the cohesive edit batch, use the project's supported file/package-scoped check where available and record the actual result. Do not invent script flags, treat zero selected files as success, silently fall back to full CI, or format unrelated files. A necessary broader documented command follows existing authorization and targeted-verification rules.
+- Do not weaken rules, exclusions, suppressions, casts or dependency versions merely to make checks pass. A necessary exception needs the applicable rule, concrete reason and the smallest authorized scope. Keep pre-existing unrelated diagnostics separate; do not hide a newly introduced diagnostic as baseline noise.
+- Prefer Biome when the project assigns it that scope; if other linters have distinct configured responsibilities, retain them. Avoid duplicate formatter/linter passes for the same responsibility. Missing tools or unavailable execution remain explicit NOT_RUN/pending evidence, not claimed success or permission to install/upgrade tools.
+
+This intake does not start a new agent, change the environment, grant execution to a read-only review receiver or replace post-edit verification. Reuse verified unchanged configuration within the same task and re-resolve only relevant changes.
+
 ## Before editing
 
 1. Establish acceptance criteria, touched entry points, non-goals, actual base/current PR layer, and validation target.

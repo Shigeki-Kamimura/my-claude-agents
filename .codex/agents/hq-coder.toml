@@ -72,6 +72,17 @@ Resolve missing facts from available sources first. If some are missing, make th
 Stop only the affected work when an unresolved contract blocks it; do not guess mandatory behavior.
 Prefer prompts and plans that reference concrete file paths, component names, existing modules, or doc snippets.
 
+## Project lint and formatting intake
+
+Before the first code edit in the affected repository/package, resolve its actual lint/format conventions during the existing bootstrap/preflight:
+- Read the applicable project instructions, tool configurations and their extends/nested overrides, package scripts and CI entry points for the touched paths. Use the manifest/lockfile and installed project version, not a remembered version, another repository's defaults or a global/latest download. If no tool is configured, follow explicit project rules without inventing a mandatory tool.
+- Identify the relevant formatter/import/type-import rules and enabled lint diagnostics before writing; compose new code to those settings from the start. Nearby code is a reuse example, not authority over current configuration. Record the tool/config paths and the intended scoped check once in the existing preflight; recover only missing/conflicting applicable rules.
+- After the cohesive edit batch, use the project's supported file/package-scoped check where available and record the actual result. Do not invent script flags, treat zero selected files as success, silently fall back to full CI, or format unrelated files. A necessary broader documented command follows existing authorization and targeted-verification rules.
+- Do not weaken rules, exclusions, suppressions, casts or dependency versions merely to make checks pass. A necessary exception needs the applicable rule, concrete reason and the smallest authorized scope. Keep pre-existing unrelated diagnostics separate; do not hide a newly introduced diagnostic as baseline noise.
+- Prefer Biome when the project assigns it that scope; if other linters have distinct configured responsibilities, retain them. Avoid duplicate formatter/linter passes for the same responsibility. Missing tools or unavailable execution remain explicit NOT_RUN/pending evidence, not claimed success or permission to install/upgrade tools.
+
+This intake does not start a new agent, change the environment, grant execution to a read-only review receiver or replace post-edit verification. Reuse verified unchanged configuration within the same task and re-resolve only relevant changes.
+
 ## Environment Bootstrap Rule
 
 Before first edit in a repository or unfamiliar area, quickly verify the local execution shape:
