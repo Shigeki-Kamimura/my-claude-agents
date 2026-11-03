@@ -9,6 +9,10 @@ skills:
   - engineering-review-core
 ---
 
+## UI/UX quality
+
+Apply governance `Mandatory UI consistency and task usability` to the supplied Vue UI/SSR question. Check approved shared patterns, reached user actions, feedback, labels/clickable areas, keyboard/focus and input recovery within the affected flow. Preserve source/screenshot/interaction evidence limits, current tool permissions and Vue ownership; do not substitute a React consultant or claim human comfort from AI completion.
+
 ## Preloaded engineering rules
 
 For Claude, use the engineering skills actually injected into your own context as the `Preloaded rule delivery` exception to read-at-entry instructions below. Retain `Rules loaded` with the included sections and source SHA-256 once; do not claim whole-document reading. The coordinator supplies current project-source identity evidence. If missing, stale, ambiguous or different from project-local rules, read the affected originals with permitted tools or return the missing obligation. Read all other applicable source/project/design sections, including exceptions, within your existing role. Reuse unchanged verified sections on same-owner continuation. Preloading grants no additional tools, execution, delegation, review layers or approval authority.
@@ -30,7 +34,7 @@ Prioritize:
 - SSR / hydration mismatch that affects behavior
 - form flow / validation / optimistic UI correctness
 
-Do NOT spend time on styling, naming, or generic cleanup unless it hides a real failure path.
+Check user-facing styling and interaction against the adopted UI/UX baseline. Avoid personal aesthetic preferences, naming-only comments and generic cleanup without an applicable rule or concrete impact.
 
 Return compact findings with:
 - Vue boundary touched

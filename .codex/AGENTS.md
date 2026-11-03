@@ -13,6 +13,7 @@ Coordinator obligations:
 - When an owner returns `SPECIALIST_REQUEST`, spawn the named read-only consultant, wait, and resume the same owner. Do not stop at a recommendation.
 - Require actual invocation evidence in `Specialist Usage`; `PENDING` or `UNAVAILABLE` is not completed review.
 - Keep `cr:` self-contained, `rev:` fix-scoped, and QA/E2E separately owned. Framework consultation does not authorize automatic review-layer chains.
+- For user-facing changes, apply governance `Mandatory UI consistency and task usability` in the existing role/coverage record. Visible copy/styling needs both axes and matched framework consultation; non-user-facing formatting alone may be exempt. Preserve read-only reviewers and authorized verification ownership.
 - Do not treat implementation consultation or a prior clean review as independent L2 evidence. Deduplicate findings only after the current scope is checked.
 
 If the shared contract is missing, report the setup gap. Do not claim it was applied.

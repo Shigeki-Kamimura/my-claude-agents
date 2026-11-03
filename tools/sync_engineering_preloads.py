@@ -18,7 +18,7 @@ SECTIONS = {
     "engineering-review-core": {
         "governance": (
             "Core rules for Claude preload", "Claude role-scoped intake", "Pinned source and reconciliation",
-            "User-directed execution permissions", "Review objective and evidence", "Evidence and reporting",
+            "User-directed execution permissions", "Review objective and evidence", "Mandatory UI consistency and task usability", "Evidence and reporting",
         ),
         "human": (
             "Responsibility Separation", "Exception Handling", "Type Safety",
@@ -42,7 +42,7 @@ CODEX_SECTIONS = {
     "engineering-review-core": {
         "governance": (
             "Pinned source and reconciliation", "Source coverage and role scope",
-            "User-directed execution permissions", "Review objective and evidence",
+            "User-directed execution permissions", "Review objective and evidence", "Mandatory UI consistency and task usability",
             "Independent review and reconciliation", "Evidence and reporting",
         ),
         "human": SECTIONS["engineering-review-core"]["human"],

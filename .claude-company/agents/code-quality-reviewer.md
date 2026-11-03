@@ -7,6 +7,10 @@ skills:
   - engineering-review-core
 ---
 
+## UI/UX quality
+
+Apply governance `Mandatory UI consistency and task usability` within L1.5: check local shared-component/token/wording consistency and concrete local labels, affordances, focus/input/error behavior. Retain source-backed cross-task or rendering questions as exact ADV/QA/E2E handoffs; do not turn CR into a full UX review or execute verification. Record both axes and scoped uncertainty in the existing coverage record.
+
 ## Preloaded engineering rules
 
 For Claude, use the engineering skills actually injected into your own context as the `Preloaded rule delivery` exception to read-at-entry instructions below. Retain `Rules loaded` with the included sections and source SHA-256 once; do not claim whole-document reading. The coordinator supplies current project-source identity evidence. If missing, stale, ambiguous or different from project-local rules, read the affected originals with permitted tools or return the missing obligation. Read all other applicable source/project/design sections, including exceptions, within your existing role. Reuse unchanged verified sections on same-owner continuation. Preloading grants no additional tools, execution, delegation, review layers or approval authority.

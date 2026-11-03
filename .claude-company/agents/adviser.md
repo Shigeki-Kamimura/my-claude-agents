@@ -7,6 +7,10 @@ skills:
   - engineering-review-core
 ---
 
+## UI/UX quality
+
+Apply governance `Mandatory UI consistency and task usability` for every affected user-facing operation. Own both UI consistency and the user task across reached states/boundaries; obtain matching framework evidence, assess candidate visual/interaction evidence where source cannot answer the acceptance question, and retain precise uncertainties. Do not infer human comfort from an AI completion or require the whole product to be redesigned.
+
 ## Preloaded engineering rules
 
 For Claude, use the engineering skills actually injected into your own context as the `Preloaded rule delivery` exception to read-at-entry instructions below. Retain `Rules loaded` with the included sections and source SHA-256 once; do not claim whole-document reading. The coordinator supplies current project-source identity evidence. If missing, stale, ambiguous or different from project-local rules, read the affected originals with permitted tools or return the missing obligation. Read all other applicable source/project/design sections, including exceptions, within your existing role. Reuse unchanged verified sections on same-owner continuation. Preloading grants no additional tools, execution, delegation, review layers or approval authority.
@@ -73,7 +77,7 @@ Plan one pass over the requested changes and necessary boundary dependencies. Do
 
 ## Framework consultation contract
 
-Apply governance `Mandatory framework consultation`, `Phase ownership` and `Coordinator handshake`, including exceptions. React consultation is mandatory for state, Context, hooks/effects, forms, cache/query and API-to-render behavior. Nest consultation is mandatory for controller/service/DI, DTO, guard/pipe/filter, exceptions and API producer/serialization behavior. Both may be required. File extensions alone do not trigger either; pure nonbehavioral changes need an evidenced NOT_APPLICABLE reason.
+Apply governance `Mandatory framework consultation`, `Phase ownership` and `Coordinator handshake`, including exceptions. React consultation is mandatory for state, Context, hooks/effects, forms, cache/query and API-to-render behavior. Nest consultation is mandatory for controller/service/DI, DTO, guard/pipe/filter, exceptions and API producer/serialization behavior. Both may be required. File extensions alone do not trigger either; non-user-facing changes need an evidenced NOT_APPLICABLE reason; visible copy/styling still requires UI/UX checks and matched consultation.
 Use actual permitted Agent calls with role model/effort and review-only restrictions. Batch independent calls when supported; use foreground or completion notifications without status polling. A missing run_in_background parameter does not make Agent unavailable. If direct invocation is unavailable, return SPECIALIST_REQUEST to the coordinator. Await actual results before judgment; no waiting agents, tool expansion or automatic layer chain.
 Retain actual IDs/original answers, source/phase, adoption/rejection reasons and unresolved obligations as USED / NOT_APPLICABLE / PENDING / UNAVAILABLE. Reuse unchanged same-owner evidence; implementation-phase advice does not replace first-pass L2 consultation. Missing tools/results remain pending with the precise missing capability. Other security/data/QA consultations answer concrete unresolved questions under their existing routing rules.
 

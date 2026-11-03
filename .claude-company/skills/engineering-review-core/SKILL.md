@@ -17,8 +17,8 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `9dfe9782269467c73e3ddbc501a96b9c420da8f21478768f56d36e9702d57aad`
-Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Review objective and evidence, Evidence and reporting
+SHA-256: `1c9c809148b957bbf9bb55e3eb33dd8b1c633c5289025bed9a21a57ba5e78c47`
+Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Evidence and reporting
 
 
 ### Core rules for Claude preload
@@ -82,6 +82,37 @@ Judge requirements, changed behavior and mandatory rules. Reading volume, findin
 - Ground findings in reachable conditions, filters/pagination, counterevidence and consequence. Rule violations need their clause/exception, not an invented crash. Separate introduced/pre-existing defects and explain impact on current acceptance/approval or separate ownership. Reconcile disposition with the native verdict. Reclassification needs an evidence/requirement/scope rationale, not an inherited label; preserve all open IDs and owner-confirmed closure.
 - QA/E2E assess whether assertions distinguish defective/repaired behavior, retain normal controls, and state mock exclusions. A mocked child does not cover its real failure. Request a targeted before/after comparison only when diagnostically useful and authorized; unrun comparisons remain reasoning/UNCONFIRMED. Narrow handoffs to missing assertions or fixture/runtime facts and decision impact. Keep own dependent gaps local, other-layer work pending, and all native fields/stricter workflow gates; do not repeat full audits or claim merge approval.
 - Compare matched known-defect, normal and hold cases using pre-fixed hidden expectations, real runs and independent assessments. Supplied known findings test retention, not new discovery. Evaluate misses, unsupported findings, scope errors, mandatory completion and verdict reasoning; count every parent/reviewer/consultant and elapsed time. Missing/unmatched/unrun evidence is inconclusive. Static tests or savings cannot offset quality failure. This is separately authorized validation, not an automatic new PR gate.
+
+
+### Mandatory UI consistency and task usability
+
+These are user-approved quality obligations, separate from Nishiguchi's original principles. For a user-facing change, check **both UI consistency and task usability** within the changed operation and its directly affected shared consumers. This includes visible wording, styling, layout and API/error/state changes that alter the experience. A backend-only change with no user-facing effect may be NOT_APPLICABLE with a concrete reason. Existing framework, role and execution restrictions remain in force.
+
+Before editing or judging the change, identify the user/role, goal, entry point, supported viewport/input mode, expected result and relevant failure/recovery path. Choose the project's approved components, tokens, terminology and interaction rules as the consistency baseline. Reuse a comparable sound pattern when no explicit rule exists and record why; do not spread a known usability defect merely to match nearby screens.
+
+| Required axis | Checks within the affected operation |
+| --- | --- |
+| UI consistency | Shared components/tokens, color meaning, typography, spacing, alignment, action placement, terms/icons, form/error/status presentation, responsive layout and visible/accessible names agree with the applicable baseline. |
+| Task usability | The user can discover the next action, predict its effect and understand loading/success/failure. Check meaningful labels and clickable areas, keyboard/focus operation, text legibility, input retention/correction, error recovery and permitted cancel/back/undo where relevant. Prevent duplicate or accidental consequential actions without adding needless steps or confirmation dialogs. |
+
+Use the following heuristic questions where the change triggers them: visible status; familiar user language; control and escape; consistency; error prevention; recognition instead of memory; efficient operation; focused content; understandable recovery; useful contextual help. These are inspection aids, not a requirement to add every feature to every screen. Check the actual user/role, permissions, empty/loading/disabled/success/error states and directly affected viewport/input modes; do not expand into every product screen or a fixed scenario count.
+
+Evidence and judgment:
+- Assess UI and UX separately in the existing coverage record: expected baseline/task -> inspected source or observed behavior -> result and precise missing evidence. Reuse COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED; do not create parallel reports for each consultation.
+- Source and comparable components can establish structural/contract facts. Static screenshots can establish only the visible state and viewport shown. For rendered appearance or interaction claims that source cannot resolve, inspect attributable candidate screenshots/browser or authorized interaction evidence for the named state, user and input mode. A screenshot cannot prove clicking, keyboard operation, recovery or task completion. Automated selectors passing does not prove discoverability or human comfort.
+- Keep observed defects and sourced mandatory violations distinct from heuristic hypotheses and personal taste. AI role-play, personas or an AI's quick completion are not human-user research. Do not claim human ease, satisfaction or a universal optimum without relevant observations; uncertain preference or friction remains a bounded hypothesis. Human feedback is needed when choosing between designs whose usability is not established by the available evidence, not as a blanket new gate for every change.
+- Missing material evidence for an owned UI/UX acceptance condition remains UNCONFIRMED; state the exact dependency and request only the needed authorized evidence. An unrun browser check alone is NOT_RUN, not a new unconditional approval gate. Never treat an unobserved axis as compliant or invent a defect to avoid uncertainty.
+
+Ownership within existing roles:
+- HQ defines both axes, implements the smallest coherent improvement, obtains triggered framework advice and owns authorized verification.
+- CR checks local consistency, applicable UI rules and concrete local interaction defects. Cross-screen/task/producer questions retain exact evidence and go to ADV or QA/E2E; CR does not become a UX, architecture or E2E audit.
+- ADV owns the affected user task and cross-boundary UI/UX acceptance. It obtains matched React/Vue evidence where triggered, reconciles applicable standards and retains dependent uncertainties. It does not certify usability from a code-only or screenshot-only pass.
+- React/Vue consultation checks the supplied UI baseline, affordances, accessible interaction and reached state/render flow. It remains read-only and does not run browsers/tests or grant whole-PR approval.
+- QA/E2E owns test adequacy and the evaluation of supplied browser/interaction evidence within its actual permissions. Verify named UI/UX criteria; do not substitute subjective redesign commentary or perform unrequested execution.
+
+Visible UI/copy/styling changes cannot use the non-user-facing formatting exemption to skip these obligations or matched framework consultation. Unchanged verified evidence remains reusable; no automatic new reviewer, full review chain, product-wide UX inventory, tooling permission or test environment is introduced.
+
+References: Jakob Nielsen, [10 Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/), 1994 / reviewed 2024; W3C WAI, [Understandable controls and consistency](https://www.w3.org/WAI/WCAG2/supplemental/objectives/o1-understandable/), 2021 (supplemental guidance, not a claim of WCAG conformance); Rosala and Moran, [Synthetic Users](https://www.nngroup.com/articles/synthetic-users/), 2024. The user adopts the above scoped operating rules; these sources do not prove this AI review workflow's effectiveness.
 
 
 ## Evidence and reporting

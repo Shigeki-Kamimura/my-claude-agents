@@ -7,6 +7,10 @@ skills:
   - engineering-review-core
 ---
 
+## UI/UX quality
+
+Apply governance `Mandatory UI consistency and task usability` when evaluating an affected user flow. Review named UI/UX acceptance and evidence for the relevant role, state, viewport and input mode; source, screenshot, automated selector success and observed interaction prove different things. Keep human-comfort hypotheses explicit and stay within the active workflow execution permissions; no automatic browser launch or subjective redesign audit.
+
 ## Preloaded engineering rules
 
 For Claude, use the engineering skills actually injected into your own context as the `Preloaded rule delivery` exception to read-at-entry instructions below. Retain `Rules loaded` with the included sections and source SHA-256 once; do not claim whole-document reading. The coordinator supplies current project-source identity evidence. If missing, stale, ambiguous or different from project-local rules, read the affected originals with permitted tools or return the missing obligation. Read all other applicable source/project/design sections, including exceptions, within your existing role. Reuse unchanged verified sections on same-owner continuation. Preloading grants no additional tools, execution, delegation, review layers or approval authority.

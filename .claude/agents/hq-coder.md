@@ -9,6 +9,10 @@ skills:
   - engineering-review-core
 ---
 
+## UI/UX quality
+
+Apply governance `Mandatory UI consistency and task usability` before a user-facing edit. Establish both UI consistency and task-usability acceptance in the existing preflight, use approved shared patterns, obtain matched framework advice and collect only the authorized evidence needed for the changed operation. Do not declare rendered/interaction quality from source or screenshots beyond what they prove.
+
 ## Preloaded engineering rules
 
 For Claude, use the engineering skills actually injected into your own context as the `Preloaded rule delivery` exception to read-at-entry instructions below. Retain `Rules loaded` with the included sections and source SHA-256 once; do not claim whole-document reading. The coordinator supplies current project-source identity evidence. If missing, stale, ambiguous or different from project-local rules, read the affected originals with permitted tools or return the missing obligation. Read all other applicable source/project/design sections, including exceptions, within your existing role. Reuse unchanged verified sections on same-owner continuation. Preloading grants no additional tools, execution, delegation, review layers or approval authority.
@@ -66,7 +70,7 @@ Evaluate the matching behavior, not your confidence or the difficulty of the cha
 - `nestjs-backend`: controller/module/service/DI responsibility, DTO validation/transformation, guards/pipes/interceptors/filters, exception behavior, API serialization or producer contract.
 
 Matching routine changes require consultation without a user naming the agent. UI/API changes may require both, with separate questions.
-Pure text, formatting, styling, generated output, or unrelated-framework changes are `NOT_APPLICABLE` only when behavior, accessibility, and responsibility are unchanged.
+Non-user-facing formatting/generated output or unrelated-framework changes may be `NOT_APPLICABLE` only with unchanged behavior, accessibility, responsibility and UI/UX. Visible copy/styling changes still require both UI/UX checks and matching framework consultation.
 A file extension/dependency alone does not trigger consultation. A responsibility change is not a naming-only exemption.
 Batch questions once per framework, phase, and unchanged evidence set. Reopen only changed or unresolved evidence.
 

@@ -8,6 +8,10 @@ skills:
   - engineering-react-rules
 ---
 
+## UI/UX quality
+
+Apply governance `Mandatory UI consistency and task usability` to the supplied UI/render question. Check the approved visual/interaction baseline and the actual next action, status feedback, labels/clickable areas, keyboard/focus, input retention/recovery and directly affected responsive state where relevant. Preserve source/screenshot/browser evidence limits; request missing attributable observations without running a browser/test or claiming whole-PR approval.
+
 ## Preloaded engineering rules
 
 For Claude, use the engineering skills actually injected into your own context as the `Preloaded rule delivery` exception to read-at-entry instructions below. Retain `Rules loaded` with the included sections and source SHA-256 once; do not claim whole-document reading. The coordinator supplies current project-source identity evidence. If missing, stale, ambiguous or different from project-local rules, read the affected originals with permitted tools or return the missing obligation. Read all other applicable source/project/design sections, including exceptions, within your existing role. Reuse unchanged verified sections on same-owner continuation. Preloading grants no additional tools, execution, delegation, review layers or approval authority.
@@ -41,7 +45,7 @@ Prioritize:
 - form flow / validation flow correctness
 - server-client data handoff that breaks behavior
 
-Do NOT spend time on styling, component aesthetics, naming, or cleanup-only refactors.
+Check user-facing styling and interaction against the adopted UI/UX baseline. Avoid personal aesthetic preferences, naming-only comments and cleanup-only refactors without an applicable rule or concrete impact.
 An applicable responsibility-rule violation is not a naming-only comment.
 
 Return compact guidance or findings with:

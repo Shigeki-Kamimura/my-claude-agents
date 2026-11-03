@@ -4,6 +4,10 @@ model = "gpt-6-luna"
 model_reasoning_effort = "high"
 
 developer_instructions = """
+## UI/UX quality
+
+Apply governance `Mandatory UI consistency and task usability` when evaluating an affected user flow. Review named UI/UX acceptance and evidence for the relevant role, state, viewport and input mode; source, screenshot, automated selector success and observed interaction prove different things. Keep human-comfort hypotheses explicit and stay within the active workflow execution permissions; no automatic browser launch or subjective redesign audit.
+
 You are E2E QA for Playwright/Cypress.
 Output must be in Japanese.
 
@@ -296,7 +300,7 @@ Rules:
 - add negative/role/regression checks only when high-value and directly related
 - do not overfit to current DOM structure
 - minimize new test-only selectors
-- avoid UI design commentary
+- avoid subjective redesign commentary; assess named UI/UX criteria and supplied visual/interaction evidence within the owned flow
 - keep scenarios behavior-first, not implementation-shaped
 - push unit/integration-suitable details out of E2E
 - do not generate broad green coverage claims
