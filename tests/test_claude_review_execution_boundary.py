@@ -19,7 +19,7 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertIn("利用者が選択した実agentだけ", workflow)
             fields = workflow.split("response_contract:\n", 1)[1].split("pause_and_resume:\n", 1)[0]
             self.assertEqual({"workflow_id", "phase", "reviewer", "snapshot_id", "native_verdict", "coverage", "decision", "open_item_ids", "questions", "handoffs", "invocation_evidence"}, set(re.findall(r"(?m)^    ([a-z_]+):", fields)))
-        for text in ("Infoは本文にもMDにも記載しません", "Ready for review", "gitignore", "全必須handoff", "REQUIRES_OWNER_RESULT_CHECK"):
+        for text in ("Infoは本文にもMDにも記載しません", "Ready for review", "gitignore", "全必須handoff", "state.json"):
             self.assertIn(text, common)
 
     def test_pipeline_preserves_actual_owners_and_human_ready(self):

@@ -1,9 +1,11 @@
 # 利用者指定のMDレビュー契約です。実行エンジンではありません。
-schema_version: 2
+schema_version: 3
 workflow_id: claude-codex-review
 runtime_validation: NOT_RUN
 goal: MDを共有し、利用者が選んだ層を確認後、Local-ci、Codex ciレビュー、draft PRへ進みます。
 common_contract: md-review.md
+request_template: "{review_md_path} を基にレビューしてください。"
+rereview_template: "{review_md_path} を基に再レビューしてください。"
 activation:
   marker: 'Workflow: claude-codex-review'
   rule: 現在の利用者の実依頼で向きを確認します。引用は起動しません。層は利用者が指定し、未指定なら1つ質問します。既定層も自動昇格もありません。
@@ -24,15 +26,16 @@ ownership:
 review_entry:
   contract_delivery: md-review.mdの原本のpath/版を渡し、各担当が自分で完全な適用節と例外を確認します。Rules loadedへ注入済み/Read/未確認を記録します。親の要約だけでは既読にしません。切詰めは不足を回収し、依存する承認を保留します。
   role_sections:
-    phase_common: authority、ownership、review_entry、execution、review_cycle、review_gates、findings、questions、response_contract、handoffとmd-review.mdの開始条件、1、2、3–6、待機、Backlogの完全な節です。
+    phase_common: authority、ownership、review_entry、execution、review_cycle、review_gates、findings、questions、response_contract、handoffとmd-review.mdの開始条件、1、2、3–6、待機、Backlog、MD依頼と判定欄の機械照合の完全な節です。
     l1_5: phase_commonです。md-review.mdのCRのnative判定、局所とhandoffの条件も適用します。
     qa: phase_commonとqa_contractです。
     e2e: phase_commonとqa_contractです。
     l2: phase_commonとconsultationです。
+    ci: phase_common、md-review.mdの7–9と対象revisionのdocs/review/review-prompt.mdです。
     consultants: authority、ownership、execution、consultationと担当質問の適用原文だけです。全体Approveや11項目の代理作成はしません。
   required_intake: 原本/例外込みの適用project規則を確認し、Rules loadedへ残します。既知pathはReadで直接確認します。未確認はUNCONFIRMEDです。
   reading_scope: 全変更hunk、変更責務、必要な直接caller/calleeを確認します。利用者やproject規則の全文確認義務を維持し、未確認の義務を残します。
-  source_delivery: MDへ実base/HEAD、working source、staged/unstaged/untracked、rename/削除両端と元版、対象/除外、規則の版を記録します。サマリーはSuppliedです。reviewerが独立にgit_diffと現ソースを確認します。
+  source_delivery: MDへ実base/HEAD、working source、staged/unstaged/untracked、rename/削除両端と元版、対象/除外、規則の版を記録します。サマリーはSuppliedです。reviewerが独立にgit_diffと現ソースを確認します。初回は全3view、再レビューは前回の実確認版からのdeltaと影響先を中心にします。
   rule_delta_delivery: 旧原文と現原文を同じ種類のhashで対応させ、変更した完全な節と例外、追加/削除した義務をMDへ追記します。旧原文が失われた場合は未確認です。親の要約で置換せず、今回の現物確認で出典を更新します。
 execution:
   cr_adv: Git読取とsource/規則/既存証拠の確認だけです。検証コマンドは実装担当です。
@@ -95,13 +98,5 @@ codex_cli:
   - --json
   invocation: 毎roundで新しいexecを起動します。この手順ではexec resumeや--lastを使いません。全対象、累積coverage、全未了をMDから引き継ぎます。CodexはClaude CLIを起動しません。
   prompt_template: |
-    {prefix}: 指定した実担当へ委譲してください。
-    Workflow: claude-codex-review
-    Phase: {phase}
-    Contract: {contract_path}
-    今回の入力:
-    Review journal: {review_md_path}
-    Snapshot: {snapshot_path}
-    ソースを編集せず、自分でGit差分と適用原文を確認してください。
-    md-review.mdと実担当のnative/Workflow Resultを返して終了してください。
+    {review_md_path} を基にレビューしてください。
   verification: Claude Codeが修正と必要な検証を行い、同じMDへ結果を追記します。

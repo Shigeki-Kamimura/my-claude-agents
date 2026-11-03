@@ -57,8 +57,8 @@ class MDReviewTests(unittest.TestCase):
                         "--paths", "code.txt", "new.txt", "--rules", self.project / "rule.md",
                         "--summary-file", self.summary, "--out-dir", self.run, *extra, code=code)
 
-    def freeze(self):
-        self.init()
+    def freeze(self, *extra):
+        self.init(*extra)
         folder, config = review.load_run(self.run)
         target = folder / "fixture-round"
         target.mkdir()
@@ -97,7 +97,7 @@ class MDReviewTests(unittest.TestCase):
         self.git("config", "diff.evil.command", str(evil))
         self.git("config", "diff.evil.textconv", str(evil))
         (self.project / ".gitattributes").write_text("*.txt filter=evil diff=evil\n")
-        target, _, _ = self.freeze()
+        target, _, _ = self.freeze("--paths", "code.txt", "new.txt", ".gitattributes")
         for view in ("branch", "staged", "unstaged"):
             review.frozen_diff(target, view)
         self.assertFalse(marker.exists())
@@ -163,7 +163,7 @@ class MDReviewTests(unittest.TestCase):
                                     input=json.dumps({"tool_name": name}), text=True, capture_output=True)
             self.assertEqual(code, result.returncode, name)
 
-    def test_one_shot_appends_native_response_but_never_calls_it_approval(self):
+    def test_invalid_one_shot_appends_response_without_approval_or_retry(self):
         self.init()
         fakebin = self.temp / "bin"
         fakebin.mkdir()
@@ -171,10 +171,10 @@ class MDReviewTests(unittest.TestCase):
         fake.write_text("#!/usr/bin/python3\nimport json,sys\nsys.stdin.read()\nprint(json.dumps({'type':'result','session_id':'fixture-id','result':'FAKE transport response'}))\n")
         fake.chmod(0o700)
         env = {**os.environ, "PATH": str(fakebin) + ":" + os.environ["PATH"]}
-        self.cli("start_md_review.py", "--run-dir", self.run, "--phase", "cr", env=env)
+        self.cli("start_md_review.py", "--run-dir", self.run, "--phase", "cr", code=2, env=env)
         record = (self.run / "review.md").read_text()
         self.assertIn("FAKE transport response", record)
-        self.assertIn("REQUIRES_OWNER_RESULT_CHECK", record)
+        self.assertIn("BLOCKED", record)
         self.assertNotIn('"status": "APPROVE"', record)
         self.assertEqual(1, len(list(self.run.glob("*/execution.json"))))
         self.cli("start_md_review.py", "--run-dir", self.run, "--phase", "adv", code=2, env=env)

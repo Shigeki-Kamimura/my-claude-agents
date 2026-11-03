@@ -127,7 +127,7 @@ class ParentHqContractTests(unittest.TestCase):
 
     def test_review_prompt_keeps_all_input_fields(self):
         fields = [name for _, name, _, _ in Formatter().parse(review_prompt(self.workflow)) if name]
-        expected = {"prefix", "phase", "contract_path", "review_md_path", "snapshot_path"}
+        expected = {"review_md_path"}
         self.assertEqual(set(fields), expected)
         self.assertEqual(len(fields), len(expected))
 
@@ -135,16 +135,11 @@ class ParentHqContractTests(unittest.TestCase):
         template = review_prompt(self.workflow)
         names = [name for _, name, _, _ in Formatter().parse(template) if name]
         values = {name: "fixed:" + name for name in names}
-        dynamic = {"review_md_path", "snapshot_path"}
         a = template.format_map(values)
-        b = template.format_map({**values, **{key: "changed:" + key for key in dynamic}})
-        before_a, after_a = a.split("今回の入力:\n", 1)
-        before_b, after_b = b.split("今回の入力:\n", 1)
-        self.assertEqual(before_a, before_b)
-        self.assertNotEqual(after_a, after_b)
-        self.assertIn("fixed:contract_path", before_a)
-        self.assertIn("changed:snapshot_path", after_b)
-        self.assertNotIn("authority_ownership_findings_questions_and_response_contracts", template)
+        b = template.format_map({"review_md_path": "changed:review.md"})
+        self.assertNotEqual(a, b)
+        self.assertEqual("changed:review.md を基にレビューしてください。\n", b)
+        self.assertEqual({"review_md_path"}, set(names))
 
     def test_reverse_transport_approval_and_result_fields_remain(self):
         for required in ("- read-only", "毎roundで新しいexec", "exec resumeや--lastを使いません",
