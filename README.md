@@ -1,9 +1,9 @@
 # claude-config (personal)
 
-個人用 Claude Code エージェント・設定リポジトリ。`~/projects/my-claude-agents/` に置き、各プロジェクトへはシンボリックリンクで展開する。
+個人用 Claude Code エージェント・設定リポジトリ。`~/projects/my-claude-agents/` に置く。Claude Code / Copilot はリンク、Codex の TOML は実ファイルコピーで展開する。
 
 ## 方針
-- 単一正は `~/projects/my-claude-agents/`（Windows: `%USERPROFILE%\projects\my-claude-agents\`）。プロジェクトへコピーしない。
+- 単一正は `~/projects/my-claude-agents/`（Windows: `%USERPROFILE%\projects\my-claude-agents\`）。Codex TOML のみ実ファイルで展開し、更新は `setup` で同期する。
 - Precedence 3 層: Project layer (repo upstream) > Personal layer (本 repo) > Agent/Skill frontmatter
 - 詳細は `CLAUDE.md` を参照。
 
@@ -53,8 +53,9 @@ Codexの定義は、正式名ごとに1ファイルへ統合しています。
 担当を明示した`hq`・`pl`・`qa`の依頼も、同じ正式名へ変換します。
 alias用のTOMLや同名定義のシンボリックリンクは追加しません。
 
-更新後は、導入済みの各プロジェクトでsetupを再実行してください。
-ファイル単位のリンクなので、追加・削除は`git pull`だけでは反映されません。
+設定の更新後は、導入済みの各プロジェクトでsetupを再実行してください。
+Codexの新しい `agents/*.toml` は自動検出・追加されます。既存の管理コピーも、手動編集がなければ更新されます。
+原本から消えたTOMLは誤削除を防ぐため自動削除しません（旧名 `hq/pl/qa` の管理リンクだけは削除します）。
 
 ```bash
 git -C ~/projects/my-claude-agents pull --ff-only origin exp/xml-agents
@@ -71,9 +72,12 @@ pwsh "$env:USERPROFILE\projects\my-claude-agents\setup.ps1" -Profile company -Ta
 profileは現在使用中の`personal`または`company`に合わせます。
 setupは、この設定リポジトリを参照する旧`hq.toml`・`pl.toml`・`qa.toml`のリンクを除去します。
 リンク先が削除済みでも、管理元が一致すれば移行できます。
-実ファイルや他の設定を参照するリンクは保持します。
-`CONFLICT preserved`が出た場合は、残った定義を確認して手動で整理してください。
-`SKIP upstream`の場合も、適用される実ファイルの内容を確認してください。
+別の設定を参照するリンクや、プロジェクト独自の実ファイルは保持します。
+管理下の実ファイルは `.git/info/codex-setup-managed.tsv` に前回同期時のSHA-256を記録し、手動変更があれば上書きしません。
+すでに手動で実ファイル化したTOMLは、原本と完全一致する場合に限り管理下へ引き継ぎます。
+Gitで追跡中のファイルは、リンクも含めて一切上書きしません。
+`CONFLICT preserved`が出た場合は、残った定義を確認してください。`SKIP upstream`は管理外ファイルの保護です。
+`.gitignore` は使わず、対象リポジトリの `.git/info/exclude` と `.git/info/` 内の管理履歴だけを更新します。
 展開後は新規Codexセッションで正式名の読み込みと起動を確認します。
 
 ### 方針
@@ -109,12 +113,18 @@ pwsh "$env:USERPROFILE\projects\my-claude-agents\setup.ps1" -Target C:\path\to\y
    - upstream が実ファイルを持っていれば skip（upstream 優先）
 4. `~/projects/my-claude-agents/.claude/settings.json` をシンボリックリンク
    - upstream が実ファイルを持っていれば skip（upstream 優先）
-5. `~/projects/my-claude-agents/.codex/AGENTS.md` と `.codex/config.toml` をシンボリックリンク
-   - Codex サブエージェント設定と既定プロファイルをプロジェクトへ反映
-   - upstream が実ファイルを持っていれば skip（upstream 優先）
-6. `~/projects/my-claude-agents/.codex/agents/*.toml` を `.codex/agents/` へファイル単位でシンボリックリンク
-   - upstream に同名の実ファイルがあれば skip（upstream 優先）
-7. リンクしたパスを `.git/info/exclude` に追記（`.gitignore` は変更しない）
+5. `~/projects/my-claude-agents/.codex/AGENTS.md` をシンボリックリンク、`.codex/config.toml` を実ファイルコピーで展開
+   - 旧管理リンクは実ファイルへ移行。プロジェクト独自設定や追跡済みファイルは保持
+6. `~/projects/my-claude-agents/.codex/agents/*.toml` を `.codex/agents/` へ実ファイルコピーで同期
+   - 新しい定義も次回 `setup` で検出。管理コピーの更新は前回同期のSHA-256で保護
+   - 旧管理リンクはコピーへ移行し、管理外ファイルは保護
+7. 配置したパスを `.git/info/exclude` に登録し、管理履歴を `.git/info/codex-setup-managed.tsv` に保存（`.gitignore` は変更しない）
+
+### Codex Desktop（Windowsアプリ + WSLエンジン）の注意点
+
+プロジェクトごとの `.codex/config.toml` と `.codex/agents/*.toml` は、WSL側の `setup.sh` で実体コピーにします。
+Desktopの `CODEX_HOME/agents/` へ定義をコピーする `sync_codex_desktop.py` は別の手順です。そちらを実行しても、プロジェクト側の古いシンボリックリンクは自動解消されません。
+コピーした定義の内容は、原本更新後に `setup` を再実行するまで更新されません。追加・変更のあとには、新しいCodexスレッドで起動を確認してください。
 
 ### 結果イメージ
 
