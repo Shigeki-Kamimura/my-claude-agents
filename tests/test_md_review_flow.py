@@ -190,7 +190,7 @@ class MDReviewFlowTests(unittest.TestCase):
 
     def test_handoffs_persist_and_only_actual_owner_can_close(self):
         handoff = {"id": "H-01", "owner": "test-qa", "question": "negative path covered?", "evidence": "code.txt path",
-                   "status": "open", "depends_on_for_approval": False}
+                   "status": "open", "weight": "🟢", "depends_on_for_approval": False}
         first = self.result(handoffs=[handoff])
         ledger = receipts.update_handoffs({}, first, "child-A", "round-A")
         previous = {"parent_session_id": "parent-A", "reviewer_id": "child-A", "result": first}
@@ -206,6 +206,79 @@ class MDReviewFlowTests(unittest.TestCase):
         self.assertTrue(checked["approved"])
         self.assertEqual("qa-child", ledger["H-01"]["closure"]["reviewer_id"])
         self.assertEqual("code.txt path", ledger["H-01"]["evidence"])
+
+    def weighted(self, weight="🟡", **updates):
+        value = {"id": "H-W", "owner": "test-qa", "question": "q", "evidence": "e", "status": "open",
+                 "depends_on_for_approval": False}
+        if weight is not None:
+            value["weight"] = weight
+        value.update(updates)
+        return value
+
+    def test_hnd1_new_handoff_requires_valid_weight(self):
+        for bad in (None, "", "high", "Low", 2):
+            handoff = self.weighted(bad if bad is not None else None)
+            if bad is not None:
+                handoff["weight"] = bad
+            for check in (lambda r: receipts.update_handoffs({}, r, "child-A", "round-A"),
+                          lambda r: self.validate(r)):
+                with self.assertRaises(ValueError, msg=repr(bad)):
+                    check(self.result(handoffs=[handoff], decision="REQUEST_CHANGES", native_verdict="L1.5_REQUEST_CHANGES"))
+        ledger = receipts.update_handoffs({}, self.result(handoffs=[self.weighted("🟡中")]), "child-A", "round-A")
+        self.assertEqual("🟡", ledger["H-W"]["weight"])
+
+    def test_hnd1_weight_is_preserved_and_cannot_be_lowered_while_open(self):
+        first = self.result(handoffs=[self.weighted("🟡")], decision="REQUEST_CHANGES", native_verdict="L1.5_REQUEST_CHANGES")
+        ledger = receipts.update_handoffs({}, first, "child-A", "round-A")
+        omitted = self.result(handoffs=[{k: v for k, v in self.weighted("🟡").items() if k != "weight"}])
+        self.assertEqual("🟡", receipts.update_handoffs(ledger, omitted, "child-A", "round-B")["H-W"]["weight"])
+        lowered = self.result(handoffs=[self.weighted("🟢")])
+        with self.assertRaises(ValueError):
+            receipts.update_handoffs(ledger, lowered, "child-A", "round-B")
+        previous = {"parent_session_id": "parent-A", "reviewer_id": "child-A", "result": first}
+        with self.assertRaises(ValueError):
+            self.validate(lowered, previous=previous)
+        raised = receipts.update_handoffs(ledger, self.result(handoffs=[self.weighted("🔴")]), "child-A", "round-B")
+        self.assertEqual("🔴", raised["H-W"]["weight"])
+        closed = {"id": "H-W", "owner": "test-qa", "status": "reviewer_confirmed_fixed", "closure_evidence": "inspected"}
+        qa = self.result(reviewer="test-qa", phase="qa", native_verdict="APPROVE", handoffs=[closed])
+        self.assertEqual("🟡", receipts.update_handoffs(ledger, qa, "qa-child", "qa-round")["H-W"]["weight"])
+
+    def test_hnd1_yellow_or_red_open_handoff_blocks_approve_but_green_does_not(self):
+        for weight in ("🟡", "🔴"):
+            with self.assertRaises(ValueError, msg=weight):
+                self.validate(self.result(handoffs=[self.weighted(weight)], native_verdict="L1.5_APPROVE_WITH_NOTES"))
+        checked = self.validate(self.result(handoffs=[self.weighted("🟢")], native_verdict="L1.5_APPROVE_WITH_NOTES"))
+        self.assertTrue(checked["approved"])
+        # 台帳の重みが🟡なら、現在の結果が🟢と書いても承認できません(重い方を採ります)。
+        ledger = receipts.update_handoffs({}, self.result(handoffs=[self.weighted("🟡")]), "child-A", "round-A")
+        with self.assertRaises(ValueError):
+            receipts.validate(self.result(handoffs=[self.weighted("🟢")]), {"direction": "claude-codex-review", "reviewer": "code-quality-reviewer"},
+                              "cr", "source-A", self.native(self.result(handoffs=[self.weighted("🟢")])), None, ledger)
+        # 🟡でも、実ownerが閉じた後なら承認できます。
+        closed = {"id": "H-W", "owner": "test-qa", "status": "reviewer_confirmed_fixed", "closure_evidence": "inspected"}
+        ledger = receipts.update_handoffs(ledger, self.result(reviewer="test-qa", phase="qa", native_verdict="APPROVE", handoffs=[closed]),
+                                          "qa-child", "qa-round")
+        self.assertEqual("reviewer_confirmed_fixed", ledger["H-W"]["status"])
+
+    def test_hnd1_legacy_handoff_without_weight_is_readable_and_treated_as_yellow(self):
+        legacy = {"id": "OLD-1", "owner": "test-qa", "question": "q", "evidence": "e", "status": "open",
+                  "depends_on_for_approval": False, "origin_reviewer": "code-quality-reviewer", "origin_round": "r0"}
+        ledger = {"OLD-1": dict(legacy)}
+        restated = {k: legacy[k] for k in ("id", "owner", "status", "depends_on_for_approval")}
+        result = self.result(handoffs=[restated])
+        previous = {"parent_session_id": "parent-A", "reviewer_id": "child-A", "result": result}
+        # 読み取りと台帳更新は成功し、台帳へ既定値は書き戻しません。
+        self.assertNotIn("weight", receipts.update_handoffs(ledger, result, "child-A", "round-B")["OLD-1"])
+        self.assertEqual(1, len(receipts.handoff_rows(previous["result"])))
+        # 実効値は🟡のため、承認は止まります。
+        with self.assertRaises(ValueError):
+            receipts.validate(result, {"direction": "claude-codex-review", "reviewer": "code-quality-reviewer"}, "cr", "source-A",
+                              self.native(result), previous, ledger)
+        # 旧行を🟢へ下げるのも拒否し、🟡以上の明示は受け付けます。
+        with self.assertRaises(ValueError):
+            receipts.update_handoffs(ledger, self.result(handoffs=[{**restated, "weight": "🟢"}]), "child-A", "round-B")
+        self.assertEqual("🔴", receipts.update_handoffs(ledger, self.result(handoffs=[{**restated, "weight": "🔴"}]), "child-A", "round-B")["OLD-1"]["weight"])
 
     def test_phase_assignments_include_transport_and_qa_role(self):
         root = Path(launcher.__file__).resolve().parents[1]
@@ -276,7 +349,7 @@ if os.environ.get("FAKE_MARKER"):
 md=Path(prompt.split(" を基に",1)[0])
 request=json.loads(re.search(r"```json\\n(.*?)\\n```",md.read_text(),re.S)[1])
 snapshot=json.loads(Path(request["snapshot_file"]).read_text())
-handoff={"id":"E2E-H1","owner":"e2e-qa","question":"full original question","evidence":"full original evidence","status":"open","depends_on_for_approval":False}
+handoff={"id":"E2E-H1","owner":"e2e-qa","question":"full original question","evidence":"full original evidence","status":"open","weight":"🟢","depends_on_for_approval":False}
 def block(handoffs):
     result={"workflow_id":"codex-claude-review","phase":request["phase"],"reviewer":request["reviewer"],"snapshot_id":snapshot["snapshot_id"],"native_verdict":"L1.5_REQUEST_CHANGES","coverage":"COMPLETE","decision":"REQUEST_CHANGES","open_item_ids":["CR-01"],"questions":[],"handoffs":handoffs,"invocation_evidence":{"platform":"Claude Code","model":"fake-fixture-model","note":"child wrote this"}}
     return "```workflow-result\\n"+json.dumps(result)+"\\n```\\n"

@@ -43,6 +43,7 @@ CODEX_SECTIONS = {
         "governance": (
             "Pinned source and reconciliation", "Source coverage and role scope",
             "OPS-1: Release, operability and data-lifecycle boundaries",
+            "XREV-1: Cross-model review calibration lenses",
             "User-directed execution permissions", "Review objective and evidence", "Mandatory UI consistency and task usability",
             "Independent review and reconciliation", "Evidence and reporting",
         ),

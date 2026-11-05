@@ -141,6 +141,9 @@ Git読取MCPと後述のBacklog読取だけを追加します。
   Origin欠落時は推測して上限を使わず、通常の指摘として扱います。
   対応しないという利用者の出典付き指示は、元reviewerが撤回を確認して記録します。
   局所判断に必要な未確認はhandoffへ移して承認しません。
+  HND-1(governanceのXREV-1): path:lineの証拠で欠陥・仕様不一致を示せるものは、他層が直す内容でも自層の指摘(最低🟢 Low)にして確認・修正担当を明記します(reviewerは読取専用で、編集は実装担当です)。
+  handoffは自層の証拠で確定できないこと(実行・他層判断・製品判断)に限ります。他層の判断自体は代行しません。
+  🟢 Lowの上限5件を超えた証拠付きの不一致は、🟢重みのhandoffとして追跡します。Infoにしません。
 - 問題がなければ元のreviewerが`Approve`とWorkflow Resultを返し、MDへ追記します。
   必須11項目は、workflow_id、phase、reviewer、snapshot_id、native_verdict、coverage、
   decision、open_item_ids、questions、handoffs、invocation_evidenceです。
@@ -152,20 +155,25 @@ Git読取MCPと後述のBacklog読取だけを追加します。
   platformはClaude CodeまたはCodexです。実委譲と必須相談の証拠も保持します。
   前回のopen IDを外す場合、invocation_evidence.finding_updatesにIDごとのstatusとevidenceを記します。
   statusはreviewer_confirmed_fixedまたはreviewer_withdrawnです。黙ってIDを消して承認しません。
-  handoffに依存しない層承認では、各handoffにdepends_on_for_approval=falseを明記します。
+  handoffに依存しない層承認では、各handoffにdepends_on_for_approval=falseを明記し、かつ重みが🟢である必要があります。
+  🟡/🔴の未解決handoffが1件でも残る間は、native承認ラベルとdecision APPROVEを返しません。既存の非承認ラベルとNEEDS_CONFIRMATIONで止めます。
   最終引渡しに必要なhandoffの解消条件は維持します。
   open_item_idsには、このphaseが解消責務を持つ局所指摘のIDを記します。
+  HND-1で自層の指摘にした証拠付きの不一致は、修正担当が他層でも、この層のopen_item_idsに入れます。この層が追跡・再レビュー・解消確認を行います。
   他担当の未了IDはhandoffs欄と累積台帳へ残し、消しません。
-  各handoffはid、owner（canonical役割名）、statusを持ちます。初出にはquestionとevidenceも必要です。
+  各handoffはid、owner（canonical役割名）、statusを持ちます。初出にはquestion、evidence、weightも必要です。
+  weightは未解決のまま残した場合の影響を示す🔴/🟡/🟢のいずれかで、一行の理由をquestionに添えます。
+  未解決のweightは下げられません。下げる唯一の道は、そのowner自身がclosure_evidence付きで解消・撤回することです。
+  weightを持たない旧台帳のhandoffは読めますが、実効値を🟡として扱い、書き戻しません。
   statusはopen/pending/fix_candidate/reviewer_confirmed_fixed/reviewer_withdrawnです。
   解消・撤回には、そのowner自身の実判定とclosure_evidenceが必要です。
   問いと元の根拠は保持します。解消済みの再開にはreopen_evidenceを記します。
   台帳はphaseをまたいで累積し、別ownerやレポートからの省略では閉じません。
   解消を確認した後のレポートでは省略できますが、累積台帳と解消の実原本は保持します。
   実行対象外ownerの未了も残し、未解消のままCIへ進みません。
-  CRのnative labelとhandoff-only承認条件は既存通りです。
+  CRのnative labelとhandoff-only承認条件は、🟢重みのhandoffに限り既存通りです。
 - 選択層の全対象がCOMPLETEで、指摘・質問・必要証拠が解消した場合だけ層の承認です。
-  依存しない他層handoffは保持できます。最終引渡しには全必須handoffの解消が必要です。
+  依存しない🟢重みの他層handoffは保持できます。最終引渡しには全必須handoffの解消が必要です。
   source/テスト/要件/規則の変更後は、選択層が影響を確認して現snapshotへ再承認します。
   未選択層の承認を作りません。既承認を親が付け替えません。
 

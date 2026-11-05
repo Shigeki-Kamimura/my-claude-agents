@@ -258,7 +258,7 @@ cases:
 
   - id: single-layer-handoff-only-approve
     phase: L1.5
-    input: 局所指摘・質問・必須証拠待ちはゼロで、全対象COMPLETEです。CRが他層へ分類した引継ぎ4件だけが未了です。
+    input: 局所指摘・質問・必須証拠待ちはゼロで、全対象COMPLETEです。CRが他層へ分類した引継ぎ4件(すべて重み🟢)だけが未了です。
     expected: L1.5_APPROVE_WITH_NOTESとdecision APPROVEを同じ担当が返し、引継ぎ4件を未了のまま保持します。全体承認にはしません。
   - id: single-layer-dependent-evidence-pending
     phase: L1.5
@@ -272,6 +272,18 @@ cases:
     phase: L1.5
     input: nativeはAPPROVE_WITH_NOTES、全対象COMPLETE、局所openは空です。他層handoffだけを理由にdecision REQUEST_CHANGESと記録されています。
     expected: Codexは元の担当へ整合確認と訂正を求め、自分で判定を書き換えません。
+  - id: hnd1-evidenced-mismatch-is-finding
+    phase: L1.5
+    input: CRがpath:lineで、表示先(Toaster)の欠落とopenapi未更新を示せています。修正は別層の領域です。
+    expected: handoffにせず自層の指摘(最低🟢 Low)として修正担当を明記します。他層の設計判断は代行せず、追跡・修正・再レビューの対象にします。
+  - id: hnd1-yellow-handoff-blocks-approve
+    phase: L1.5
+    input: 局所指摘ゼロ・全対象COMPLETEですが、自層の証拠で確定できない🟡の引継ぎが1件未了です。
+    expected: L1.5_APPROVE系とdecision APPROVEを返さず、既存の非承認ラベルとNEEDS_CONFIRMATIONで止めます。重みを🟢へ下げて承認しません。
+  - id: hnd1-low-cap-overflow-stays-green-handoff
+    phase: L1.5
+    input: 証拠付きの不一致が🟢 Low上限5件を超えました。
+    expected: 超過分はInfoにせず、🟢重みのhandoffとして追跡します。🟢のみなら従来どおり承認できます。
   - id: cr-handoff-count-and-scope
     phase: L1.5
     input: 別の担当・根拠を持つ引継ぎ4件を保持して再開します。新しい根拠はありません。

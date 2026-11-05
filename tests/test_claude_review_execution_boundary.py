@@ -104,6 +104,23 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertIn("scope changes need new evidence", governance)
         self.assertEqual(1, read("tests/agent-review-contract-cases.yml").count("  - id: cr-handoff-count-and-scope\n"))
 
+    def test_hnd1_handoff_weight_contract_is_consistent(self):
+        for profile in (".claude", ".claude-company"):
+            governance = read(f"{profile}/knowledge/engineering-governance.md")
+            for text in ("**HND-1: Handoff weight and evidence-first reporting", "Evidence becomes a finding",
+                         "never as Info", "prevents a clean result", "n=1, PR #1024"):
+                self.assertIn(text, governance)
+            for role in ("code-quality-reviewer", "adviser", "test-qa", "e2e-qa"):
+                self.assertIn("HND-1", read(f"{profile}/agents/{role}.md"))
+        for role in ("code-quality-reviewer", "adviser", "test-qa", "e2e-qa"):
+            self.assertIn("HND-1", read(f".codex/agents/{role}.toml"))
+        for path in (".codex/workflows/claude-review.yml", ".codex/workflows/codex-review.yml"):
+            self.assertIn("HND-1", read(path))
+        contract = read(".codex/workflows/md-review.md")
+        for text in ("weight", "🟡/🔴の未解決handoff", "旧台帳"):
+            self.assertIn(text, contract)
+        self.assertIn('"weight"(🔴|🟡|🟢)', read("tools/start_md_review.py"))
+
     def test_injected_self_definition_reuse_keeps_missing_rules_pending(self):
         for profile in (".claude", ".claude-company"):
             governance = read(f"{profile}/knowledge/engineering-governance.md")

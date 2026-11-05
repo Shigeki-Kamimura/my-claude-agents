@@ -74,6 +74,11 @@ class PreloadTests(unittest.TestCase):
         self.assertIn(heading, preloads.render(ROOT, "engineering-review-core", "codex"))
         self.assertNotIn(heading, preloads.render(ROOT, "engineering-review-core"))
 
+    def test_cross_review_supplement_is_codex_core_only(self):
+        heading = "### XREV-1: Cross-model review calibration lenses"
+        self.assertIn(heading, preloads.render(ROOT, "engineering-review-core", "codex"))
+        self.assertNotIn(heading, preloads.render(ROOT, "engineering-review-core"))
+
     def test_nested_conditions_and_exceptions_are_preserved(self):
         source = "## Rule\nRequired.\n### Exception\nConditional.\n## Next\nUnrelated.\n"
         self.assertEqual(preloads.section(source, "Rule"),

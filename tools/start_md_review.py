@@ -228,7 +228,8 @@ def build_dispatch(folder, request):
     lines += ["最終メッセージは日本語レポートの後ろに、次の info-string `workflow-result` のfenced blockをちょうど1つだけ置いて終えてください。",
               "11項目すべてが必須で、値の<...>は子が実際の結果で埋めます。ホストは判定・根拠を事前記入しません。Infoは省略します。",
               "coverageとdecisionは列挙語1語だけです(範囲の説明は日本語レポートへ)。open_item_idsとquestionsは文字列の配列です。",
-              'handoffsは各要素が {"id","owner","status"(open|pending|fix_candidate),"question","evidence"} のobjectです。',
+              'handoffsは各要素が {"id","owner","status"(open|pending|fix_candidate),"weight"(🔴|🟡|🟢),"question","evidence"} のobjectです。',
+              "weightは未解決のまま放置した場合の影響の重さです(新規は必須、後から下げられません)。🟡/🔴の未解決handoffが残る間は承認できません。",
               "```workflow-result", json.dumps(skeleton, ensure_ascii=False), "```"]
     body = "\n".join(lines)
     return body, review.digest(body.encode())
