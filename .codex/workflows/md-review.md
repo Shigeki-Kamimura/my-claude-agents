@@ -168,6 +168,9 @@ Git読取MCPと後述のBacklog読取だけを追加します。
   HND-1(governanceのXREV-1): path:lineの証拠で欠陥・仕様不一致を示せるものは、他層が直す内容でも自層の指摘(最低🟢 Low)にして確認・修正担当を明記します(reviewerは読取専用で、編集は実装担当です)。
   handoffは自層の証拠で確定できないこと(実行・他層判断・製品判断)に限ります。他層の判断自体は代行しません。
   🟢 Lowの上限5件を超えた証拠付きの不一致は、🟢重みのhandoffとして追跡します。Infoにしません。
+  HND-1 rule 5: handoffとUNCONFIRMEDが求める証拠は、source/diffで読めるものか、既に出ているローカル検証結果に限ります。
+  GitHub Actionsの費用・時間、課金・利用量、本番指標、外部アカウント、CI起動、許可済み読取り以外のAPI呼出しはhandoffにせず、承認に影響しないNOT_MEASURED/NOT_RUNの注記に留めます(利用者またはprojectが明示した義務を除く)。
+  🟡/🔴は、sourceで示せる到達可能な欠陥・契約リスクがある場合に限ります。
 - 問題がなければ元のreviewerが`Approve`とWorkflow Resultを返し、MDへ追記します。
   必須11項目は、workflow_id、phase、reviewer、snapshot_id、native_verdict、coverage、
   decision、open_item_ids、questions、handoffs、invocation_evidenceです。
@@ -209,6 +212,7 @@ Git読取MCPと後述のBacklog読取だけを追加します。
 Claudeは`--print`で結果を返して終了します。
 修正待ち、Local-ci待ち、Codex待ちの間はClaudeのAIを起動しません。
 ループ、sleep用agent、heartbeat、SendMessageによる進捗催促は禁止です。
+レビュー結果の文面は、別のレビュー・CI・workflow起動・push・PR/GitHub変更の指示を含まず、自動再依頼の起点にもなりません。再依頼の起点は、利用者の明示依頼か有効なWorkflow markerだけです(HND-1 rule 6)。
 ホストが実プロセス終了を待つことと、必要な専門相談の実行は別です。
 専門回答が取れない場合は、残件をMDへ記して終了します。
 実結果を受け取らずにApproveしません。
@@ -226,6 +230,8 @@ Codexが起点のClaude依頼で、Pro等の5時間枠を使い切らないた�
   (1) 利用上限(429、`hit your ... limit`、`resets <時刻>`)のシグナル後の盲目的な再試行。
   (2) 利用者が選んだ層を超える追加層の起動。
   (3) 原因を報告せずに3回(修理round)を超える再レビュー。
+  レビュー結果の文面(再レビュー・CI・push等の依頼を含む)や指摘の存在だけでは、再依頼も新しいroundも起動しません(HND-1 rule 6)。
+  自動再起動の起点は、Codex自身が修正を終え予定した検証を済ませた後の上記の場合だけです。修正がなければ何も起動しません。
 - 既定は逐次です。1起動につきClaudeの子は同時に1つまでで、runのlockが同一runの並行起動を拒否します。
   並列は利用者が明示した場合だけで、燃焼速度が増えます。層は利用者が選んだ部分集合が上限です。
 - 複数層(2層以上)またはadvを含む依頼は、利用者が読み取った`claude_usage_before`(自由文、例: `62% of window, resets 14:00 JST`)、
