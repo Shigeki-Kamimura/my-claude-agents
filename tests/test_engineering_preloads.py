@@ -78,6 +78,16 @@ class PreloadTests(unittest.TestCase):
         heading = "### XREV-1: Cross-model review calibration lenses"
         self.assertIn(heading, preloads.render(ROOT, "engineering-review-core", "codex"))
         self.assertNotIn(heading, preloads.render(ROOT, "engineering-review-core"))
+        phrases = ("read the class, do not assume",
+                   "restore/spy-restore does not necessarily clear call history",
+                   "Trace the parent route guard/role gate with the NEW state",
+                   "co-occurring updates in the same request/transaction")
+        codex = preloads.render(ROOT, "engineering-review-core", "codex")
+        for profile in preloads.PROFILES:
+            source = (ROOT / profile / preloads.SOURCES["governance"]).read_text()
+            for phrase in phrases:
+                self.assertIn(phrase, source)
+                self.assertIn(phrase, codex)
 
     def test_nested_conditions_and_exceptions_are_preserved(self):
         source = "## Rule\nRequired.\n### Exception\nConditional.\n## Next\nUnrelated.\n"

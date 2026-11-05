@@ -118,3 +118,62 @@
 ### GuildBoard 側の判断事項(両モデルの adv が独立に提起)
 
 自動で公開範囲を広げる前の告知・同意の要否、既存の「組織所属かつ `self`」行の移行要否、`CLAUDE.md`(Repository 経由)と `DESIGN.md`(Service のデータアクセス許容)の優先順位。いずれもプロジェクト側の製品・規約の判断で、本リポジトリでは決めない。
+
+## 3回目の再レビュー(修正差分 80c900af..c61b599ff)
+
+実施日: 2026-11-05。利用者の依頼で hq-coder が指摘を修正し、その修正差分を、新しい8本(Claude と Codex それぞれの qa / e2e / cr / adv)が再レビューした。2回目までと同様、前回の出力は担当に読ませていない。
+
+### 修正の内容と範囲
+
+- 修正は隔離したクローンのブランチ `fix/pr1024-review-findings` で行った(7コミット・30ファイル・+1387/-149)。
+- 実行したのは Biome のみ。tsc / jest / vitest / Playwright は NOT_RUN。E2E は書いたが NOT_RUN。
+- 意図的に直していない項目: Q1(事前告知)、Q2(既存行・変更なしの自己更新)、Q3(admin-members の自己操作)、`CLAUDE.md` と `DESIGN.md` の優先順位、status-transitions のロック順序。
+
+### 結果
+
+| 層 | Claude 2回目 → 3回目 | Codex 2回目 → 3回目 |
+|---|---|---|
+| qa | 🟡2・Low5 → 🟡1・Low3 | 🟡4・Low3 → 🟡3 |
+| e2e | 🟡2・Low2 → Low2 | Low3 → Low1 |
+| cr | 🟡3・Low4 → 🟡1・Low1 | 🟡4・Low2 → 🟡4・Low1 |
+| adv | 🟡3・Low5 → 🟡1・Low2 | 🟡4・Low5 → 🟡1・Low3 と 🟡 UNCONFIRMED 1 |
+
+- 報告された指摘はすべて `FIX_INDUCED` で、前回の指摘が未解決と報告された例はない(`PRIOR_FINDING` なし)。
+- 承認ラベルを返した層はない。全層に 🟡 または Low が残ったため。したがって「Info のみなら `APPROVE`」「🟢 の handoff のみなら `L1.5_APPROVE_WITH_NOTES`」の境界は今回も試験できていない。一方「未解決の Low があれば承認系ラベルを返さない」は全8本で守られた。Claude の e2e は Low のみで `REQUEST_CHANGES` を返した。
+
+### 両モデルが見つけた指摘(信頼度が高い)
+
+- `CreateOwnOrganizationPage` の完了画面が、`fetchCurrentUser` で利用者が staff に変わった後に、`AuthGuard` の「アクセス権がありません」表示に置き換わる。cr と adv が両モデルで発見した(qa / e2e は未発見)。修正側のテストは AuthContext をモックしていたため、この経路を検出できなかった。
+- `fetchCurrentUser` をミューテーションの外へ移したことで生じた再送信の窓(二重送信)。
+- 参加時のキャッシュ無効化のテストがない。
+- 手動の `updated_at` 更新が `DESIGN` の禁止事項に反する。
+- ブラウザ水準の E2E がない。
+
+### 片方だけが見つけた指摘
+
+- Codex のみ:
+  - テストコードの欠陥2件。`member-visibility-policy.spec` が `toThrow(日本語の文字列)` で検証しているが、`UserVisibleError.message` は固定ラベル `Displayable error`(クラスを読んで確認)。`InviteAcceptPage.visibilityNotice.test` が、`clearMocks:false` の vitest 設定下でモジュール単位の `vi.fn` の呼び出し履歴を共有している(設定を読んで確認)。どちらも実行はしていない。
+  - 画面仕様書の README が未更新。
+  - メールアドレスの同時変更によるロック昇格の疑い(UNCONFIRMED)。Claude の adv は「新しい窓はない」と判断しており、判断が割れたまま残る。
+- Claude のみ:
+  - `/me/visibility` が `updated_at` を更新せず、ETag 契約の別の書き込み経路になっている。
+  - `ProfileVisibilityControl.test` に、起こり得ない文言への否定アサーションが残り空振りしている。
+  - `fetchCurrentUser` の通知以外の失敗経路にテストがない。
+
+### 進め方
+
+- 全8本が同じガバナンス(SHA-256 `d627fe4c…`)を報告した。
+- Claude の e2e は、今回も作業コピーの `CLAUDE.md` を十分に読まなかった。
+
+### 学びと反映
+
+上記の「片方だけ」の指摘を、トリガー式の観点として `engineering-governance.md` の `XREV-1` 表に追加した(両 profile 同一)。
+
+- 既存の行に統合: ADV「不変条件」の行に ETag/版管理の契約の全書き込み経路の列挙を、ADV「行ロック」の行にロックモード変更と昇格・不一致の記録を含めた。
+- 新しい行: QA + CR(カスタムエラー型のマッチャー、共有モックのリセット)、QA(陳腐化した既存テスト、置き換えたプロバイダ)、E2E(ブラウザ経路の欠落)、CR + ADV(認可状態の更新とガード)、ADV(画面仕様書)。
+
+### 限界
+
+- PR 1件、各条件1回(n=1)。各側に見落としがあり、どちらのモデルが一般に優れているとは言えない。
+- 実行による検証はしていない。テストコードの欠陥2件のみ、クラスと設定を読んで確認した。それ以外の指摘は主張として扱う。
+- Claude 側のサブエージェントのトークンは合計約65万。Codex 側と利用枠の消費は NOT_MEASURED。
