@@ -18,7 +18,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
 SHA-256: `2a9593ae2d9fca9e5148c19734e61924448d83c50fe6d92d317dead0c185a6a1`
-Included sections: Pinned source and reconciliation, Source coverage and role scope, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Independent review and reconciliation, Evidence and reporting
+Included sections: Pinned source and reconciliation, Source coverage and role scope, OPS-1: Release, operability and data-lifecycle boundaries, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Independent review and reconciliation, Evidence and reporting
 
 
 ### Pinned source and reconciliation
@@ -53,6 +53,21 @@ The listed roles identify responsibility, not a new review chain or permission t
 | §14 トランザクションと整合性 (L2147) | Dependent writes, commit timing, or partial persistence | `hq-coder`, `data-platform`, matching backend consultant, assigned reviewer/QA/E2E owner |
 | §15 冪等性（リトライ・重複に耐える） (L2182) | Retry, duplicate requests, jobs, or external delivery | `hq-coder`, `data-platform`, matching framework consultant, assigned reviewer/QA/E2E owner |
 | §16 チェックリスト (L2218) | Final check of the topics actually changed | Current assigned owner only; retain unchecked obligations without claiming complete source compliance |
+
+
+### OPS-1: Release, operability and data-lifecycle boundaries
+
+This is a user-approved operating supplement, not a Nishiguchi quotation. Apply only a row whose trigger the change reaches, within the assigned role; without a trigger the row is NOT_APPLICABLE with a concrete reason. It is not a checklist for every PR.
+
+| Area | Trigger | Question to answer from source or supplied evidence | Default owner |
+| --- | --- | --- | --- |
+| Rollout and compatibility | Change to a public/internal API contract, persisted schema/data, event/message/queue payload, or config/flag consumed by other versions, clients or workers | During a mixed-version deploy (old client/new server, old worker/new producer) and after rollback, can either side break? Are migration/flag ordering (expand/contract) and a rollback path stated? | Adviser; data-platform for migrations |
+| Observability and operability | New/changed async work, retry, background job, external integration or error handling that could fail without a caller seeing it | Can an operator detect and diagnose the failure from existing logs/metrics/alerts and an existing meaningful identifier? Is the failure not swallowed, and is no sensitive data logged? Do not demand new metrics where an existing signal suffices | Adviser |
+| Performance and capacity | New/changed list, query, loop, batch or endpoint whose input or data volume can grow | Is there a concrete bound (pagination/limit/index/batch size) for the reachable cardinality? No speculation without a concrete failure path | Adviser; data-platform for query/persistence |
+| Dependencies and supply chain | Manifest, lockfile, CI, tooling or runtime image changes | Is a new dependency necessary versus an existing one? Do transitive/lockfile changes match the intent? Check version pinning, install scripts, and license/maintenance for a new package | Adviser; sec-arch for known-vulnerability or trust questions |
+| Personal/sensitive data lifecycle | New or changed personal/sensitive field, log, export, analytics or third-party transfer | Are classification and minimization defined, who can read it, is there a retention/deletion path, and is it kept out of logs, errors and URLs? | sec-arch; Adviser for the boundary |
+
+- Classification: a missing concrete project rule or an unverifiable fact is UNCONFIRMED, not a blocker. Findings default to Should; a Blocker needs a mandatory project rule or a concrete reachable failure path. Never invent cardinality, traffic or compliance requirements.
 
 
 ### User-directed execution permissions

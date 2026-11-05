@@ -42,6 +42,7 @@ CODEX_SECTIONS = {
     "engineering-review-core": {
         "governance": (
             "Pinned source and reconciliation", "Source coverage and role scope",
+            "OPS-1: Release, operability and data-lifecycle boundaries",
             "User-directed execution permissions", "Review objective and evidence", "Mandatory UI consistency and task usability",
             "Independent review and reconciliation", "Evidence and reporting",
         ),
