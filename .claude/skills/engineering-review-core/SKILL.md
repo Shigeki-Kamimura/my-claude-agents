@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `8d238fdefabc4ad21287e4d634defb23752dd43524d905f5bb3d9c123dc95a48`
+SHA-256: `d627fe4c40b1c383a7f371de6c2d0ad9a96200e72e691ccbe60c67f828f09d5d`
 Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Evidence and reporting
 
 

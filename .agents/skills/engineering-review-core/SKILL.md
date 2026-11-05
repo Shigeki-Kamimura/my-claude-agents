@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `8d238fdefabc4ad21287e4d634defb23752dd43524d905f5bb3d9c123dc95a48`
+SHA-256: `d627fe4c40b1c383a7f371de6c2d0ad9a96200e72e691ccbe60c67f828f09d5d`
 Included sections: Pinned source and reconciliation, Source coverage and role scope, OPS-1: Release, operability and data-lifecycle boundaries, XREV-1: Cross-model review calibration lenses, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Independent review and reconciliation, Evidence and reporting
 
 
@@ -83,9 +83,11 @@ This is a user-approved operating supplement, not a Nishiguchi quotation or a cl
 | QA | Lock/serialization claim | Check lock target binding, transaction vs root client, and call order |
 | QA | Newly added side effect | A failure-propagation test (rejects with the same error, no swallowed failure) |
 | QA | A value must not change; a mutation can fail | Preservation/negative controls for the unchanged value; a failed mutation produces no success-side effect |
+| QA | A coverage gap on a behavior the PR itself states as its central change (e.g. a new rejection branch, a new side effect, a new response field) | If no test can distinguish the new behavior from the old, the gap is at least 🟡. This is an evidence-based floor, not a rule to raise severity without evidence; gaps in peripheral controls, message text or secondary negative cases may be 🟢 Low. Record the reason in one line (see the ALL severity/class row) |
 | E2E | Evidence mixes HTTP, UI and mocked controllers | Separate the three. An earlier-branch rejection (401/403/404/428) is not proof of a new rejection branch; do not infer authentication (401) from authorization cases |
 | E2E | Operator and target differ | Distinguish operator vs target subject |
 | E2E | Declaring a coverage gap | Read the affected E2E files fully first |
+| E2E | A coverage gap on a behavior the PR itself states as its central change (e.g. a new rejection branch, a new side effect, a new response field) | If no test can distinguish the new behavior from the old, the gap is at least 🟡. This is an evidence-based floor, not a rule to raise severity without evidence; gaps in peripheral controls, message text or secondary negative cases may be 🟢 Low. Record the reason in one line (see the ALL severity/class row) |
 | CR | Raw SQL replaces an ORM call | Compare accepted input forms (e.g. ID notations the ORM/controller already accept) |
 | CR | A new error status or audit vocabulary | The status must reach the user-visible message mapper; audit values must match their consumer's normalizer |
 | CR | Changed behavior near comments or duplicated rules | Comments contradicting the change; the same invariant duplicated across services |

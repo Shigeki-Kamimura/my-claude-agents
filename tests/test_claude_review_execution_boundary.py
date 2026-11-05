@@ -121,6 +121,33 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertIn(text, contract)
         self.assertIn('"weight"(🔴|🟡|🟢)', read("tools/start_md_review.py"))
 
+    def test_claude_layers_must_read_xrev1_hnd1_and_project_rules(self):
+        # Claude側のプリロードにXREV-1/HND-1は含まれないため、4層の定義が判定前の実読を明記します。
+        clause = ("Before the first judgment, actually Read XREV-1 and HND-1 (HND-1 is a standing rule, "
+                  "not a triggered lens) from `.claude/knowledge/engineering-governance.md`, and the applicable "
+                  "project rule sections (e.g. the work copy's CLAUDE.md); do not rely only on this role "
+                  "definition, and state in `Rules loaded` what was read.")
+        for profile in (".claude", ".claude-company"):
+            for role, layer in (("test-qa", "QA"), ("e2e-qa", "E2E"),
+                                ("code-quality-reviewer", "CR"), ("adviser", "ADV")):
+                text = read(f"{profile}/agents/{role}.md")
+                self.assertEqual(1, text.count(clause), f"{profile}/{role}")
+                self.assertIn(f"Apply the XREV-1 {layer} lenses only when triggered. {clause}", text)
+
+    def test_xrev1_central_behavior_gap_floor_is_pinned(self):
+        floor = ("If no test can distinguish the new behavior from the old, the gap is at least 🟡. "
+                 "This is an evidence-based floor, not a rule to raise severity without evidence; gaps in "
+                 "peripheral controls, message text or secondary negative cases may be 🟢 Low.")
+        for profile in (".claude", ".claude-company"):
+            governance = read(f"{profile}/knowledge/engineering-governance.md")
+            for layer in ("QA", "E2E"):
+                row = next(line for line in governance.splitlines()
+                           if line.startswith(f"| {layer} | A coverage gap on a behavior the PR itself states"))
+                self.assertIn(floor, row)
+        # Codex側は再生成されたプリロード経由で受け取り、Claude側の事前読込には含まれません。
+        self.assertEqual(2, read(".agents/skills/engineering-review-core/SKILL.md").count(floor))
+        self.assertNotIn(floor, read(".claude/skills/engineering-review-core/SKILL.md"))
+
     def test_approval_label_boundary_open_low_never_approves(self):
         # 未解決のLow(DEFER指定を含む)は承認系ラベルを許さず、Infoだけなら清浄な承認です。
         for profile in (".claude", ".claude-company"):
