@@ -73,3 +73,6 @@
 - HND-1: ①ソース証拠(path:line)で欠陥・仕様不一致を示せるなら、他層の領域でも自層の指摘(最低🟢 Low)にして修正担当を明記する。②handoffは自層の証拠で確定できないこと(実行・他層の判断・製品判断)に限り、必ず🔴/🟡/🟢の重みと一行理由を付け、担当の解消・撤回証拠なしに下げない。
 - ③🟢 Low の1層1回5件の上限は維持する。超過分は🟢重みの handoff として追跡し、Info にしない。④🟡/🔴の未解決 handoff がある間は、その層は `APPROVE` 系(`L1.5_APPROVE`/`L1.5_APPROVE_WITH_NOTES`/L2 `APPROVE`/workflow `decision: APPROVE`)を返さず、`NEEDS_CONFIRMATION` で止める。🟢のみなら従来どおり。
 - 本文は governance の `XREV-1` 内 `HND-1`。ツール側(`tools/review_receipts.py`)では、新規 handoff の `weight` 必須、未解決行の重み引下げ拒否、🟡/🔴未解決時の承認拒否を機械検証する。
+- 利用者の判断(2026-11-05・承認ラベルの境界): Info だけが残る(未解決の指摘も handoff もない)場合は清浄な承認(CR は `L1.5_APPROVE`、ADV は `APPROVE`)。`L1.5_APPROVE_WITH_NOTES`(CR のみ)は、未解決の指摘がなく、残りが根拠付きで他層へ割り当てた🟢重みの handoff だけの場合に限る。ADV に notes ラベルは設けない。
+- 未解決の🟢 Low は(`DEFER` と分類していても)承認系ラベルを返さず、`L1.5_REQUEST_CHANGES` / `REQUEST_CHANGES` にする。Low は追跡・修正・再レビューする指摘であり、`DEFER` は修復サイクル内の修正の優先度・時期を表すだけである。ツール側(`validate()`)は承認時に `open_item_ids` が空であることを既に要求しており、変更しない。
+- Info は一度 Info と分類したら Low に格上げ・付け替えしない。分類は初回報告の証拠で1回だけ行い、証拠付きの欠陥・不一致は Info にしない(上限超過分を🟢 handoff にするのは Info の格上げではない)。修正で新たに生じた Low は新規の分類で `Origin: FIX_INDUCED` とする(Origin と再レビュー上限は従来どおり)。

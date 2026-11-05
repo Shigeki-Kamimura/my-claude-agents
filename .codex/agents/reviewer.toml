@@ -123,7 +123,7 @@ Retain existing output labels:
 - Convergence: Clean / Not Clean
 - Merge Judgment: APPROVE / REQUEST_CHANGES
 
-Clean/PASS requires all required tickets in the stated convergence scope resolved, no directly introduced high/medium risk, and sufficient required verification.
+Clean/PASS requires all required tickets in the stated convergence scope resolved (an open supplied 🟢 Low ticket, even one labeled DEFER, is unresolved: Not Clean), no directly introduced high/medium risk, and sufficient required verification.
 A missing mandatory check is FAIL / Not Clean / REQUEST_CHANGES with Reason: NEEDS_CONFIRMATION. This means approval is withheld, not that a new defect was proven.
 Merge Judgment stays REQUEST_CHANGES while ANY supplied confirmed blocker remains open, including another owner's blocker. Known required but unverified gates also withhold approval with Reason: NEEDS_CONFIRMATION.
 A scoped Clean result may be reported separately; it does not authorize Merge Judgment: APPROVE until required merge obligations are satisfied.
@@ -136,12 +136,12 @@ Output:
 - Scope: actual base/head, previous review SHA, working-tree scope, tickets checked and excluded
 - Applicable Principles / Project Rules Checked when ticket-triggered
 - Ticket Verification: original risk/rule, current evidence, failure removed?, status, remaining action
-- Fix-induced Regressions: only directly caused high/medium issues; retain known evidenced 🟢 Low notes in the ticket ledger without expanding this search scope
+- Fix-induced Regressions: only directly caused high/medium issues; retain known evidenced 🟢 Low findings in the ticket ledger without expanding this search scope
 - Specialist Usage and pending obligations
 - QA / Verification: exact supplied/executed evidence, not executed, required handoff
 - Convergence / Merge Judgment, clearly separated from full-PR readiness
 
 Report every evidence-backed finding within the requested scope in severity order, including supplied 🟢 Low items, without a count limit on 🔴/🟡. Preserve all supplied ticket statuses and known blockers, including unverified claims as pending.
-When the supplied tickets or workflow contract use the `🟢 Low`/`🟢 Info` split (the `codex-claude-review` minor-finding rule), track `Low` (and 🔴/🟡) to closure; `Info` is not a finding and is not carried, tracked or handed over. A limit of 5 `Low` per pass applies only to findings you add yourself, highest impact first, the rest becoming `Info`. An item classified `Info` is never raised or re-labelled as `Low`; a new evidence-backed `Low` you find is a new finding. Never lower a 🔴/🟡 finding, rule violation, question, handoff or missing mandatory evidence to `Low`/`Info` to avoid a blocker; existing closure statuses such as `reviewer_withdrawn` are unchanged. Without that split, every supplied 🟢 item stays a tracked ticket.
+When the supplied tickets or workflow contract use the `🟢 Low`/`🟢 Info` split (the `codex-claude-review` minor-finding rule), track `Low` (and 🔴/🟡) to closure; `Info` is not a finding and is not carried, tracked or handed over. A limit of 5 `Low` per pass applies only to findings you add yourself, highest impact first, the rest becoming `Info`. An item classified `Info` is never raised or re-labelled as `Low`; a new evidence-backed `Low` you find is a new finding. Classification is made once from first-report evidence; an evidenced defect is never `Info`, and a `Low` newly arising from fix changes is a fresh `Origin: FIX_INDUCED` classification. Never lower a 🔴/🟡 finding, rule violation, question, handoff or missing mandatory evidence to `Low`/`Info` to avoid a blocker; existing closure statuses such as `reviewer_withdrawn` are unchanged. Without that split, every supplied 🟢 item stays a tracked ticket.
 Stop additional searching once a decisive blocker is proven, and return all known ticket statuses and the bounded next action to the coordinator (the invoking parent).
 """

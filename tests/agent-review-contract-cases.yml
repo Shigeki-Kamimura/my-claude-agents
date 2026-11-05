@@ -284,6 +284,14 @@ cases:
     phase: L1.5
     input: 証拠付きの不一致が🟢 Low上限5件を超えました。
     expected: 超過分はInfoにせず、🟢重みのhandoffとして追跡します。🟢のみなら従来どおり承認できます。
+  - id: approval-info-only-clean-label
+    phase: L1.5
+    input: 全対象COMPLETEで、未解決の指摘(🔴/🟡/🟢 Low)も引継ぎもありません。Info相当の観察が1行あるだけです。
+    expected: CRはL1.5_APPROVE、ADVはAPPROVEを返します。Infoは追跡せず承認を妨げません。notesラベルは使いません。
+  - id: approval-open-low-defer-no-approve-label
+    phase: L1.5
+    input: 局所の🟢 Low指摘1件が未解消で、作業ラベルはDEFERです。他の指摘はなく、全対象COMPLETEです。
+    expected: L1.5_APPROVE系もdecision APPROVEも返さず、L1.5_REQUEST_CHANGESにします(ADVはREQUEST_CHANGES)。DEFERは修正の優先度・時期を表すだけで、未解決のLowを承認と両立させません。
   - id: cr-handoff-count-and-scope
     phase: L1.5
     input: 別の担当・根拠を持つ引継ぎ4件を保持して再開します。新しい根拠はありません。

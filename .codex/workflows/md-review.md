@@ -94,6 +94,8 @@ Git読取MCPと後述のBacklog読取だけを追加します。
 
 - 指摘は既存定義の🔴重、🟡中、🟢Lowです。Infoは本文にもMDにも記載しません。
   Lowは既存の1層1回最大5件を維持します。InfoをLowへ付け替えません。
+  分類は初回報告時の証拠で1回だけ行います。証拠付きの欠陥・不一致はInfoにしません(上限超過分を🟢重みのhandoffにするのは、Infoの格上げではありません)。
+  修正で新たに生じたLowは新規の分類で、Origin: FIX_INDUCEDです。既存のOriginと再レビュー上限は変えません。
   重大な指摘、必須規則、質問、handoff、証拠不足を件数で落としません。
 - 指摘にID、担当、箇所、到達条件・因果・影響、または必須規則の根拠を付けます。
   「起票」はMD内の指摘登録です。Backlogへの課題作成は別の明示指示が必要です。
@@ -157,6 +159,8 @@ Git読取MCPと後述のBacklog読取だけを追加します。
   statusはreviewer_confirmed_fixedまたはreviewer_withdrawnです。黙ってIDを消して承認しません。
   handoffに依存しない層承認では、各handoffにdepends_on_for_approval=falseを明記し、かつ重みが🟢である必要があります。
   🟡/🔴の未解決handoffが1件でも残る間は、native承認ラベルとdecision APPROVEを返しません。既存の非承認ラベルとNEEDS_CONFIRMATIONで止めます。
+  未解決のLowが1件でも残る間も、DEFER指定を含め、native承認ラベル(L1.5_APPROVE/L1.5_APPROVE_WITH_NOTES/L2のAPPROVE)とdecision APPROVEを返しません。既存の非承認ラベル(L1.5_REQUEST_CHANGES/REQUEST_CHANGES)にします。
+  Infoだけが残る場合(未解決の指摘もhandoffもなし)は、清浄なnative承認ラベルです。L1.5_APPROVE_WITH_NOTESは、未解決の指摘がなく残りが根拠付きで他層へ割り当てた🟢重みhandoffだけの場合に限ります。L2に同等のnotesラベルはありません。
   最終引渡しに必要なhandoffの解消条件は維持します。
   open_item_idsには、このphaseが解消責務を持つ局所指摘のIDを記します。
   HND-1で自層の指摘にした証拠付きの不一致は、修正担当が他層でも、この層のopen_item_idsに入れます。この層が追跡・再レビュー・解消確認を行います。

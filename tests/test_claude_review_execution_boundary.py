@@ -121,6 +121,26 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertIn(text, contract)
         self.assertIn('"weight"(🔴|🟡|🟢)', read("tools/start_md_review.py"))
 
+    def test_approval_label_boundary_open_low_never_approves(self):
+        # 未解決のLow(DEFER指定を含む)は承認系ラベルを許さず、Infoだけなら清浄な承認です。
+        for profile in (".claude", ".claude-company"):
+            governance = read(f"{profile}/knowledge/engineering-governance.md")
+            self.assertIn("Approval-label boundary", governance)
+            self.assertIn("allows no approval-class label", governance)
+            self.assertIn("Origin: FIX_INDUCED", governance)
+            cr = read(f"{profile}/agents/code-quality-reviewer.md")
+            self.assertIn("any 🟢 Low finding is open (including one labeled DEFER)", cr)
+            self.assertNotIn("non-blocking notes", cr)
+            self.assertIn("any open owned 🟢 Low finding", read(f"{profile}/agents/adviser.md"))
+        cr_toml = read(".codex/agents/code-quality-reviewer.toml")
+        self.assertIn("any 🟢 Low finding is open (including one labeled DEFER)", cr_toml)
+        self.assertNotIn("non-blocking notes", cr_toml)
+        self.assertIn("any open owned 🟢 Low finding", read(".codex/agents/adviser.toml"))
+        self.assertIn("DEFER指定を含め", read(".codex/workflows/md-review.md"))
+        cases = read("tests/agent-review-contract-cases.yml")
+        for case in ("approval-info-only-clean-label", "approval-open-low-defer-no-approve-label"):
+            self.assertEqual(cases.count("  - id: " + case + "\n"), 1)
+
     def test_injected_self_definition_reuse_keeps_missing_rules_pending(self):
         for profile in (".claude", ".claude-company"):
             governance = read(f"{profile}/knowledge/engineering-governance.md")
