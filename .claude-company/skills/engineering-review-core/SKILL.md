@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `cbfa6575d2069d5957d8130ce1988b5c313c564caf9225e8c61b49d5988b7fde`
+SHA-256: `2a9593ae2d9fca9e5148c19734e61924448d83c50fe6d92d317dead0c185a6a1`
 Included sections: Core rules for Claude preload, Claude role-scoped intake, Pinned source and reconciliation, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Evidence and reporting
 
 
@@ -106,6 +106,7 @@ Code-observable checks for those questions (inspection aids; apply only the rows
 | Can the user recover from an error? | On failure the user's input is retained, and the message states the cause and the next action. |
 | Is it consistent? | Shared components/tokens are used, and terms/labels for the same operation match across screens. |
 | Is it operable? | Interactive elements use appropriate element types (button/a/input), have accessible names, are keyboard-reachable with visible focus, and have usable target size. |
+| Is it readable and localizable? | Text legibility follows the baseline tokens (size/contrast) where defined; user-visible strings go through the project's i18n/copy mechanism when one exists, without hard-coded concatenated sentences; unobservable rendering stays UNCONFIRMED. |
 
 These rows translate the questions into checks; they do not prove human comfort, and unobserved rendering/interaction stays UNCONFIRMED under the evidence rules below. A reviewer (CR/ADV) treats HQ's reached-state list as supplied evidence, not as the review scope: independently derive the reachable states from the requirement and source, and report any state the list omits.
 

@@ -128,6 +128,20 @@ These supplements were adopted by the user on 2026-10-29. They clarify applicati
 - Preserve unexpected failures and their cause. A status or catch boundary does not establish an unobserved cause.
 - Source context: [guideline §10.1](https://github.com/Shigeki-Kamimura/coding-guidelines/blob/4f2f34ea149a52869a551acbcf17580da357e96f/README.md#L1968-L2009). Technical basis: Fielding, Nottingham and Reschke, [RFC 9110 §15.5.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.2) and [§15.5.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.4), 2022.
 
+### OPS-1: Release, operability and data-lifecycle boundaries
+
+This is a user-approved operating supplement, not a Nishiguchi quotation. Apply only a row whose trigger the change reaches, within the assigned role; without a trigger the row is NOT_APPLICABLE with a concrete reason. It is not a checklist for every PR.
+
+| Area | Trigger | Question to answer from source or supplied evidence | Default owner |
+| --- | --- | --- | --- |
+| Rollout and compatibility | Change to a public/internal API contract, persisted schema/data, event/message/queue payload, or config/flag consumed by other versions, clients or workers | During a mixed-version deploy (old client/new server, old worker/new producer) and after rollback, can either side break? Are migration/flag ordering (expand/contract) and a rollback path stated? | Adviser; data-platform for migrations |
+| Observability and operability | New/changed async work, retry, background job, external integration or error handling that could fail without a caller seeing it | Can an operator detect and diagnose the failure from existing logs/metrics/alerts and an existing meaningful identifier? Is the failure not swallowed, and is no sensitive data logged? Do not demand new metrics where an existing signal suffices | Adviser |
+| Performance and capacity | New/changed list, query, loop, batch or endpoint whose input or data volume can grow | Is there a concrete bound (pagination/limit/index/batch size) for the reachable cardinality? No speculation without a concrete failure path | Adviser; data-platform for query/persistence |
+| Dependencies and supply chain | Manifest, lockfile, CI, tooling or runtime image changes | Is a new dependency necessary versus an existing one? Do transitive/lockfile changes match the intent? Check version pinning, install scripts, and license/maintenance for a new package | Adviser; sec-arch for known-vulnerability or trust questions |
+| Personal/sensitive data lifecycle | New or changed personal/sensitive field, log, export, analytics or third-party transfer | Are classification and minimization defined, who can read it, is there a retention/deletion path, and is it kept out of logs, errors and URLs? | sec-arch; Adviser for the boundary |
+
+- Classification: a missing concrete project rule or an unverifiable fact is UNCONFIRMED, not a blocker. Findings default to Should; a Blocker needs a mandatory project rule or a concrete reachable failure path. Never invent cardinality, traffic or compliance requirements.
+
 ### Calibration examples
 
 Use these examples when evaluating whether agents apply the adopted rules correctly, not as a new test/review gate for each task. Compare the agent's judgment and evidence with the expected decision; record the agent, rule revision and actual result when run. Static configuration checks do not count as agent execution. Include both missed defects and unsupported findings; more findings is not a success metric.
@@ -189,6 +203,7 @@ Code-observable checks for those questions (inspection aids; apply only the rows
 | Can the user recover from an error? | On failure the user's input is retained, and the message states the cause and the next action. |
 | Is it consistent? | Shared components/tokens are used, and terms/labels for the same operation match across screens. |
 | Is it operable? | Interactive elements use appropriate element types (button/a/input), have accessible names, are keyboard-reachable with visible focus, and have usable target size. |
+| Is it readable and localizable? | Text legibility follows the baseline tokens (size/contrast) where defined; user-visible strings go through the project's i18n/copy mechanism when one exists, without hard-coded concatenated sentences; unobservable rendering stays UNCONFIRMED. |
 
 These rows translate the questions into checks; they do not prove human comfort, and unobserved rendering/interaction stays UNCONFIRMED under the evidence rules below. A reviewer (CR/ADV) treats HQ's reached-state list as supplied evidence, not as the review scope: independently derive the reachable states from the requirement and source, and report any state the list omits.
 

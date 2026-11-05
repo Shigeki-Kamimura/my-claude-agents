@@ -102,6 +102,13 @@ Use only the rows triggered by the change:
 | Scale-out | Authoritative local state, cron/job ownership, restart durability, multi-instance access. Is there a lock/leader/dedicated worker or duplicate-safe processing? | data-platform |
 | Lifecycle | Allowed source/target/terminal states, repeated/concurrent transitions, actor, audit/effects. | Adviser owns meaning; security/data own authorization/atomicity |
 | Verification | Evidence needed for the changed contract/failure path; do not infer it from file existence or total test count. | test-qa for unit/service/controller; e2e-qa for browser/API/module-boundary flows |
+| Rollout/compatibility | Contract, schema/data, payload or flag consumed by other versions. In a mixed-version deploy and after rollback, can either side break; are expand/contract ordering and a rollback path stated? | data-platform for migrations |
+| Observability | New/changed async, retry, job, integration or error handling. Can an operator detect and diagnose a failure from existing signals and an existing identifier, without swallowing it or logging sensitive data? | Adviser (no additional owner) |
+| Performance/capacity | New/changed list, query, loop, batch or endpoint with growing input. Is there a concrete bound (pagination/limit/index/batch size) for the reachable cardinality? | data-platform for query/persistence |
+| Dependencies | Manifest/lockfile/CI/tooling/image change. Is it necessary versus an existing dependency, and do transitive/lockfile scope, pinning, install scripts and license/maintenance match intent? | sec-arch for vulnerability/trust |
+| Personal data lifecycle | New/changed personal or sensitive field, log, export, analytics or third-party transfer. Are classification/minimization, readers, retention/deletion and non-exposure via logs/errors/URLs established? | sec-arch |
+
+Apply governance OPS-1 for the five rows above (Rollout/compatibility through Personal data lifecycle); findings default to Should, and unverifiable facts stay UNCONFIRMED.
 
 Do not flag per-request memoization, disposable temporary files, or correctness-independent caches as durable-state failures.
 Correlation IDs are required findings only where changed async/service/retry boundaries cannot otherwise be joined using an existing meaningful identifier.
