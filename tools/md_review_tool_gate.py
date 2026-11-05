@@ -11,7 +11,7 @@ spec.loader.exec_module(launcher)
 
 
 def main():
-    allowed = set(launcher.TOOLS) | {"ToolSearch", "mcp__md_review__git_diff"} | {"mcp__backlog__" + name for name in launcher.BACKLOG_READ}
+    allowed = set(launcher.TOOLS) | {"ToolSearch"} | {"mcp__md_review__" + name for name in launcher.MD_TOOLS} | {"mcp__backlog__" + name for name in launcher.BACKLOG_READ}
     try:
         event = json.load(sys.stdin)
         if event.get("tool_name") not in allowed:

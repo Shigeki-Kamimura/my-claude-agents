@@ -252,12 +252,203 @@ print(json.dumps({"type":"item.completed","item":{"type":"collab_tool_call","too
         state = json.loads((self.run / "state.json").read_text())
         self.assertEqual("APPROVED", state["phases"]["cr"]["status"])
         current_round = self.run / state["phases"]["cr"]["latest_attempt"]
-        self.assertEqual(f"{self.run / 'review.md'} を基に再レビューしてください。\n", (current_round / "request.txt").read_text())
+        self.assertTrue((current_round / "request.txt").read_text().startswith(f"{self.run / 'review.md'} を基に再レビューしてください。\n<<BRIEFING sha256="))
         self.assertEqual(["code.txt"], json.loads((current_round / "comparison.json").read_text())["changed_paths"])
         self.assertIn("-working", review.frozen_diff(current_round, "delta"))
+        context = json.loads((current_round / "context.json").read_text())
+        self.assertEqual(["current"], context["request"]["reading_plan"]["required_sections"])
+        self.assertEqual(["previous_result", "summary"], context["request"]["reading_plan"]["inlined_sections"])
+        self.assertFalse(context["request"]["reading_plan"]["retained_owner_context"])
+        self.assertIn("User request:", review.review_context(current_round, "summary")["text"])
+        self.assertIn("CR-01", review.review_context(current_round, "previous_result")["text"])
         journal = (self.run / "review.md").read_text()
         self.assertIn(original_round, journal)
         self.assertNotIn('"argv"', journal)
+
+    FAKE_CLAUDE = '''#!/usr/bin/python3
+import json,os,re,sys
+from pathlib import Path
+prompt=sys.stdin.read()
+if os.environ.get("FAKE_ARGV"):
+    Path(os.environ["FAKE_ARGV"]).write_text(json.dumps(sys.argv))
+if os.environ.get("FAKE_MARKER"):
+    Path(os.environ["FAKE_MARKER"]).write_text("started")
+md=Path(prompt.split(" を基に",1)[0])
+request=json.loads(re.search(r"```json\\n(.*?)\\n```",md.read_text(),re.S)[1])
+snapshot=json.loads(Path(request["snapshot_file"]).read_text())
+handoff={"id":"E2E-H1","owner":"e2e-qa","question":"full original question","evidence":"full original evidence","status":"open","depends_on_for_approval":False}
+def block(handoffs):
+    result={"workflow_id":"codex-claude-review","phase":request["phase"],"reviewer":request["reviewer"],"snapshot_id":snapshot["snapshot_id"],"native_verdict":"L1.5_REQUEST_CHANGES","coverage":"COMPLETE","decision":"REQUEST_CHANGES","open_item_ids":["CR-01"],"questions":[],"handoffs":handoffs,"invocation_evidence":{"platform":"Claude Code","model":"fake-fixture-model","note":"child wrote this"}}
+    return "```workflow-result\\n"+json.dumps(result)+"\\n```\\n"
+mode=os.environ["FAKE_MODE"]
+child_text="CHILD FINAL\\n"+block([handoff]) if mode!="both_lack" else "CHILD FINAL without block"
+parent_text={"paraphrase":"I summarise: approved with no block.","both_lack":"paraphrase","altered":"PARENT\\n"+block([{**handoff,"question":"short"}]),"ok":"PARENT\\n"+block([handoff])}[mode]
+child=Path(os.environ["FAKE_CHILD"])
+child.parent.mkdir(parents=True,exist_ok=True)
+with child.open("a") as f: f.write(json.dumps({"type":"assistant","message":{"content":[{"type":"text","text":child_text}]}})+"\\n")
+print(json.dumps({"message":{"content":[{"type":"tool_use","id":"c1","name":"Agent","input":{"subagent_type":"code-quality-reviewer"}}]}}))
+print(json.dumps({"message":{"content":[{"type":"tool_result","tool_use_id":"c1"}]},"toolUseResult":{"agentId":"child-X"}}))
+print(json.dumps({"type":"result","session_id":"parent-X","result":parent_text}))
+'''
+
+    def claude_round(self, mode, marker=None, code=None):
+        if not (self.run / "state.json").exists() and not (self.run / "review.md").exists():
+            self.init()
+        fakebin = self.temp / "bin"
+        fakebin.mkdir(exist_ok=True)
+        fake = fakebin / "claude"
+        fake.write_text(self.FAKE_CLAUDE)
+        fake.chmod(0o700)
+        os.environ["CLAUDE_CONFIG_DIR"] = str(self.temp / "cfg")
+        self.addCleanup(os.environ.pop, "CLAUDE_CONFIG_DIR", None)
+        transcript = receipts.claude_transcript(self.project, "parent-X")
+        env = {**os.environ, "PATH": str(fakebin) + ":" + os.environ["PATH"], "CLAUDE_CONFIG_DIR": str(self.temp / "cfg"),
+               "FAKE_MODE": mode, "FAKE_CHILD": str(transcript.with_suffix("") / "subagents/agent-child-X.jsonl")}
+        if marker:
+            env["FAKE_MARKER"] = str(marker)
+        transcript.parent.mkdir(parents=True, exist_ok=True)
+        transcript.touch()
+        self.cli("start_md_review.py", "--run-dir", self.run, "--phase", "cr", code=2 if code is None else code, env=env)
+        records = sorted(self.run.glob("*/execution.json"), key=lambda p: p.stat().st_mtime_ns)
+        return env, records, json.loads(records[-1].read_text()) if records else None
+
+    def test_parent_paraphrase_uses_child_final_message_verbatim(self):
+        _, records, meta = self.claude_round("paraphrase", code=0)
+        self.assertEqual("child_verbatim", meta["result_source"])
+        self.assertEqual("REVIEWED", meta["status"])
+        round_dir = records[-1].parent
+        self.assertTrue((round_dir / "result.md").read_text().startswith("CHILD FINAL"))
+        self.assertIn("I summarise", (round_dir / "parent-result.md").read_text())
+        state = json.loads((self.run / "state.json").read_text())
+        self.assertEqual("note", next(k for k in state["phases"]["cr"]["last_valid"]["result"]["invocation_evidence"] if k == "note"))
+        self.assertEqual("full original question", state["handoffs"]["E2E-H1"]["question"])
+
+    def test_altered_parent_handoff_is_replaced_by_child_verbatim(self):
+        _, _, meta = self.claude_round("altered", code=0)
+        self.assertEqual("child_verbatim", meta["result_source"])
+        state = json.loads((self.run / "state.json").read_text())
+        self.assertEqual("full original question", state["handoffs"]["E2E-H1"]["question"])
+
+    def test_parent_with_valid_block_stays_parent_sourced(self):
+        _, _, meta = self.claude_round("ok", code=0)
+        self.assertEqual("parent", meta["result_source"])
+
+    def test_both_without_block_stay_blocked(self):
+        _, _, meta = self.claude_round("both_lack")
+        self.assertEqual("BLOCKED", meta["status"])
+        self.assertIn("workflow-result", meta["validation_error"])
+        self.assertNotEqual("child_verbatim", meta.get("result_source"))
+
+    def test_foreign_child_resume_starts_no_model(self):
+        env, records, _ = self.claude_round("ok", code=0)
+        state_file = self.run / "state.json"
+        state = json.loads(state_file.read_text())
+        owner = state["phases"]["cr"]["owner"]
+        state["phases"]["qa"] = {"status": "REVIEWED", "owner": dict(owner)}
+        state_file.write_text(json.dumps(state))
+        marker = self.temp / "started"
+        env["FAKE_MARKER"] = str(marker)
+        stopped = self.cli("start_md_review.py", "--run-dir", self.run, "--phase", "cr", code=2, env=env)
+        self.assertIn("別phase", stopped.stderr)
+        self.assertFalse(marker.exists())
+        self.assertEqual(len(records), len(list(self.run.glob("*/execution.json"))))
+
+    def second_round(self, gap, threshold=300, strip=False, tamper=False):
+        """1回目後、前回終了からgap秒後に同phaseを再実行します（プロセス内、時計は差し替え）。"""
+        import datetime
+        env, records, _ = self.claude_round("ok", code=0)
+        first = records[-1]
+        meta = json.loads(first.read_text())
+        self.assertIn("finished_at", meta)
+        if strip:
+            del meta["finished_at"]
+        else:
+            meta["finished_at"] = "2026-01-01T00:00:00+00:00"
+        first.write_text(json.dumps(meta))
+        if tamper:
+            state = json.loads((self.run / "state.json").read_text())
+            state["phases"]["cr"]["owner"]["tool_contract_sha256"] = "changed"
+            (self.run / "state.json").write_text(json.dumps(state))
+        argv_file = self.temp / "argv.json"
+        env["FAKE_ARGV"] = str(argv_file)
+        now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc) + datetime.timedelta(seconds=gap)
+        args = ["start_md_review.py", "--run-dir", str(self.run), "--phase", "cr", "--fresh-after-seconds", str(threshold)]
+        with patch.dict(os.environ, env), patch.object(sys, "argv", args), patch.object(launcher, "utc_now", lambda: now):
+            code = launcher.main()
+        newest = max((p for p in self.run.glob("*/execution.json") if p != first), key=lambda p: p.stat().st_mtime_ns, default=None)
+        argv = json.loads(argv_file.read_text()) if argv_file.exists() else None
+        return code, argv, json.loads(newest.read_text()), newest.parent
+
+    def test_gap_over_threshold_starts_fresh_owner_without_inheriting_approval(self):
+        code, argv, meta, round_dir = self.second_round(301)
+        self.assertEqual(0, code)
+        self.assertNotIn("--resume", argv)
+        self.assertEqual("fresh_after_ttl", meta["owner_continuity"]["mode"])
+        self.assertEqual(301.0, meta["owner_continuity"]["gap_seconds"])
+        ids = {"parent_session_id": "parent-X", "reviewer_id": "child-X"}
+        self.assertEqual(ids, meta["owner_continuity"]["previous_owner"])
+        self.assertEqual(ids, meta["owner_continuity"]["new_owner"])
+        self.assertFalse(meta["resume"])
+        briefing = (round_dir / "briefing.md").read_text()
+        for name in ("summary", "previous_result"):
+            self.assertIn(f"<<SECTION {name} ", briefing)
+        self.assertIn("CR-01", briefing)
+        self.assertIn(launcher.FRESH_OWNER_NOTICE, briefing)
+        context = json.loads((round_dir / "context.json").read_text())
+        self.assertFalse(context["request"]["reading_plan"]["retained_owner_context"])
+        self.assertEqual("fresh_after_ttl", context["request"]["owner_continuity"]["mode"])
+        phase = json.loads((self.run / "state.json").read_text())["phases"]["cr"]
+        self.assertEqual(ids, phase["previous_owner"])
+        self.assertEqual([ids], phase["previous_owners"])
+        self.assertEqual(["CR-01"], phase["last_valid"]["result"]["open_item_ids"])
+        self.assertIn("fresh_after_ttl", (self.run / "review.md").read_text())
+
+    def test_gap_within_threshold_resumes_as_before(self):
+        code, argv, meta, round_dir = self.second_round(300)
+        self.assertEqual(0, code)
+        self.assertEqual("parent-X", argv[argv.index("--resume") + 1])
+        self.assertEqual("resumed", meta["owner_continuity"]["mode"])
+        context = json.loads((round_dir / "context.json").read_text())
+        self.assertTrue(context["request"]["reading_plan"]["retained_owner_context"])
+        self.assertNotIn(launcher.FRESH_OWNER_NOTICE, (round_dir / "briefing.md").read_text())
+
+    def test_unknown_timestamp_resumes_without_guessing(self):
+        code, argv, meta, _ = self.second_round(99999, strip=True)
+        self.assertIn("--resume", argv)
+        self.assertEqual("resumed_gap_unknown", meta["owner_continuity"]["mode"])
+        self.assertIsNone(meta["owner_continuity"]["gap_seconds"])
+
+    def test_threshold_zero_disables_fresh_owner(self):
+        code, argv, meta, _ = self.second_round(99999, threshold=0)
+        self.assertIn("--resume", argv)
+        self.assertEqual("resumed_ttl_disabled", meta["owner_continuity"]["mode"])
+
+    def test_preflight_mismatch_stays_blocked_even_when_gap_is_long(self):
+        marker = self.temp / "never"
+        try:
+            self.second_round(99999, tamper=True)
+        except Exception:
+            pass
+        self.assertFalse((self.temp / "argv.json").exists())
+        self.assertEqual(1, len(list(self.run.glob("*/execution.json"))))
+
+    def test_print_briefing_reports_continuity_without_writing(self):
+        import datetime
+        self.claude_round("ok", code=0)
+        first = next(self.run.glob("*/execution.json"))
+        meta = json.loads(first.read_text())
+        meta["finished_at"] = "2026-01-01T00:00:00+00:00"
+        first.write_text(json.dumps(meta))
+        now = datetime.datetime(2026, 1, 1, 0, 20, tzinfo=datetime.timezone.utc)
+        args = ["start_md_review.py", "--run-dir", str(self.run), "--phase", "cr", "--print-briefing"]
+        import io
+        out = io.StringIO()
+        with patch.object(sys, "argv", args), patch.object(launcher, "utc_now", lambda: now), patch("sys.stdout", out):
+            launcher.main()
+        report = json.loads(out.getvalue().rsplit("---\n", 1)[1])
+        self.assertEqual("fresh_after_ttl", report["owner_continuity"]["mode"])
+        self.assertIn(launcher.FRESH_OWNER_NOTICE, out.getvalue())
+        self.assertEqual(1, len(list(self.run.glob("*/execution.json"))))
 
 
 if __name__ == "__main__":

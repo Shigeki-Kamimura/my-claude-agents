@@ -126,7 +126,7 @@ class MDReviewTests(unittest.TestCase):
         result = subprocess.run([sys.executable, "-I", "-B", str(ROOT / "tools/md_review.py"), "--serve", str(target)],
                                 input="\n".join(map(json.dumps, messages)) + "\n", capture_output=True, text=True, check=True)
         responses = [json.loads(line) for line in result.stdout.splitlines()]
-        self.assertEqual(["git_diff"], [t["name"] for t in responses[1]["result"]["tools"]])
+        self.assertEqual(["git_diff", "review_context"], [t["name"] for t in responses[1]["result"]["tools"]])
         self.assertIn("+branch", responses[2]["result"]["content"][0]["text"])
         self.assertIn("error", responses[3])
         self.assertIn("error", responses[4])
@@ -156,7 +156,7 @@ class MDReviewTests(unittest.TestCase):
         self.assertEqual(before, self.git("status", "--porcelain").stdout)
 
     def test_tool_gate_allows_read_and_rejects_backlog_mutations_and_bash(self):
-        for name, code in [("Read", 0), ("mcp__md_review__git_diff", 0), ("mcp__backlog__get_issue", 0),
+        for name, code in [("Read", 0), ("mcp__md_review__git_diff", 0), ("mcp__md_review__review_context", 0), ("mcp__backlog__get_issue", 0),
                            ("mcp__backlog__add_issue", 2), ("mcp__backlog__delete_issue", 2),
                            ("Bash", 2), ("Write", 2), ("mcp__other__get_issue", 2)]:
             result = subprocess.run([sys.executable, "-I", "-B", str(ROOT / "tools/md_review_tool_gate.py")],

@@ -2,6 +2,7 @@
 """指定した1層だけを一度実行し、終了した応答をMDへ追記します。"""
 
 import argparse
+import datetime
 import fcntl
 import importlib.util
 import json
@@ -23,6 +24,7 @@ receipt_spec.loader.exec_module(receipts)
 BACKLOG_READ = ("get_issue", "get_issue_comments", "get_document", "get_document_comments",
                 "get_project", "get_wiki", "get_wikis", "get_documents", "get_document_tree")
 TOOLS = ["Read", "Glob", "Grep", "Agent", "SendMessage"]
+MD_TOOLS = ("git_diff", "review_context")
 
 
 def codex_mcp_overrides(project):
@@ -72,14 +74,14 @@ def command(config, phase, round_dir, resume=None):
                 "-c", 'mcp_servers.md_review.command=' + json.dumps(bridge["command"]),
                 "-c", 'mcp_servers.md_review.args=' + json.dumps(bridge["args"]),
                 "-c", "mcp_servers.md_review.enabled=true",
-                "-c", 'mcp_servers.md_review.enabled_tools=["git_diff"]',
+                "-c", 'mcp_servers.md_review.enabled_tools=' + json.dumps(list(MD_TOOLS)),
                 "--output-last-message", str(round_dir / "result.md"), "-"]
     # Backlogの秘密値を引数やrun記録へ複製しません。
     settings = {"env": {"CLAUDE_CODE_DISABLE_ADVISOR_TOOL": "1"}, "autoCompactWindow": 200000,
                 "hooks": {"PreToolUse": [{"matcher": "", "hooks": [{"type": "command", "command":
                     __import__("shlex").join([sys.executable, "-I", "-B", str(review.ROOT / "tools/md_review_tool_gate.py")])}]}]}}
     backlog = {"command": "bash", "args": ["-lc", 'source "$HOME/.config/backlog-mcp/env" && exec npx -y backlog-mcp-server']}
-    allowed = TOOLS + ["ToolSearch", "mcp__md_review__git_diff"] + ["mcp__backlog__" + n for n in BACKLOG_READ]
+    allowed = TOOLS + ["ToolSearch"] + ["mcp__md_review__" + n for n in MD_TOOLS] + ["mcp__backlog__" + n for n in BACKLOG_READ]
     args = ["claude", "--print", "--output-format", "stream-json", "--verbose", "--prompt-suggestions", "false", "--model", "sonnet", "--effort", "medium",
             "--settings", json.dumps(settings), "--strict-mcp-config", "--mcp-config",
             json.dumps({"mcpServers": {"md_review": bridge, "backlog": backlog}}),
@@ -128,8 +130,187 @@ def save_state(folder, state):
     review.atomic_text(folder / "state.json", json.dumps(state, ensure_ascii=False, indent=2) + "\n")
 
 
-def child_result_matches(project, native, checked, provider, child_offset=0):
-    child = checked["reviewer_id"]
+def reading_context(folder, config, phase_state, phase, retained):
+    previous = phase_state.get("last_valid")
+    count = previous.get("update_count", 0) if previous else 0
+    updates = config.get("updates", [])
+    if type(count) is not int or not 0 <= count <= len(updates):
+        raise ValueError("前回確認後の追記範囲を確定できません")
+    sections = {"summary": [config["summary_reference"]], "updates": updates[count:]}
+    required = ["current"]
+    if not retained:
+        required.append("summary")
+    if previous:
+        sections["previous_result"] = [review.result_reference(folder, previous, phase, config)]
+        if not retained:
+            required.append("previous_result")
+    if sections["updates"]:
+        required.append("updates")
+    if phase_state.get("latest_reference") and phase_state.get("latest_attempt") != (previous or {}).get("round_id"):
+        sections["previous_attempt"] = [phase_state["latest_reference"]]
+        required.append("previous_attempt")
+    # 間違った参照をモデルへ渡す前に停止します。
+    for references in sections.values():
+        for reference in references:
+            review.journal_read(folder, reference)
+    plan = {"tool": "md_review.review_context", "required_sections": required,
+            "available_sections": ["current", *sections], "retained_owner_context": retained,
+            "update_count": len(updates) - count,
+            "pending_item_ids": (previous or {}).get("result", {}).get("open_item_ids", []),
+            "history": "必要欄をnext_offset=nullまで読みます。過去履歴の全文は再読しません。失われた根拠、未確認範囲、変更した規則・テストと影響先は追加確認します。"}
+    return plan, sections
+
+
+BRIEFING_PRIORITY = ("previous_result", "updates", "summary")
+BRIEFING_IDENTITY = ("workflow_id", "phase", "reviewer", "review_kind", "round_id", "project", "base", "head", "snapshot_id",
+                     "previous_snapshot_id", "layers", "rule_source_files", "role_section", "workflow_file", "contract_file",
+                     "required_diff_views", "previous_owner", "owner_continuity", "fresh_owner_notice")
+
+FRESH_OWNER_NOTICE = ("新規担当です。前担当の承認・判定は引き継がれません。全ての未解決IDを今回の差分と原本規則で独立に再確認してください。")
+FRESH_AFTER_SECONDS = 300
+
+
+def utc_now():
+    """テストで差し替え可能な時計です。"""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
+def owner_finished_at(folder, phase_state):
+    """前担当の最後の実行の終了時刻を返します。記録がなければNone（推測しません）。"""
+    last = (phase_state.get("last_valid") or {}).get("round_id")
+    for round_id in (phase_state.get("latest_attempt"), last):
+        if not isinstance(round_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", round_id):
+            continue
+        try:
+            meta = json.loads((folder / round_id / "execution.json").read_text())
+            if round_id != last and meta["owner_continuity"]["decision"] == "fresh":
+                continue  # 失敗した新規担当の試行は、記録済み担当のcacheを温めていません
+            return datetime.datetime.fromisoformat(meta["finished_at"]).astimezone(datetime.timezone.utc)
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+    return None
+
+
+def decide_continuity(folder, phase_state, owner, threshold):
+    """resume / fresh を決めます。時刻が不明または閾値以下・無効ならresumeです。"""
+    ids = {k: owner[k] for k in ("parent_session_id", "reviewer_id")}
+    info = {"mode": "resumed", "decision": "resume", "gap_seconds": None, "threshold_seconds": threshold, "previous_owner": ids}
+    if not isinstance(threshold, int) or threshold <= 0:
+        return {**info, "mode": "resumed_ttl_disabled"}
+    finished = owner_finished_at(folder, phase_state)
+    gap = (utc_now() - finished).total_seconds() if finished else None
+    if gap is None or gap < 0:
+        return {**info, "mode": "resumed_gap_unknown"}
+    info["gap_seconds"] = round(gap, 3)
+    if gap > threshold:
+        return {**info, "mode": "fresh_after_ttl", "decision": "fresh"}
+    return info
+
+
+def build_dispatch(folder, request):
+    """親が子へ渡す依頼の先頭ブロックをホストが決定的に作ります。判定・根拠は空欄のままです。"""
+    if request.get("workflow_id") != "codex-claude-review" or request.get("phase") == "ci":
+        return None
+    wf = request["workflow_id"]
+    skeleton = {"workflow_id": wf, "phase": request["phase"], "reviewer": request["reviewer"],
+                "snapshot_id": request.get("snapshot_id") or "<実snapshot_id>",
+                "native_verdict": "<子が記入>", "coverage": "<COMPLETE|PARTIAL|BLOCKED のいずれか1語>",
+                "decision": "<APPROVE|REQUEST_CHANGES|NEEDS_USER_INPUT|BLOCKED|CONTINUE_REVIEW のいずれか1語>",
+                "open_item_ids": [], "questions": [], "handoffs": [],
+                "invocation_evidence": {"platform": "Claude Code", "model": "<子が記入>"}}
+    lines = [f"Workflow: {wf} / phase {request['phase']} / review_kind {request.get('review_kind')}"
+             + (f" / round_id {request['round_id']}" if request.get("round_id") else ""),
+             f"Direction: {wf}", f"review.md: {folder / 'review.md'}",
+             f"Workflow file: {review.ROOT / '.codex/workflows/claude-review.yml'} (role_section: review_entry.role_sections.{request['phase']})",
+             f"Contract: {review.ROOT / '.codex/workflows/md-review.md'}"]
+    if request.get("snapshot_id"):
+        lines.append(f"snapshot_id: {request['snapshot_id']}")
+    lines += ["最終メッセージは日本語レポートの後ろに、次の info-string `workflow-result` のfenced blockをちょうど1つだけ置いて終えてください。",
+              "11項目すべてが必須で、値の<...>は子が実際の結果で埋めます。ホストは判定・根拠を事前記入しません。Infoは省略します。",
+              "coverageとdecisionは列挙語1語だけです(範囲の説明は日本語レポートへ)。open_item_idsとquestionsは文字列の配列です。",
+              'handoffsは各要素が {"id","owner","status"(open|pending|fix_candidate),"question","evidence"} のobjectです。',
+              "```workflow-result", json.dumps(skeleton, ensure_ascii=False), "```"]
+    body = "\n".join(lines)
+    return body, review.digest(body.encode())
+
+
+def build_briefing(folder, request, plan, sections, cap):
+    """ホストが保持する原本だけを逐語で並べます。要約・言い換えはしません。
+    全文を入れた欄は読取計画のrequired_sectionsから外し、入らない欄はNOT_INLINEDとして残します。"""
+    identity = {k: request[k] for k in BRIEFING_IDENTITY if request.get(k) is not None}
+    dispatch = build_dispatch(folder, request)
+    dispatch_text = f"<<CHILD_DISPATCH sha256={dispatch[1]}>>\n{dispatch[0]}\n<<END CHILD_DISPATCH>>\n\n" if dispatch else ""
+    head = ("## Identity\n```json\n" + json.dumps(identity, ensure_ascii=False, indent=2) + "\n```\n\n" + dispatch_text +
+            "## Open item IDs\n```json\n" + json.dumps(plan["pending_item_ids"], ensure_ascii=False) + "\n```\n\n"
+            "## Handoffs (ledger, verbatim)\n```json\n" + json.dumps(request.get("handoff_index", {}), ensure_ascii=False, indent=2) + "\n```\n")
+    used, blocks, inlined, skipped = len(head), [], [], []
+    manifest = [("identity+open_ids+handoffs", len(head), "INLINED")]
+    for name in BRIEFING_PRIORITY:
+        if name not in plan["required_sections"] or name not in sections:
+            continue
+        text = "\n\n".join(review.journal_read(folder, ref) for ref in sections[name])
+        block = f"\n<<SECTION {name} chars={len(text)}>>\n{text}\n<<END SECTION {name}>>\n"
+        if used + len(block) <= cap:
+            used += len(block)
+            blocks.append(block)
+            inlined.append(name)
+            manifest.append((name, len(text), "INLINED"))
+        else:
+            skipped.append(name)
+            manifest.append((name, len(text), "NOT_INLINED"))
+    plan["required_sections"] = [n for n in plan["required_sections"] if n not in inlined]
+    plan["inlined_sections"] = inlined
+    plan["not_inlined_sections"] = skipped
+    lines = [f"- {n}: {c} chars {state}" for n, c, state in manifest]
+    text = ("<manifest cap_chars=%d>\n" % cap + "\n".join(lines) + "\n</manifest>\n\n" + head + "".join(blocks))
+    return text, {"chars": len(text), "cap_chars": cap, "inlined": inlined, "not_inlined": skipped,
+                  "sha256": review.digest(text.encode()),
+                  "child_dispatch_sha256": dispatch[1] if dispatch else None, "child_dispatch_chars": len(dispatch[0]) if dispatch else 0}
+
+
+def print_briefing(args):
+    """読取専用です。何も書かず、モデルも起動しません。"""
+    folder, config = review.load_run(args.run_dir)
+    if args.phase != "ci" and args.phase not in config["layers"]:
+        raise ValueError("利用者が選んでいない層です")
+    if "summary_reference" not in config:
+        raise ValueError("run.jsonに共通MDの索引がありません。通常起動で索引を作成してから実行してください")
+    state_file = folder / "state.json"
+    if state_file.is_symlink():
+        raise ValueError("状態ファイルにsymlinkは使用できません")
+    state = json.loads(state_file.read_text()) if state_file.exists() else {"version": 3, "phases": {}}
+    if not isinstance(state, dict) or state.get("version") != 3 or not isinstance(state.get("phases"), dict):
+        raise ValueError("状態ファイルの形式が未対応です")
+    phase_state = state["phases"].get(args.phase, {})
+    previous = phase_state.get("last_valid")
+    owner = phase_state.get("owner") or previous
+    is_claude = config["direction"] == "codex-claude-review" and args.phase != "ci"
+    rereview = previous is not None and previous["result"]["coverage"] == "COMPLETE"
+    request = {"workflow_id": config["direction"], "phase": receipts.PHASES[args.phase], "reviewer": review.LAYERS[args.phase],
+               "review_kind": "rereview" if rereview else "continuation" if previous or owner else "initial",
+               "project": config["project"], "base": config["base"], "layers": config["layers"],
+               "previous_snapshot_id": phase_state.get("snapshot_id"), "rule_source_files": config["rules"],
+               "required_diff_views": ["delta"] if rereview else ["branch", "staged", "unstaged"],
+               "previous_owner": {k: owner[k] for k in ("parent_session_id", "reviewer_id")} if owner else None,
+               "handoff_index": state.get("handoffs", {})}
+    continuity = decide_continuity(folder, phase_state, owner, getattr(args, "fresh_after_seconds", FRESH_AFTER_SECONDS)) if is_claude and owner else None
+    fresh = bool(continuity and continuity["decision"] == "fresh")
+    if continuity:
+        request["owner_continuity"] = continuity
+    if fresh:
+        request["fresh_owner_notice"] = FRESH_OWNER_NOTICE
+    plan, sections = reading_context(folder, config, phase_state, args.phase, bool(is_claude and owner and not fresh))
+    text, report = build_briefing(folder, request, plan, sections, args.briefing_max_chars)
+    report["review_md_chars"] = len(review.journal_body(folder))
+    report["owner_continuity"] = continuity
+    report["required_sections_after"] = plan["required_sections"]
+    print(text)
+    print("---\n" + json.dumps(report, ensure_ascii=False))
+    return 0
+
+
+def child_final_text(project, native, child, provider, child_offset=0):
+    """実子の最終応答を、書換えずに原本から取り出します。"""
     if provider == "claude":
         if not re.fullmatch(r"[A-Za-z0-9_-]+", child):
             raise ValueError("実子IDの形式が不正です")
@@ -144,9 +325,13 @@ def child_result_matches(project, native, checked, provider, child_offset=0):
                 text = "".join(b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text")
                 if text:
                     texts.append(text)
-        body = texts[-1] if texts else ""
-    else:
-        body = native["completed"].get(child, "")
+        return texts[-1] if texts else ""
+    return native["completed"].get(child, "")
+
+
+def child_result_matches(project, native, checked, provider, child_offset=0):
+    child = checked["reviewer_id"]
+    body = child_final_text(project, native, child, provider, child_offset)
     child_result = receipts.workflow_result(body)
     evidence = child_result.get("invocation_evidence")
     if (not isinstance(evidence, dict) or evidence.get("parent_session_id") not in (None, native["parent_session_id"])
@@ -172,7 +357,28 @@ def bind_reviewer(project, native, result, provider, expected_role, child_offset
     native["reviewer_id"] = matches[0]
 
 
+def preflight_owner(project, phase, state, owner, previous, policy_id, resume):
+    """resume前にstate.jsonだけで親子・phase・tool契約を確認します。モデルは起動しません。"""
+    for key in ("parent_session_id", "reviewer_id"):
+        if not isinstance(owner.get(key), str) or not re.fullmatch(r"[A-Za-z0-9_-]+", owner[key]):
+            raise ValueError("記録済みの親子IDが不正です")
+    if owner["tool_contract_sha256"] != policy_id or resume and resume != owner["parent_session_id"]:
+        raise ValueError("元の親子またはtool契約を確認できません")
+    if previous and any(previous.get(k) not in (None, owner[k]) for k in ("parent_session_id", "reviewer_id")):
+        raise ValueError("phase担当の記録が前回の検証済み結果と一致しません")
+    for other, entry in state["phases"].items():
+        theirs = entry.get("owner") if isinstance(entry, dict) else None
+        if other != phase and theirs and theirs.get("reviewer_id") == owner["reviewer_id"]:
+            raise ValueError(f"記録済みの担当が別phase({other})の担当と重複しています。別sessionの子は再開できません")
+    transcript = receipts.claude_transcript(project, owner["parent_session_id"])
+    child = transcript.with_suffix("") / "subagents" / ("agent-" + owner["reviewer_id"] + ".jsonl")
+    if not transcript.is_file() or transcript.is_symlink() or not child.is_file() or child.is_symlink():
+        raise ValueError("記録済みの子が記録済みの親sessionに属することを原本で確認できません")
+
+
 def run(args):
+    if args.print_briefing:
+        return print_briefing(args)
     folder, config = review.load_run(args.run_dir)
     if args.phase != "ci" and args.phase not in config["layers"]:
         raise ValueError("利用者が選んでいない層は起動できません")
@@ -181,6 +387,7 @@ def run(args):
     with os.fdopen(lock, "w") as stream:
         fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
         scope = review.check_scope(config)
+        review.journal_index(folder, config)
         state_file = folder / "state.json"
         if state_file.is_symlink():
             raise ValueError("状態ファイルにsymlinkは使用できません")
@@ -196,10 +403,14 @@ def run(args):
         policy_id = review.digest(b"".join((review.ROOT / name).read_bytes() for name in (
             "tools/start_md_review.py", "tools/md_review.py", "tools/md_review_tool_gate.py", "tools/review_receipts.py", ".codex/workflows/md-review.md")))
         is_claude = config["direction"] == "codex-claude-review" and args.phase != "ci"
+        continuity, fresh, active_owner = None, False, owner
         if owner and is_claude:
-            if owner["tool_contract_sha256"] != policy_id or args.resume and args.resume != owner["parent_session_id"]:
-                raise ValueError("元の親子またはtool契約を確認できません")
+            preflight_owner(config["project"], args.phase, state, owner, previous, policy_id, args.resume)
             args.resume = owner["parent_session_id"]
+            continuity = decide_continuity(folder, phase_state, owner, args.fresh_after_seconds)
+            if continuity["decision"] == "fresh":
+                # 検証済みで再開可能な担当でもcacheが冷えているため、新規担当で始めます（承認は引き継ぎません）。
+                fresh, active_owner, args.resume = True, None, None
         elif args.resume:
             raise ValueError("このrun/phaseの検証済みClaude親子を確認できません")
         round_dir = folder / str(uuid.uuid4())
@@ -241,11 +452,27 @@ def run(args):
                    "previous_owner": {k: owner[k] for k in ("parent_session_id", "reviewer_id")} if owner else None,
                    "phase_index": {p: {k: v.get(k) for k in ("status", "snapshot_id", "latest_attempt")} for p, v in state["phases"].items()}}
         request["handoff_index"] = state["handoffs"]
-        fix_index = folder / "latest-fix.json"
-        if fix_index.exists():
-            request["latest_fix"] = json.loads(fix_index.read_text())
+        if continuity:
+            request["owner_continuity"] = continuity
+        if fresh:
+            request["fresh_owner_notice"] = FRESH_OWNER_NOTICE
+        request["project"] = config["project"]
+        request["base"] = config["base"]
+        request["reading_plan"], sections = reading_context(folder, config, phase_state, args.phase, bool(is_claude and args.resume))
+        request["reading_plan"]["required_diff_views"] = request["required_diff_views"]
+        request["head"] = before["head"]
+        request["snapshot_id"] = before["snapshot_id"]
+        briefing, briefing_report = build_briefing(folder, request, request["reading_plan"], sections, args.briefing_max_chars)
+        del request["head"], request["snapshot_id"]
+        request["reading_plan"]["briefing_sha256"] = briefing_report["sha256"]
+        review.private_write(round_dir / "briefing.md", briefing)
+        review.private_write(round_dir / "context.json", json.dumps({"request": request, "sections": sections, "briefing": briefing_report}, ensure_ascii=False))
         review.current_request(folder, request)
-        prompt = f"{folder / 'review.md'} を基に{'再レビュー' if previous or owner else 'レビュー'}してください。\n"
+        prompt = (f"{folder / 'review.md'} を基に{'再レビュー' if previous or owner else 'レビュー'}してください。\n"
+                  f"<<BRIEFING sha256={briefing_report['sha256']}>>\n{briefing}<<END BRIEFING>>\n"
+                  + ("\n親への固定指示: 担当の子を起動するときは、briefing内の<<CHILD_DISPATCH ...>>から<<END CHILD_DISPATCH>>までのブロックを、"
+                     "一字も変えず子のpromptの先頭へそのまま置いてください。要約・書換え・追記で置き換えず、子の最終メッセージも変えずに返してください。\n"
+                     if briefing_report["child_dispatch_sha256"] else ""))
         review.private_write(round_dir / "request.txt", prompt)
         try:
             argv = command(config, args.phase, round_dir, args.resume)
@@ -270,6 +497,9 @@ def run(args):
                 raise ValueError("再開先の実子原本を確認できません")
             child_offset = child.stat().st_size
         state["phases"][args.phase] = {**phase_state, "status": "PENDING", "snapshot_id": before["snapshot_id"], "latest_attempt": round_dir.name}
+        if fresh:
+            history = [*phase_state.get("previous_owners", []), continuity["previous_owner"]]
+            state["phases"][args.phase].update({"previous_owner": continuity["previous_owner"], "previous_owners": history})
         save_state(folder, state)
         with open(round_dir / "stdout.jsonl", "x", opener=lambda p, f: os.open(p, f, 0o600)) as output:
             with open(round_dir / "stderr.log", "x", opener=lambda p, f: os.open(p, f, 0o600)) as errors:
@@ -296,7 +526,7 @@ def run(args):
             changed = True
         meta = {"transport": "md-v3", "phase": args.phase, "snapshot_id": before["snapshot_id"], "exit_code": exit_code,
                 "source_changed": changed, "resume": args.resume, "artifacts": str(round_dir),
-                "failure": failure, "argv": argv, "tool_contract_sha256": policy_id,
+                "failure": failure, "argv": argv, "finished_at": utc_now().isoformat(), "owner_continuity": continuity, "tool_contract_sha256": policy_id, "briefing": briefing_report,
                 "status": "PENDING_RESULT_VALIDATION" if exit_code == 0 and not changed and not failure else "BLOCKED"}
         if is_claude:
             try:
@@ -326,40 +556,74 @@ def run(args):
             rows = receipts.records(round_dir / "stdout.jsonl")
             if is_claude and meta.get("session_id"):
                 rows += receipts.records(receipts.claude_transcript(config["project"], meta["session_id"]), transcript_offset)
-            native = receipts.identities(rows, "claude" if is_claude else "codex", review.LAYERS[args.phase], owner)
+            native = receipts.identities(rows, "claude" if is_claude else "codex", review.LAYERS[args.phase], active_owner)
             meta["parent_session_id"] = native["parent_session_id"]
             candidates = [child for child, role in native["children"].items() if role == review.LAYERS[args.phase]]
-            if len(candidates) == 1 and re.fullmatch(r"[A-Za-z0-9_-]+", candidates[0]):
+            if len(candidates) == 1 and re.fullmatch(r"[A-Za-z0-9_-]+", candidates[0]) and not fresh:
                 state["phases"][args.phase]["owner"] = {"parent_session_id": native["parent_session_id"],
                     "reviewer_id": candidates[0], "tool_contract_sha256": policy_id, "result": {"open_item_ids": []}}
             if meta["status"] == "BLOCKED":
                 raise ValueError("CLI失敗、原本欠落またはsource変更です")
-            result = receipts.workflow_result(body)
-            bind_reviewer(config["project"], native, result, "claude" if is_claude else "codex",
-                          review.LAYERS[args.phase], child_offset, owner)
-            checked = receipts.validate(result, {**config, "reviewer": review.LAYERS[args.phase]}, args.phase,
-                                        before["snapshot_id"], native, previous or owner, state["handoffs"])
-            state["handoffs"] = receipts.update_handoffs(state["handoffs"], result, checked["reviewer_id"], round_dir.name)
+            provider = "claude" if is_claude else "codex"
+
+            def accept(text):
+                result = receipts.workflow_result(text)
+                bind_reviewer(config["project"], native, result, provider, review.LAYERS[args.phase], child_offset, active_owner)
+                checked = receipts.validate(result, {**config, "reviewer": review.LAYERS[args.phase]}, args.phase,
+                                            before["snapshot_id"], native, previous or owner, state["handoffs"], fresh)
+                return checked, receipts.update_handoffs(state["handoffs"], result, checked["reviewer_id"], round_dir.name)
+
+            meta["result_source"] = "parent"
+            try:
+                checked, handoffs = accept(body)
+            except (ValueError, KeyError, TypeError, OSError) as parent_error:
+                if not is_claude:
+                    raise
+                # 親の言い換えは信用せず、実子の最終応答をそのまま採用できるか検証します。
+                role = review.LAYERS[args.phase]
+                ids = [active_owner["reviewer_id"]] if active_owner and active_owner["reviewer_id"] in native["children"] else \
+                    [c for c, r in native["children"].items() if r == role] if not active_owner else []
+                try:
+                    if len(ids) != 1:
+                        raise ValueError("実子を1人に確定できません")
+                    verbatim = child_final_text(config["project"], native, ids[0], provider, child_offset if active_owner else 0)
+                    checked, handoffs = accept(verbatim)
+                except (ValueError, KeyError, TypeError, OSError) as child_error:
+                    raise ValueError(f"{parent_error}（実子原本の採用も不可: {child_error}）") from None
+                os.replace(result_path, round_dir / "parent-result.md")
+                review.private_write(result_path, verbatim)
+                body, meta["result_source"] = verbatim, "child_verbatim"
+            state["handoffs"] = handoffs
             meta.update({k: checked[k] for k in ("parent_session_id", "reviewer_id", "approved")})
             meta["status"] = "APPROVED" if checked["approved"] else "REVIEWED"
+            if fresh:
+                continuity["new_owner"] = {"parent_session_id": checked["parent_session_id"], "reviewer_id": checked["reviewer_id"]}
             state["phases"][args.phase] = {"status": meta["status"], "snapshot_id": before["snapshot_id"],
                 "latest_attempt": round_dir.name,
+                **{k: phase_state[k] for k in ("previous_owner", "previous_owners") if k in phase_state},
+                **({"previous_owner": continuity["previous_owner"], "previous_owners": state["phases"][args.phase]["previous_owners"],
+                    "owner_continuity": "fresh_after_ttl"} if fresh else {}),
                 "owner": {"parent_session_id": checked["parent_session_id"], "reviewer_id": checked["reviewer_id"],
                           "tool_contract_sha256": policy_id, "result": {"open_item_ids": []}},
-                "last_valid": {**checked, "round_id": round_dir.name, "tool_contract_sha256": policy_id}}
+                    "last_valid": {**checked, "round_id": round_dir.name, "tool_contract_sha256": policy_id,
+                                   "update_count": len(config.get("updates", []))}}
         except (ValueError, KeyError, TypeError, OSError) as error:
             meta["status"] = "BLOCKED"
             meta["validation_error"] = str(error)
             state["phases"][args.phase]["status"] = "BLOCKED"
-        save_state(folder, state)
         review.private_write(round_dir / "execution.json", json.dumps(meta, ensure_ascii=False, indent=2))
-        review.append(folder, f"{args.phase} / {round_dir.name}",
+        reference = review.append(folder, f"{args.phase} / {round_dir.name}",
                       "```json\n" + json.dumps({k: v for k, v in meta.items() if k != "argv"}, ensure_ascii=False, indent=2) + "\n```\n\n" + body)
+        state["phases"][args.phase]["latest_reference"] = reference
+        if meta["status"] in ("APPROVED", "REVIEWED"):
+            state["phases"][args.phase]["last_valid"]["journal_reference"] = reference
+        save_state(folder, state)
         request["phase_index"] = {p: {k: v.get(k) for k in ("status", "snapshot_id", "latest_attempt")} for p, v in state["phases"].items()}
         request["handoff_index"] = state["handoffs"]
         request["execution_result_file"] = str(round_dir / "execution.json")
+        request["current_owner"] = {k: state["phases"][args.phase]["owner"][k] for k in ("parent_session_id", "reviewer_id")} if state["phases"][args.phase].get("owner") else None
         review.current_request(folder, request)
-        print(json.dumps(meta, ensure_ascii=False))
+        print(json.dumps({k: v for k, v in meta.items() if k != "argv"}, ensure_ascii=False))
         return 0 if meta["status"] in ("APPROVED", "REVIEWED") else 2
 
 
@@ -369,6 +633,10 @@ def main():
     parser.add_argument("--phase", choices=tuple(review.LAYERS), required=True)
     parser.add_argument("--resume", help="同phaseの検証済みClaude親session IDだけです")
     parser.add_argument("--timeout", type=int, default=1800)
+    parser.add_argument("--fresh-after-seconds", type=int, default=FRESH_AFTER_SECONDS,
+                        help="同phaseの前回終了からこの秒数を超えたら、resumeせず新規Claude担当で始めます。0以下で無効")
+    parser.add_argument("--briefing-max-chars", type=int, default=60000, help="依頼文へ逐語で入れる本文の上限文字数")
+    parser.add_argument("--print-briefing", action="store_true", help="briefingと大きさだけを標準出力へ出します。書込みもモデル起動もしません")
     args = parser.parse_args()
     try:
         return run(args)

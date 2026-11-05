@@ -150,7 +150,7 @@ def identities(rows, provider, expected_role, previous=None):
     return {"parent_session_id": next(iter(parents)), "children": children, "completed": completed}
 
 
-def validate(result, config, phase, snapshot_id, native, previous=None, handoff_ledger=None):
+def validate(result, config, phase, snapshot_id, native, previous=None, handoff_ledger=None, fresh_owner=False):
     expected = {"workflow_id": config["direction"], "phase": PHASES[phase],
                 "reviewer": config["reviewer"], "snapshot_id": snapshot_id}
     if any(result.get(key) != value for key, value in expected.items()):
@@ -176,7 +176,7 @@ def validate(result, config, phase, snapshot_id, native, previous=None, handoff_
             or not re.fullmatch(r"[A-Za-z0-9_-]+", child)
             or child not in native["children"] or native["children"][child] not in (None, config["reviewer"])):
         raise ValueError("親子IDまたは実担当が実行記録と一致しません")
-    if previous and config["direction"] == "codex-claude-review" and phase != "ci":
+    if previous and not fresh_owner and config["direction"] == "codex-claude-review" and phase != "ci":
         if native["parent_session_id"] != previous["parent_session_id"] or child != previous["reviewer_id"]:
             raise ValueError("元のClaude親子を再開していません")
     for field in ("platform", "model"):

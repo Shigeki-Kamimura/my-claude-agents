@@ -126,6 +126,131 @@ def current_request(folder, request):
     atomic_text(path, header + body)
 
 
+def journal_body(folder):
+    text = (folder / "review.md").read_text()
+    return re.sub(r"\A<!-- md-review-current:begin -->.*?<!-- md-review-current:end -->\n\n", "", text, count=1, flags=re.S)
+
+
+def journal_reference(text, start, length):
+    return {"start": start, "length": length, "sha256": digest(text[start:start + length].encode())}
+
+
+def journal_read(folder, reference):
+    start, length = reference["start"], reference["length"]
+    if type(start) is not int or type(length) is not int or start < 0 or length < 1:
+        raise ValueError("MD参照の範囲が不正です")
+    content = journal_body(folder)[start:start + length]
+    if len(content) != length or digest(content.encode()) != reference["sha256"]:
+        raise ValueError("MD参照の本文が変更または欠落しています")
+    return content
+
+
+def journal_index(folder, config):
+    """旧runは実記録で境界を確認します。本文の見出しを信用しません。"""
+    if "summary_reference" not in config:
+        body = journal_body(folder)
+        entries = legacy_entries(folder, body)
+        end = entries[0][0] if entries else len(body)
+        config["summary_reference"] = journal_reference(body, 0, end)
+        config["updates"] = []
+        config["legacy_result_references"] = {}
+        for start, text, kind in entries:
+            reference = journal_reference(body, start, len(text))
+            if kind == "update":
+                config["updates"].append(reference)
+            else:
+                match = re.match(r"\n\n## (qa|e2e|cr|adv|ci) / ([0-9a-f-]{36})\n\n", text)
+                config["legacy_result_references"][match[2]] = {"phase": match[1], "reference": reference}
+        atomic_text(folder / "run.json", json.dumps(config, ensure_ascii=False, indent=2) + "\n")
+    journal_read(folder, config["summary_reference"])
+    for reference in config.get("updates", []):
+        journal_read(folder, reference)
+    for entry in config.get("legacy_result_references", {}).values():
+        journal_read(folder, entry["reference"])
+
+
+def legacy_entries(folder, body):
+    entries = []
+    for path in folder.glob("*/execution.json"):
+        if not re.fullmatch(r"[0-9a-f-]{36}", path.parent.name):
+            continue
+        if path.is_symlink() or path.parent.is_symlink():
+            raise ValueError("旧runの実行記録がsymlinkです")
+        meta = json.loads(path.read_text())
+        if meta.get("phase") not in LAYERS or meta.get("artifacts") != str(path.parent):
+            raise ValueError("旧runの実行記録を確認できません")
+        result = path.parent / "result.md"
+        if result.is_symlink():
+            raise ValueError("旧runの実応答がsymlinkです")
+        if result.is_file():
+            content = "```json\n" + json.dumps({k: v for k, v in meta.items() if k != "argv"}, ensure_ascii=False, indent=2) + "\n```\n\n" + result.read_text()
+        elif meta.get("failure") == "CLI_CONFIGURATION_UNCONFIRMED":
+            content = json.dumps(meta, ensure_ascii=False)
+        else:
+            raise ValueError("旧runの実応答が欠落しています")
+        text = journal_entry(f"{meta['phase']} / {path.parent.name}", content)
+        if body.count(text) != 1:
+            raise ValueError("旧runの実結果の境界が曖昧です")
+        entries.append((body.index(text), text, "result"))
+    heading = "\n\n## Implementation update\n\n"
+    for path in folder.glob("fix-*.md"):
+        if not re.fullmatch(r"fix-[0-9a-f-]{36}\.md", path.name):
+            continue
+        if path.is_symlink():
+            raise ValueError("旧runの修正原本がsymlinkです")
+        note, matches = path.read_text().strip(), []
+        if not note:
+            raise ValueError("旧runの修正原本が空です")
+        for match in re.finditer(re.escape(heading), body):
+            tail = body[match.end():]
+            line = tail.split("\n", 1)[0]
+            try:
+                meta = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(meta, dict) or set(meta) != {"snapshot_id", "added_paths", "added_rules"}:
+                continue
+            text = heading + line + "\n\n" + note + "\n"
+            if body.startswith(text, match.start()):
+                matches.append((match.start(), text, "update"))
+        if len(matches) != 1:
+            raise ValueError("旧runの修正記録の境界が曖昧です")
+        entries.extend(matches)
+    entries.sort()
+    if not entries and re.search(r"\n\n## (Implementation update|(?:qa|e2e|cr|adv|ci) / [0-9a-f-]{36})\n\n", body):
+        raise ValueError("旧runの履歴を裏付けるホスト記録がありません")
+    for i, (start, text, _) in enumerate(entries):
+        end = start + len(text)
+        following = entries[i + 1][0] if i + 1 < len(entries) else len(body)
+        if end > following or body[end:following].strip():
+            raise ValueError("旧runに索引化できない履歴があります")
+    return entries
+
+
+def result_reference(folder, previous, phase, config):
+    if "journal_reference" in previous:
+        journal_read(folder, previous["journal_reference"])
+        return previous["journal_reference"]
+    # 移行済みの本文を旧形式で再解析しません。
+    entry = config.get("legacy_result_references", {}).get(previous["round_id"])
+    if not entry or entry["phase"] != phase:
+        raise ValueError("前回結果のホスト記録を共通MDと照合できません")
+    journal_read(folder, entry["reference"])
+    return entry["reference"]
+
+
+def review_context(round_dir, section, offset=0):
+    context = json.loads((round_dir / "context.json").read_text())
+    if section == "current":
+        text = json.dumps(context["request"], ensure_ascii=False, indent=2)
+    else:
+        if section not in context["sections"]:
+            raise ValueError("この回には指定したMD欄がありません")
+        text = "\n\n".join(journal_read(round_dir.parent, ref) for ref in context["sections"][section])
+    return {"section": section, "text": text[offset:offset + 12000],
+            "next_offset": offset + 12000 if offset + 12000 < len(text) else None}
+
+
 def safe_directory(path, project):
     path = path.absolute()
     if any(p.is_symlink() for p in [path, *path.parents]):
@@ -152,12 +277,19 @@ def load_run(folder):
     return folder, config
 
 
+def journal_entry(title, body):
+    return f"\n\n## {title}\n\n{body.rstrip()}\n"
+
+
 def append(folder, title, body):
     """呼出し側がrunのlockを保持して追記します。"""
     target = folder / "review.md"
+    before = journal_body(folder)
+    entry = journal_entry(title, body)
     fd = os.open(target, os.O_WRONLY | os.O_APPEND | os.O_NOFOLLOW)
     with os.fdopen(fd, "a", encoding="utf-8") as stream:
-        stream.write(f"\n\n## {title}\n\n{body.rstrip()}\n")
+        stream.write(entry)
+    return journal_reference(before + entry, len(before), len(entry))
 
 
 def capture(config, destination=None):
@@ -235,6 +367,11 @@ def serve(round_dir):
             "inputSchema": {"type": "object", "properties": {"view": {"enum": ["branch", "staged", "unstaged", "delta"]},
                 "offset": {"type": "integer", "minimum": 0}}, "required": ["view"], "additionalProperties": False},
             "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}}
+    context_tool = {"name": "review_context", "description": "共通review.mdの必要欄だけを読みます。最初はcurrent、そのreading_planに従ってください。",
+                    "inputSchema": {"type": "object", "properties": {
+                        "section": {"enum": ["current", "summary", "updates", "previous_result", "previous_attempt"]},
+                        "offset": {"type": "integer", "minimum": 0}}, "required": ["section"], "additionalProperties": False},
+                    "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}}
     for line in sys.stdin:
         message = None
         try:
@@ -248,14 +385,21 @@ def serve(round_dir):
             elif method == "ping":
                 result = {}
             elif method == "tools/list":
-                result = {"tools": [tool]}
+                result = {"tools": [tool, context_tool]}
             elif method == "tools/call":
                 args = params.get("arguments", {})
-                if params.get("name") != "git_diff" or set(args) - {"view", "offset"}:
+                name = params.get("name")
+                fields = {"view", "offset"} if name == "git_diff" else {"section", "offset"}
+                if name not in ("git_diff", "review_context") or set(args) - fields:
                     raise ValueError("未許可の操作です")
                 offset = args.get("offset", 0)
                 if type(offset) is not int or offset < 0:
                     raise ValueError("offsetが不正です")
+                if name == "review_context":
+                    page = review_context(round_dir, args["section"], offset)
+                    result = {"content": [{"type": "text", "text": json.dumps(page, ensure_ascii=False)}]}
+                    print(json.dumps({"jsonrpc": "2.0", "id": message["id"], "result": result}, ensure_ascii=False), flush=True)
+                    continue
                 content = frozen_diff(round_dir, args["view"])
                 mode_rows = info["paths"]
                 comparison = round_dir / "comparison.json"
@@ -279,7 +423,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serve", type=Path)
     parser.add_argument("--run-dir", type=Path)
-    parser.add_argument("--note-file", type=Path)
+    notes = parser.add_mutually_exclusive_group()
+    notes.add_argument("--note-file", type=Path, help="既存文書の取込専用です。通常はnote-stdinを使います")
+    notes.add_argument("--note-stdin", action="store_true")
     parser.add_argument("--add-paths", nargs="+", default=[])
     parser.add_argument("--add-rules", nargs="+", type=Path, default=[])
     parser.add_argument("--exclude", nargs=2, action="append", default=[], metavar=("PATH", "REASON"))
@@ -289,7 +435,9 @@ def main():
     parser.add_argument("--layers", nargs="+", choices=("qa", "e2e", "cr", "adv"))
     parser.add_argument("--paths", nargs="+")
     parser.add_argument("--rules", nargs="+", type=Path)
-    parser.add_argument("--summary-file", type=Path)
+    summaries = parser.add_mutually_exclusive_group()
+    summaries.add_argument("--summary-file", type=Path, help="既存文書の取込専用です。通常はsummary-stdinを使います")
+    summaries.add_argument("--summary-stdin", action="store_true")
     parser.add_argument("--out-dir", type=Path)
     args = parser.parse_args()
     if args.serve:
@@ -297,16 +445,17 @@ def main():
         return
     if args.run_dir:
         folder, config = load_run(args.run_dir)
-        if any((args.project, args.base, args.direction, args.layers, args.paths, args.rules, args.summary_file, args.out_dir)):
+        if any((args.project, args.base, args.direction, args.layers, args.paths, args.rules, args.summary_file, args.summary_stdin, args.out_dir)):
             parser.error("既存runには初期化用引数を使えません。add-paths/add-rulesを指定してください")
-        if not args.note_file:
-            parser.error("実装側追記にはnote-fileが必要です")
-        note = args.note_file.read_text().strip()
+        if not (args.note_file or args.note_stdin):
+            parser.error("実装側追記にはnote-stdinが必要です")
+        note = (sys.stdin.read() if args.note_stdin else args.note_file.read_text()).strip()
         if not note:
             raise ValueError("追記が空です")
         lock = os.open(folder / ".lock", os.O_CREAT | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
         with os.fdopen(lock, "w") as stream:
             fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            journal_index(folder, config)
             config["paths"] = sorted(set(config["paths"]) | set(map(safe_path, args.add_paths)))
             config["rules"] = sorted(set(config["rules"]) | {str(p.resolve(strict=True)) for p in args.add_rules})
             for path, reason in args.exclude:
@@ -315,18 +464,17 @@ def main():
                 config.setdefault("exclusions", {})[safe_path(path, allow_secret=True)] = reason
             scope = check_scope(config)
             info = capture(config)
-            temporary = folder / (str(uuid.uuid4()) + ".json")
-            private_write(temporary, json.dumps(config, ensure_ascii=False, indent=2) + "\n")
-            os.replace(temporary, folder / "run.json")
-            note_path = folder / ("fix-" + str(uuid.uuid4()) + ".md")
-            private_write(note_path, note)
-            atomic_text(folder / "latest-fix.json", json.dumps({"path": str(note_path), "snapshot_id": info["snapshot_id"]}))
-            append(folder, "Implementation update", json.dumps({"snapshot_id": info["snapshot_id"],
+            reference = append(folder, "Implementation update", json.dumps({"snapshot_id": info["snapshot_id"],
                    "added_paths": args.add_paths, "added_rules": list(map(str, args.add_rules))}, ensure_ascii=False) + "\n\n" + note)
+            config["updates"].append(reference)
+            atomic_text(folder / "run.json", json.dumps(config, ensure_ascii=False, indent=2) + "\n")
+            atomic_text(folder / "latest-fix.json", json.dumps({"reference": reference, "snapshot_id": info["snapshot_id"]}))
         print(folder / "review.md")
         return
-    if not all((args.project, args.base, args.direction, args.layers, args.rules, args.summary_file)):
-        parser.error("project/base/direction/layers/rules/summary-fileが必要です")
+    if args.note_file or args.note_stdin or args.add_paths or args.add_rules:
+        parser.error("追記用引数にはrun-dirが必要です")
+    if not all((args.project, args.base, args.direction, args.layers, args.rules, args.summary_file or args.summary_stdin)):
+        parser.error("project/base/direction/layers/rules/summary-stdinが必要です")
     if os.environ.get("GIT_INDEX_FILE"):
         parser.error("別indexの伝播は未対応です。元の設定を変更せず保留してください")
     project = Path(git(args.project, "rev-parse", "--show-toplevel").decode().strip()).resolve()
@@ -347,7 +495,7 @@ def main():
     if not args.paths:
         config["paths"] = changed_paths(config)[0]
     scope = check_scope(config)
-    summary = args.summary_file.read_text().strip()
+    summary = (sys.stdin.read() if args.summary_stdin else args.summary_file.read_text()).strip()
     if not summary:
         raise ValueError("実装担当のサマリーが空です")
     capture(config)  # 不正な対象では記録を作りません。
@@ -355,6 +503,11 @@ def main():
     private_write(folder / "run.json", json.dumps(config, ensure_ascii=False, indent=2) + "\n")
     private_write(folder / "review.md", "# Cross-model review\n\n" + json.dumps({**config, "scope_check": scope}, ensure_ascii=False, indent=2) +
                   "\n\n## Implementation summary\n\n" + summary + "\n")
+    # 新規MDの範囲は生成した本文から確定します。見出しは解釈しません。
+    body = journal_body(folder)
+    config["summary_reference"] = journal_reference(body, 0, len(body))
+    config["updates"] = []
+    atomic_text(folder / "run.json", json.dumps(config, ensure_ascii=False, indent=2) + "\n")
     print(folder / "review.md")
 
 

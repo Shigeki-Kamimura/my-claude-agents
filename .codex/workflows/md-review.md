@@ -26,6 +26,12 @@
 ## 1. 実装担当がMDを作ります
 
 実装担当が`review.md`へ次を記します。書式は後述のtemplateを使います。
+依頼の入口は、この1ファイルに固定します。
+層別、再レビュー、結果の形式修正のために別の依頼MDを作りません。
+本文は`--summary-stdin`、修正や伝達の訂正は`--note-stdin`で直接登録します。
+既存文書の`--summary-file` / `--note-file`は取込専用です。
+取込後は共通MDだけを参照し、取込元やfix用MDを複製しません。
+実応答の原本、実行ログ、機械用JSONは監査資料として別に保持できます。
 
 - 利用者の実依頼と選んだ層、方向、repoの絶対パスです。
 - 実baseの出典・SHA、HEAD、対象ファイルと除外です。
@@ -103,6 +109,25 @@ Git読取MCPと後述のBacklog読取だけを追加します。
 - Claude方向はstate.jsonに記録した終了済みの同phase親sessionを自動で再開します。
   親から元の実childへ戻します。再開不能なら未承認を保持し、架空の継続にしません。
   安全なtool構成を確認できない旧sessionは再開しません。
+- 再開前にホストがstate.jsonだけで、記録済みの子が記録済みの親sessionとtool契約に属し、
+  他phaseの担当と重複しないことを確認します。不一致ならモデルを起動せずBLOCKEDで停止し、
+  新しい権限や別担当への付替えはしません。
+- prompt cache(TTL約5分)切れ対策: 検証済みで再開可能でも、同phaseの前回終了から
+  `--fresh-after-seconds`(既定300、0以下で無効)を超えていれば、ホストは--resumeせず新規親子を起動します。
+  終了時刻(execution.jsonのfinished_at)が不明なら推測せず従来どおり再開します。
+- 新規担当は前担当の判断を継続しません。前担当はprevious_ownerに残し、execution.jsonとMDの
+  `owner_continuity`(fresh_after_ttl、gap秒、両担当ID)に記録します。依頼にsummary・前回結果・追記・
+  全open ID・handoffを逐語で入れ、新規担当は全open IDを差分と原本規則で独立に再確認します。
+  前回の承認・判定は移りません。preflight不一致やtool契約変更は新規起動せず従来どおりBLOCKEDです。
+- 親の最終応答に単一のworkflow-result欄がない、または判定欄・handoffの問い/根拠が親の言い換えで
+  検証に通らない場合、ホストは実担当の実子原本の最終応答を一字も変えずに検証し、通る場合だけ採用します。
+  採用元はexecution.jsonの`result_source`(`parent`|`child_verbatim`)に記録し、親の応答は
+  `parent-result.md`に残します。実子の欄も検証に通らなければ従来どおりBLOCKEDで、補完や合成はしません。
+- Claude方向のbriefingにはホストが作る`<<CHILD_DISPATCH sha256=...>>`ブロックがあり、marker、phase、round、
+  review.mdのpath、snapshot、`workflow-result`欄の骨格(11項目、判定・根拠は空欄)を含みます。
+  親は担当の子のpromptの先頭へこのブロックを一字も変えず置き、子の最終メッセージも変えず返します。
+  sha256はcontext.jsonとexecution.jsonのbriefing欄(child_dispatch_sha256)に記録します。
+  新規・再開・fresh担当のどれでもround単位で同じ方式です。Infoは省略します。
 - Codex方向は既存通り毎回fresh `codex exec --sandbox read-only`です。
   全対象、累積coverage、全open ID、前回sourceと修正の参照はMDから引き継ぎます。
 - 再レビューのOrigin、NEW_UNRELATED Lowの既存上限、担当による撤回条件を維持します。
@@ -207,8 +232,32 @@ runnerはMDの先頭にホスト管理のCurrent requestを置きます。
 ```
 
 受け手はCurrent requestを先に読み、指定した実担当へ委譲・再開します。
-規則、差分、結果本文を依頼文へ再展開しません。必要な原本の読取り義務は維持します。
+規則と差分は依頼文へ再展開しません。必要な原本の読取り義務は維持します。
+ホストは`summary`・前回の実結果・全追記・open ID・handoff台帳を逐語で`<<BRIEFING sha256=...>>`に同梱します(要約・言い換えなし、上限`--briefing-max-chars`、既定60000)。
+全文を同梱した欄は`reading_plan.inlined_sections`に記録し`required_sections`から外します。再取得は不要で、`review_context`も使えます。
+上限を超えた欄はmanifestにNOT_INLINEDと記録し、`required_sections`に残すため従来どおり`review_context`で読みます。
+briefingはround_dirの`briefing.md`に保存する派生データです(context.json/execution.jsonに大きさとhash)。review.mdへは複製せず、原本・本文索引の照合が優先します。
+差分(git_diff)は同梱せず、`required_diff_views`、規則原本、source identityの確認義務も変わりません。
+`--print-briefing`はbriefingと大きさだけを出力し、書込みもモデル起動もしません。
 Current requestの短い参照を使い、古いMD履歴の全文を毎回読み直しません。
+親と実担当は`md_review.review_context`の`current`を最初に取得します。
+ホストが固定した`reading_plan.required_sections`だけを通常の読取対象にします。
+各欄は`next_offset=null`まで確認します。MD全体のRead/catは使いません。
+`summary`は受入条件、`updates`はその担当の前回確認後の全追記です。
+`previous_result`は前回の実結果、`previous_attempt`は未受理の直近結果です。
+同じClaude担当が根拠を保持している場合、未変更のsummaryと実結果の再読は省きます。
+fresh Codex担当はsummary、前回の実結果、必要な原本を自分で確認します。
+前回の初回確認が途中なら全3viewと未確認範囲を維持します。
+再レビューは`delta`、全追記、全open IDと必要な影響先を確認します。
+変更したテスト・規則・仕様、失われた根拠、未確認範囲は追加確認します。
+同じMDの索引で本文の範囲とhashを照合し、欠落や改変時は停止します。
+索引と固定した読取計画はJSONです。依頼本文は重複保存しません。
+新規MDは生成時の既知の本文範囲を記録し、本文中の見出し例を境界にしません。
+旧runは実行記録・実応答・保存済み修正原本と境界を照合します。
+照合が一意にできない場合は停止し、原本と履歴を残します。
+旧runの前回追記数が不明なら全追記を渡します。未確認を推測で省きません。
+tool契約が変わったClaude sessionは従来の安全な再開条件を維持します。
+先頭には実行後の`current_owner`も記録し、停止後も実親子IDを参照できます。
 Current requestは呼出し元のホストだけが更新し、過去の指摘と実応答は追記で保持します。
 起動引数などの機械用詳細はexecution.jsonへ保存し、MDへ重複掲載しません。
 
@@ -237,18 +286,23 @@ REVIEWEDは結果を受領した状態で、承認とは区別します。
 ## 起動例
 
 実装担当が選択された層と全対象ファイルを埋めます。
-サマリー本文は下のtemplateを使い、repo外の一時ファイルへ保存します。
+サマリー本文は下のtemplateを使い、標準入力から直接登録します。
+別の依頼MDは作りません。
 
 ```bash
 python3 tools/md_review.py --project /absolute/project --base ACTUAL_BASE_SHA \
   --direction codex-claude-review --layers cr adv \
   --exclude path/to/unrelated-file "既存の対象外変更" \
   --rules /absolute/project/rules.md /absolute/governance.md \
-  --summary-file /tmp/implementation-summary.md
+  --summary-stdin <<'SUMMARY'
+利用者の実依頼、変更前後、受入条件、対象、規則、検証と限界を記します。
+SUMMARY
 python3 tools/start_md_review.py --run-dir /absolute/run --phase cr
 # 全指摘の一括修正と必要な検証・MD追記の後だけ再開します。
-python3 tools/md_review.py --run-dir /absolute/run --note-file /tmp/fix-summary.md \
-  --add-paths path/to/new-fix-file --add-rules /absolute/additional-rule.md
+python3 tools/md_review.py --run-dir /absolute/run --note-stdin \
+  --add-paths path/to/new-fix-file --add-rules /absolute/additional-rule.md <<'UPDATE'
+指摘IDと変更責務、影響先、検証結果、残る義務を記します。
+UPDATE
 python3 tools/start_md_review.py --run-dir /absolute/run --phase cr
 ```
 
@@ -256,7 +310,7 @@ python3 tools/start_md_review.py --run-dir /absolute/run --phase cr
 runnerへ渡すrepoは信頼済みの対象です。既存hook/plugin/managed設定の適用も確認します。
 禁止操作が起動hook等で発生する構成は、設定を迂回せずBLOCKEDにします。
 Codexは対象projectの有効MCP一覧をモデルなしで取得します。
-起動回の設定で不要MCPとappsを無効にし、bridgeはgit_diffだけを公開します。
+起動回の設定で不要MCPとappsを無効にし、bridgeはgit_diffとreview_contextだけを公開します。
 有効な既存Backlogは読取toolのenabled_toolsだけを指定します。
 元が無効なBacklogを有効化せず、既存のdenyも解除しません。
 一覧や設定の対応を確認できなければ、モデルを起動せずBLOCKEDにします。
