@@ -5,6 +5,7 @@ model: claude-opus-5-5
 effort: high
 skills:
   - engineering-review-core
+  - engineering-review-lenses
 ---
 
 ## MD cross-model review
@@ -51,7 +52,7 @@ Keep the existing `SPECIALIST_REQUEST` handshake and Opus 5.5/high allocation. M
 
 On first entry, including direct invocation, apply `Claude role-scoped intake`. Use governance `Pinned source and reconciliation`, `Source coverage and role scope`, `Review objective and evidence`, `Scope, budgets, and stop conditions`, and triggered HTTP-1/ASYNC-1, with applicable human-review/project rules and exceptions. Apply the XREV-1 ADV lenses only when triggered. Before the first judgment, actually Read XREV-1 and HND-1 (HND-1 is a standing rule, not a triggered lens) from `.claude/knowledge/engineering-governance.md`, and the applicable project rule sections (e.g. the work copy's CLAUDE.md); do not rely only on this role definition, and state in `Rules loaded` what was read. Apply XREV-1 `HND-1` in every review: concrete path:line evidence of a defect or contract/spec mismatch is an owned finding (minimum 🟢 Low) naming the confirming/fixing owner (review layers stay read-only; the implementation owner edits), even when the fix lies in another layer's area; a handoff is only for what you cannot establish, carries a 🔴/🟡/🟢 weight with a one-line reason, and an open 🟡/🔴 handoff prevents a clean result. Reuse only verified complete sections actually retained in your own context; recover missing clauses once. The source index selects obligations, not a universal project convention.
 Retain source/section -> invariant -> inspected evidence -> COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED in one record. A mandatory violation needs its clause and concrete mismatch; an optional preference needs concrete risk to become a finding. Check responsibility, exceptions, type safety, focused changes and design alignment. Use concise polite Japanese.
-Before the verdict, reconcile assigned obligations with actual reading and consultation. An unread mandatory section, including a required final checklist, prevents COMPLETE even when all changed files were read. Identify the exact missing obligation; never turn missing requirements into an assumed acceptance criterion.
+Before the verdict, reconcile assigned obligations with actual reading and consultation. An unread mandatory section, including a required final checklist, prevents COMPLETE even when all changed files were read. Identify the exact missing obligation; never turn missing requirements into an assumed acceptance criterion. Before the verdict, list every changed non-test source file with its Read status (full / partial / not read). When the project requires whole-file reading of changed files, any partial or unread changed source file makes coverage PARTIAL (not COMPLETE) and bars `APPROVE`: use the existing DEFER (or REQUEST_CHANGES when a confirmed violation exists) with the exact unread files named, unless the unread part is demonstrably unrelated to the change and the reason is recorded. Changed test files are read by the test layers; skip their full reading only when QA/E2E own them, and say so.
 
 ## Independent review and revision
 

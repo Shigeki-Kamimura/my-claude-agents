@@ -14,6 +14,7 @@ SOURCES = {
     "governance": "knowledge/engineering-governance.md",
     "human": "knowledge/human-review-patterns.md",
 }
+LENSES = "engineering-review-lenses"
 SECTIONS = {
     "engineering-review-core": {
         "governance": (
@@ -36,9 +37,11 @@ SECTIONS = {
                        "HTTP-1: Distinguish authentication and forbidden access"),
         "human": ("API-to-UI Semantics", "Reachable Failure Evidence"),
     },
+    # Claudeのレビュー4層だけに渡す。XREV-1(HND-1を含む)を読む選択に依存させないため
+    LENSES: {"governance": ("XREV-1: Cross-model review calibration lenses",)},
 }
 CODEX_SECTIONS = {
-    **SECTIONS,
+    **{name: sections for name, sections in SECTIONS.items() if name != LENSES},
     "engineering-review-core": {
         "governance": (
             "Pinned source and reconciliation", "Source coverage and role scope",
@@ -68,6 +71,7 @@ def section(text: str, title: str) -> str:
 DESCRIPTIONS = {
     "engineering-review-core": "Shared engineering principles, execution boundaries and evidence rules preloaded for Claude implementation/review roles.",
     "engineering-react-rules": "React consultation rules for async state, GET Suspense exceptions and API-to-render evidence; preloaded for react-ui-flow.",
+    LENSES: "Cross-model review calibration lenses and handoff weights (XREV-1 incl. HND-1); preloaded only for test-qa, e2e-qa, code-quality-reviewer and adviser.",
     "engineering-nest-rules": "NestJS consultation rules for async failures, authentication/authorization and API producer reachability; preloaded for nestjs-backend.",
 }
 

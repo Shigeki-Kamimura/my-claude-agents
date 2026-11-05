@@ -6,6 +6,7 @@ model: sonnet
 effort: high
 skills:
   - engineering-review-core
+  - engineering-review-lenses
 ---
 
 ## MD cross-model review

@@ -571,7 +571,7 @@ L2自身が必要とする証拠の不足は、その層の未了として残し
 
 ## サブエージェントへの規則の事前読込
 
-Claudeの全担当は、`skills`指定で`engineering-review-core`を起動時に読み込みます。ReactとNestには、それぞれの担当範囲の追加スキルも渡します。ガバナンスと人のレビュー方針から節単位で原文を抽出し、禁止事項・条件・例外を保持します。設計書は変更に関係する部分を別途確認します。
+Claudeの全担当は、`skills`指定で`engineering-review-core`を起動時に読み込みます。ReactとNestには、それぞれの担当範囲の追加スキルも渡します。レビュー4層(test-qa・e2e-qa・code-quality-reviewer・adviser)には、XREV-1(HND-1を含む)だけの`engineering-review-lenses`も渡します(Codex側は変更なし)。ガバナンスと人のレビュー方針から節単位で原文を抽出し、禁止事項・条件・例外を保持します。設計書は変更に関係する部分を別途確認します。
 
 正本は`.claude/knowledge/`の2資料です。`.claude-company/knowledge/`との一致を確認し、`tools/sync_engineering_preloads.py --write`で両profileとCodexの`.agents/skills/`を生成します。通常の実行は変更せず、出典の変更や生成物の欠落を検出します。生成物には原文のSHA-256と収録節を記録します。
 

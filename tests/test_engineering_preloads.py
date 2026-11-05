@@ -188,6 +188,24 @@ class PreloadTests(unittest.TestCase):
         self.assertIn("全対象、累積coverage、全open ID", common)
         self.assertIn("終了済みの同phase親session", common)
 
+    def test_xrev1_lenses_skill_reaches_only_four_claude_review_layers(self):
+        name = "engineering-review-lenses"
+        source = preloads.section((ROOT / ".claude" / preloads.SOURCES["governance"]).read_text(),
+                                  "XREV-1: Cross-model review calibration lenses")
+        self.assertIn("**HND-1: Handoff weight and evidence-first reporting", source)
+        self.assertEqual(preloads.render(ROOT, name).count(source), 1)
+        self.assertNotIn("### XREV-1", preloads.render(ROOT, "engineering-review-core"))
+        self.assertNotIn(name, preloads.CODEX_SECTIONS)
+        self.assertFalse((ROOT / ".agents/skills" / name).exists())
+        reviewers = {"test-qa", "e2e-qa", "code-quality-reviewer", "adviser"}
+        for profile in preloads.PROFILES:
+            installed = (ROOT / profile / "skills" / name / "SKILL.md").read_text()
+            self.assertEqual(installed, preloads.render(ROOT, name))
+            for role in preloads.agent_files(ROOT, profile):
+                header = role.read_text().split("---", 2)[1]
+                self.assertEqual(role.stem in reviewers,
+                                 re.search(rf"(?m)^  - {name}$", header) is not None, f"{profile}/{role.stem}")
+
     def test_existing_setup_links_skills_for_both_profiles(self):
         with tempfile.TemporaryDirectory(prefix="preload setup ") as folder:
             base = Path(folder)

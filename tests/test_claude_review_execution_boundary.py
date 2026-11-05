@@ -122,7 +122,7 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         self.assertIn('"weight"(🔴|🟡|🟢)', read("tools/start_md_review.py"))
 
     def test_claude_layers_must_read_xrev1_hnd1_and_project_rules(self):
-        # Claude側のプリロードにXREV-1/HND-1は含まれないため、4層の定義が判定前の実読を明記します。
+        # XREV-1/HND-1は4層だけにengineering-review-lensesで注入される。注入に頼らず、定義側にも判定前の実読を明記します。
         clause = ("Before the first judgment, actually Read XREV-1 and HND-1 (HND-1 is a standing rule, "
                   "not a triggered lens) from `.claude/knowledge/engineering-governance.md`, and the applicable "
                   "project rule sections (e.g. the work copy's CLAUDE.md); do not rely only on this role "
@@ -133,6 +133,31 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                 text = read(f"{profile}/agents/{role}.md")
                 self.assertEqual(1, text.count(clause), f"{profile}/{role}")
                 self.assertIn(f"Apply the XREV-1 {layer} lenses only when triggered. {clause}", text)
+
+    def test_e2e_must_fully_read_files_and_project_rules_before_gap_verdict(self):
+        clause = ('Before declaring any E2E coverage gap, fully Read each affected E2E file (a grep-only search '
+                  'yields "not found by grep", never a gap verdict), and list in `Rules loaded` the work copy\'s '
+                  'CLAUDE.md sections actually Read with line ranges; if that CLAUDE.md was not Read, '
+                  'design-alignment judgments are UNCONFIRMED and no clean or approve result may be returned.')
+        for profile in (".claude", ".claude-company"):
+            text = read(f"{profile}/agents/e2e-qa.md")
+            self.assertEqual(1, text.count(clause), profile)
+            self.assertIn("an open 🟡/🔴 handoff prevents a clean result." + " " + clause, text)
+
+    def test_adviser_changed_source_read_status_gate_bars_approve(self):
+        gate = ("Before the verdict, list every changed non-test source file with its Read status (full / partial / not read). "
+                "When the project requires whole-file reading of changed files, any partial or unread changed source file "
+                "makes coverage PARTIAL (not COMPLETE) and bars `APPROVE`: use the existing DEFER (or REQUEST_CHANGES when a "
+                "confirmed violation exists) with the exact unread files named, unless the unread part is demonstrably "
+                "unrelated to the change and the reason is recorded. Changed test files are read by the test layers; skip "
+                "their full reading only when QA/E2E own them, and say so.")
+        for profile in (".claude", ".claude-company"):
+            text = read(f"{profile}/agents/adviser.md")
+            self.assertEqual(1, text.count(gate), profile)
+            self.assertIn("never turn missing requirements into an assumed acceptance criterion. " + gate, text)
+            header = text.split("---", 2)[1]
+            self.assertIn("model: claude-opus-5-5", header)
+            self.assertIn("effort: high", header)
 
     def test_xrev1_central_behavior_gap_floor_is_pinned(self):
         floor = ("If no test can distinguish the new behavior from the old, the gap is at least 🟡. "
