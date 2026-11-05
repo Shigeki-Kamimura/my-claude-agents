@@ -17,7 +17,7 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `edf249197799e18e684ee52d02d9b94bea8401715fd9100d40be6ce9c8d21de3`
+SHA-256: `cbfa6575d2069d5957d8130ce1988b5c313c564caf9225e8c61b49d5988b7fde`
 Included sections: Pinned source and reconciliation, Source coverage and role scope, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Independent review and reconciliation, Evidence and reporting
 
 
@@ -91,6 +91,18 @@ Before editing or judging the change, identify the user/role, goal, entry point,
 
 Use the following heuristic questions where the change triggers them: visible status; familiar user language; control and escape; consistency; error prevention; recognition instead of memory; efficient operation; focused content; understandable recovery; useful contextual help. These are inspection aids, not a requirement to add every feature to every screen. Check the actual user/role, permissions, empty/loading/disabled/success/error states and directly affected viewport/input modes; do not expand into every product screen or a fixed scenario count.
 
+Code-observable checks for those questions (inspection aids; apply only the rows the change triggers, and keep unobservable aspects UNCONFIRMED rather than guessing):
+
+| Question | Observation point in source or supplied evidence |
+| --- | --- |
+| Is status visible? | Each async branch (pending/success/error) has a user-visible representation. |
+| Can the user escape or undo? | Destructive or consequential actions have confirmation/undo as appropriate, and duplicate submission is prevented. |
+| Can the user recover from an error? | On failure the user's input is retained, and the message states the cause and the next action. |
+| Is it consistent? | Shared components/tokens are used, and terms/labels for the same operation match across screens. |
+| Is it operable? | Interactive elements use appropriate element types (button/a/input), have accessible names, are keyboard-reachable with visible focus, and have usable target size. |
+
+These rows translate the questions into checks; they do not prove human comfort, and unobserved rendering/interaction stays UNCONFIRMED under the evidence rules below. A reviewer (CR/ADV) treats HQ's reached-state list as supplied evidence, not as the review scope: independently derive the reachable states from the requirement and source, and report any state the list omits.
+
 Evidence and judgment:
 - Assess UI and UX separately in the existing coverage record: expected baseline/task -> inspected source or observed behavior -> result and precise missing evidence. Reuse COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED; do not create parallel reports for each consultation.
 - Source and comparable components can establish structural/contract facts. Static screenshots can establish only the visible state and viewport shown. For rendered appearance or interaction claims that source cannot resolve, inspect attributable candidate screenshots/browser or authorized interaction evidence for the named state, user and input mode. A screenshot cannot prove clicking, keyboard operation, recovery or task completion. Automated selectors passing does not prove discoverability or human comfort.
@@ -98,7 +110,7 @@ Evidence and judgment:
 - Missing material evidence for an owned UI/UX acceptance condition remains UNCONFIRMED; state the exact dependency and request only the needed authorized evidence. An unrun browser check alone is NOT_RUN, not a new unconditional approval gate. Never treat an unobserved axis as compliant or invent a defect to avoid uncertainty.
 
 Ownership within existing roles:
-- HQ defines both axes, implements the smallest coherent improvement, obtains triggered framework advice and owns authorized verification.
+- HQ defines both axes, implements the smallest coherent improvement, obtains triggered framework advice and owns authorized verification. Before editing, list the states the changed operation can actually reach (e.g. loading/empty/disabled/success/error/duplicate submit/back navigation; omit unreachable ones) and reconcile that list after implementation so reviewers verify the same set.
 - CR checks local consistency, applicable UI rules and concrete local interaction defects. Cross-screen/task/producer questions retain exact evidence and go to ADV or QA/E2E; CR does not become a UX, architecture or E2E audit.
 - ADV owns the affected user task and cross-boundary UI/UX acceptance. It obtains matched React/Vue evidence where triggered, reconciles applicable standards and retains dependent uncertainties. It does not certify usability from a code-only or screenshot-only pass.
 - React/Vue consultation checks the supplied UI baseline, affordances, accessible interaction and reached state/render flow. It remains read-only and does not run browsers/tests or grant whole-PR approval.
