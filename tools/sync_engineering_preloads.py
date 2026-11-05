@@ -38,7 +38,8 @@ SECTIONS = {
         "human": ("API-to-UI Semantics", "Reachable Failure Evidence"),
     },
     # Claudeのレビュー4層だけに渡す。XREV-1(HND-1を含む)を読む選択に依存させないため
-    LENSES: {"governance": ("XREV-1: Cross-model review calibration lenses",)},
+    LENSES: {"governance": ("XREV-1: Cross-model review calibration lenses",
+                            "BIAS-1: Provenance and self-preference controls")},
 }
 CODEX_SECTIONS = {
     **{name: sections for name, sections in SECTIONS.items() if name != LENSES},
@@ -47,6 +48,7 @@ CODEX_SECTIONS = {
             "Pinned source and reconciliation", "Source coverage and role scope",
             "OPS-1: Release, operability and data-lifecycle boundaries",
             "XREV-1: Cross-model review calibration lenses",
+            "BIAS-1: Provenance and self-preference controls",
             "User-directed execution permissions", "Review objective and evidence", "Mandatory UI consistency and task usability",
             "Independent review and reconciliation", "Evidence and reporting",
         ),
@@ -71,7 +73,7 @@ def section(text: str, title: str) -> str:
 DESCRIPTIONS = {
     "engineering-review-core": "Shared engineering principles, execution boundaries and evidence rules preloaded for Claude implementation/review roles.",
     "engineering-react-rules": "React consultation rules for async state, GET Suspense exceptions and API-to-render evidence; preloaded for react-ui-flow.",
-    LENSES: "Cross-model review calibration lenses and handoff weights (XREV-1 incl. HND-1); preloaded only for test-qa, e2e-qa, code-quality-reviewer and adviser.",
+    LENSES: "Cross-model review calibration lenses and handoff weights (XREV-1 incl. HND-1) and provenance/self-preference controls (BIAS-1); preloaded only for test-qa, e2e-qa, code-quality-reviewer and adviser.",
     "engineering-nest-rules": "NestJS consultation rules for async failures, authentication/authorization and API producer reachability; preloaded for nestjs-backend.",
 }
 

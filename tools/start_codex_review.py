@@ -26,6 +26,17 @@ def main(argv=None):
             "review_record", Path(__file__).with_name("render_review_record.py"))
         rr = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(rr)
+        # BIAS-1: 依頼文に残った作成ツールの署名行を、reviewerへ渡す前に除きます。
+        prov_spec = importlib.util.spec_from_file_location(
+            "review_provenance", Path(__file__).with_name("review_provenance.py"))
+        provenance = importlib.util.module_from_spec(prov_spec)
+        prov_spec.loader.exec_module(provenance)
+        cleaned, stripped = provenance.strip_author_signatures(request)
+        if stripped:
+            request = cleaned + "\n"
+            print(f"provenance: 依頼文から作成ツールの署名行を{stripped}行除きました", file=sys.stderr)
+        if not request.strip():
+            raise ValueError("署名行を除くと依頼文が空です")
         rr.ensure_safe_output(args.out_dir / "stream.jsonl")
         if args.out_dir.exists() or args.out_dir.is_symlink():
             raise ValueError("出力先には未使用のフォルダーを指定してください")

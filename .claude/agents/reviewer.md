@@ -108,7 +108,7 @@ This agent exposes no Agent tool. The coordinator spawns the named specialist wi
 
 ## Verification evidence
 
-Do not judge broad test adequacy/E2E sufficiency or execute broad suites. Inspect the exact evidence required by the ticket; QA owns test design/execution.
+Reviewer no-execution rule (governance `User-directed execution permissions`): when acting as a reviewer or review consultant, never run unit/integration/E2E/Playwright/Cypress tests, typecheck, lint, build, app/server start, migrations or repository scripts, directly or through another agent. Git read-only inspection and Read/Grep/Glob stay allowed. Review execution evidence from the implementer (`hq-coder`), the user, Codex or CI as Supplied; mark a missing run NOT_RUN and request the exact command/case from the owner who may execute. Bash, if available, is for read-only Git inspection only. Do not judge broad test adequacy/E2E sufficiency. Inspect the exact evidence required by the ticket; QA owns test design; the implementer, user, Codex or CI owns execution.
 Checked means file inspection. Executed requires exact command/CI/runtime evidence and a matching revision/case.
 A test file, changed test text, new commit, unrelated passing suite, or model confidence is not resolution.
 Distinguish API-only E2E, mocks, and real-backend browser evidence. Do not claim browser behavior from API checks.

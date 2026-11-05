@@ -114,13 +114,35 @@ Git読取MCPと後述のBacklog読取だけを追加します。
 - 再開前にホストがstate.jsonだけで、記録済みの子が記録済みの親sessionとtool契約に属し、
   他phaseの担当と重複しないことを確認します。不一致ならモデルを起動せずBLOCKEDで停止し、
   新しい権限や別担当への付替えはしません。
-- prompt cache(TTL約5分)切れ対策: 検証済みで再開可能でも、同phaseの前回終了から
-  `--fresh-after-seconds`(既定300、0以下で無効)を超えていれば、ホストは--resumeせず新規親子を起動します。
-  終了時刻(execution.jsonのfinished_at)が不明なら推測せず従来どおり再開します。
+- 継続優先(既定): 検証済みで再開可能な同phaseの担当は、前回終了からの経過時間に関わらず再開します。
+  再開は前回の転記を一度送り直しますが、新規担当は規則と差分を読み直して推論も作り直すため、
+  通常は再開のほうが読み直しが少ないと見込みます。実際のtoken削減は未測定で、数値は主張しません。
+  従来の`--fresh-after-seconds`(prompt cache TTL約5分を理由に新規化)は**既定0(無効)**に変更しました。
+  正の値を明示した場合だけ、前回終了からその秒数を超えると新規親子を起動します(互換のための任意設定)。
+  終了時刻(execution.jsonのfinished_at)が不明なら推測せず再開します。
+- 新規化の既定条件は文脈サイズです。前担当の子転記の最後のassistant応答に記録されたinput規模
+  (input+cache読込+cache作成のtoken)が`--fresh-above-tokens`(既定150000、0以下で無効)を超えると、
+  ホストは--resumeせず新規親子を起動します。値は目安で測定値ではなく、読めない場合は推測せず再開します。
+  1時間のprompt cache TTLは、ローカルのリリースノートに`promptCacheTtl`/`subagentPromptCacheTtl`の記載があるだけで、
+  サブスクリプションの`claude -p`と子agentで有効かを`--help`や文書で確認できていないため、オプションにも主張にもしません。
 - 新規担当は前担当の判断を継続しません。前担当はprevious_ownerに残し、execution.jsonとMDの
-  `owner_continuity`(fresh_after_ttl、gap秒、両担当ID)に記録します。依頼にsummary・前回結果・追記・
-  全open ID・handoffを逐語で入れ、新規担当は全open IDを差分と原本規則で独立に再確認します。
-  前回の承認・判定は移りません。preflight不一致やtool契約変更は新規起動せず従来どおりBLOCKEDです。
+  `owner_continuity`(fresh_over_context_cap / fresh_after_ttl、gap秒、context_tokens、両担当ID)に記録します。
+  依頼にsummary・前回結果・追記・全open ID・handoffを逐語で入れ、新規担当は全open IDを今回のdeltaと
+  必要な原本で独立に再判定します。前回の承認・判定は移りません。
+  preflight不一致やtool契約変更は新規起動せず従来どおりBLOCKEDです。
+- review_state_digest(新規担当の再レビューのみ。初回には付けません): 新規担当の依頼にホストが
+  state/MD/前回の実記録だけから決定的に作るdigestを同梱します(モデル起動なし)。内容は、規則manifest
+  (path、前担当時点と現在のsha256、status、前担当のRead要求のoffset/limit)、前担当のRead台帳
+  (path、要求範囲、前担当snapshot時点のblob sha)、open IDとhandoffのowner/status/weight、
+  前回結果の参照(原文はsummaryと前回結果の逐語欄にあります)、前回snapshotから今回までのdelta
+  (変更path、規則の変更。callerは安価に導けないため変更ファイルのみで、diffは`git_diff`のdeltaを読みます)です。
+  現在のsha256がmanifestと一致する規則のうち前担当が読んだと記録された範囲だけをSupplied根拠にでき、
+  それは自分の承認ではありません。shaが変わった/追加された規則はdigestで範囲を認めず全体を読みます。
+  新規担当がReadするのは、変更・追加された規則、manifestにない節でdeltaが必要とするもの、delta、
+  各open IDの再判定に必要な原本です。全open IDの再判定と独立した判断は省略できません。
+  digest本体は依頼の`review_state_digest.digest`にも入り、実担当は`review_context`のcurrentで読めます。
+  Read台帳はRead要求の記録で、本文が届いた証明ではありません。転記が読めなければ台帳は空で、規則は全体を読みます。
+  digestのsha256はcontext.jsonとexecution.jsonのbriefing欄に記録します。
 - 親の最終応答に単一のworkflow-result欄がない、または判定欄・handoffの問い/根拠が親の言い換えで
   検証に通らない場合、ホストは実担当の実子原本の最終応答を一字も変えずに検証し、通る場合だけ採用します。
   採用元はexecution.jsonの`result_source`(`parent`|`child_verbatim`)に記録し、親の応答は
@@ -192,6 +214,45 @@ Claudeは`--print`で結果を返して終了します。
 実結果を受け取らずにApproveしません。
 session IDはディスクへ保持します。待機中のAIプロセスは保持しません。
 利用量削減は、実測するまで効果が確認できたとは報告しません。
+
+## 利用量の上限とBIAS-1の来歴管理
+
+利用者指定の運用契約です。Claudeの利用量を測定・問合せせず、モデルやeffortの割当も変えません。
+Codexが起点のClaude依頼で、Pro等の5時間枠を使い切らないための起動側の上限です。
+調整役が担うため、各層の`role_sections`には含めません。
+
+- Codexは、修正を一括し予定した検証を終えた後の再レビューを、新しい利用者依頼なしに自動で再起動できます
+  (想定どおりの運用)。禁止は次の3つだけです。
+  (1) 利用上限(429、`hit your ... limit`、`resets <時刻>`)のシグナル後の盲目的な再試行。
+  (2) 利用者が選んだ層を超える追加層の起動。
+  (3) 原因を報告せずに3回(修理round)を超える再レビュー。
+- 既定は逐次です。1起動につきClaudeの子は同時に1つまでで、runのlockが同一runの並行起動を拒否します。
+  並列は利用者が明示した場合だけで、燃焼速度が増えます。層は利用者が選んだ部分集合が上限です。
+- 複数層(2層以上)またはadvを含む依頼は、利用者が読み取った`claude_usage_before`(自由文、例: `62% of window, resets 14:00 JST`)、
+  なければ`claude_usage: unknown`をrun.jsonとMDの先頭に記録します(`md_review.py --claude-usage-before`)。
+  unknownの間、起動側は推定コスト区分(層数と変更path数の目安。実測ではない)を告知し、
+  利用者が追加を確認する(`start_md_review.py --confirm-more-layers`)まで最初の層だけ起動します。
+- コスト区分の目安: adv(Opus)と変更pathが多い差分が高コストです。高(adv含む、3層以上、
+  変更path 60以上、または2層で変更path 30以上)、中(2層、または変更path 30以上)、低(それ以外)です。
+- 利用上限の検出: Claudeが非0終了、is_error、またはresult欠落で終わり、最終resultか標準エラー末尾に
+  上限のシグナルがある場合、ホストはstatus `RATE_LIMITED`、`failure: "rate_limited"`、`reset_hint`を記録し、
+  再試行も追加の子の起動もしません。終了コードは3です。正常終了した回(判定欄がない親の言い換えを含む)は対象にせず、child_verbatimによる回復を妨げません。
+  作業は保存済みで再開でき、リセット時刻を利用者へ示します。同じrunの次のClaude起動は、
+  利用者がリセットを確認して`--after-rate-limit-ack`を付けるまで拒否します(何も作成しません)。
+  この拒否はrun単位で、アカウント全体の上限そのものは検知できません。
+- 3回の修理roundの上限、並列起動の同意、利用量の読取りは契約上の義務で、ツールは強制しません。
+  ツールが強制するのは、unknown時の最初の層だけの起動、RATE_LIMITEDの記録・再試行なし・ack要求、
+  同一runの並行拒否です。
+
+BIAS-1(来歴管理)のツール側の扱いです。
+- `md_review.py`は、summaryと追記から作成ツールの署名行
+  (`Co-Authored-By:`、AIツールの`Generated with ...`、行頭の🤖、`written by <tool/model>`)を保存前に除き、
+  除いた行数を記録します。fenced code block内は変更しません。文体の痕跡は隠せません。
+  summaryと前回結果は契約上必要なため落としません。これらはSuppliedで、正しさの証拠ではありません。
+- `--author-model {claude,codex,human,unknown}`は任意で、未指定の旧runも有効です。未指定時は方向から実装側を定めます。
+  ホストは検証済みの判定欄から`reviewer_model`と`review_independence`(`self_check`/`cross_model`/`unknown`)を
+  execution.jsonとMDに記録します。判定欄の11項目は変えず、承認条件も追加しません。
+  codex-claude-reviewのciはCodexがCodex作の対象を見るため`self_check`と記録します。
 
 ## Backlog MCP
 

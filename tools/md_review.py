@@ -4,6 +4,7 @@
 import argparse
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,10 @@ import stat
 import subprocess
 import sys
 import uuid
+
+_provenance_spec = importlib.util.spec_from_file_location("review_provenance", Path(__file__).with_name("review_provenance.py"))
+provenance = importlib.util.module_from_spec(_provenance_spec)
+_provenance_spec.loader.exec_module(provenance)
 
 LAYERS = {"qa": "test-qa", "e2e": "e2e-qa", "cr": "code-quality-reviewer", "adv": "adviser", "ci": "ci-reviewer"}
 ROOT = Path(__file__).resolve().parents[1]
@@ -439,19 +444,25 @@ def main():
     summaries.add_argument("--summary-file", type=Path, help="既存文書の取込専用です。通常はsummary-stdinを使います")
     summaries.add_argument("--summary-stdin", action="store_true")
     parser.add_argument("--out-dir", type=Path)
+    parser.add_argument("--author-model", choices=provenance.AUTHOR_MODELS,
+                        help="実装側のモデル(BIAS-1)。省略可。未指定の旧runも有効です")
+    parser.add_argument("--claude-usage-before", metavar="TEXT",
+                        help="利用者が読み取ったClaude利用量の自由文(例: '62%% of window, resets 14:00 JST')。unknownも可。測定はしません")
     args = parser.parse_args()
     if args.serve:
         serve(args.serve.resolve(strict=True))
         return
     if args.run_dir:
         folder, config = load_run(args.run_dir)
-        if any((args.project, args.base, args.direction, args.layers, args.paths, args.rules, args.summary_file, args.summary_stdin, args.out_dir)):
+        if any((args.project, args.base, args.direction, args.layers, args.paths, args.rules, args.summary_file, args.summary_stdin, args.out_dir, args.author_model, args.claude_usage_before)):
             parser.error("既存runには初期化用引数を使えません。add-paths/add-rulesを指定してください")
         if not (args.note_file or args.note_stdin):
             parser.error("実装側追記にはnote-stdinが必要です")
-        note = (sys.stdin.read() if args.note_stdin else args.note_file.read_text()).strip()
+        note, stripped = provenance.strip_author_signatures(sys.stdin.read() if args.note_stdin else args.note_file.read_text())
         if not note:
             raise ValueError("追記が空です")
+        if stripped:
+            print(f"provenance: 追記から作成ツールの署名行を{stripped}行除きました", file=sys.stderr)
         lock = os.open(folder / ".lock", os.O_CREAT | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
         with os.fdopen(lock, "w") as stream:
             fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -465,7 +476,8 @@ def main():
             scope = check_scope(config)
             info = capture(config)
             reference = append(folder, "Implementation update", json.dumps({"snapshot_id": info["snapshot_id"],
-                   "added_paths": args.add_paths, "added_rules": list(map(str, args.add_rules))}, ensure_ascii=False) + "\n\n" + note)
+                   "added_paths": args.add_paths, "added_rules": list(map(str, args.add_rules)),
+                   **({"provenance_stripped_lines": stripped} if stripped else {})}, ensure_ascii=False) + "\n\n" + note)
             config["updates"].append(reference)
             atomic_text(folder / "run.json", json.dumps(config, ensure_ascii=False, indent=2) + "\n")
             atomic_text(folder / "latest-fix.json", json.dumps({"reference": reference, "snapshot_id": info["snapshot_id"]}))
@@ -492,12 +504,20 @@ def main():
               "rules": [str(p.resolve(strict=True)) for p in args.rules]}
     if any(not reason.strip() for reason in config["exclusions"].values()):
         raise ValueError("除外理由が必要です")
+    if args.author_model:
+        config["author_model"] = args.author_model
+    config.update(provenance.usage_record(args.claude_usage_before, args.direction, config["layers"]))
     if not args.paths:
         config["paths"] = changed_paths(config)[0]
     scope = check_scope(config)
-    summary = (sys.stdin.read() if args.summary_stdin else args.summary_file.read_text()).strip()
+    summary, stripped = provenance.strip_author_signatures(sys.stdin.read() if args.summary_stdin else args.summary_file.read_text())
     if not summary:
         raise ValueError("実装担当のサマリーが空です")
+    if stripped:
+        config["provenance_stripped_lines"] = stripped
+        print(f"provenance: サマリーから作成ツールの署名行を{stripped}行除きました", file=sys.stderr)
+    if config.get("claude_usage") == "unknown":
+        print("claude_usage: unknown。複数層またはadvのため、起動側は推定コスト区分を告知し、利用者が追加を確認するまで最初の層だけ起動します", file=sys.stderr)
     capture(config)  # 不正な対象では記録を作りません。
     folder.mkdir(parents=True, mode=0o700, exist_ok=False)
     private_write(folder / "run.json", json.dumps(config, ensure_ascii=False, indent=2) + "\n")

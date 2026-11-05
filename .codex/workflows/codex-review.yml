@@ -86,6 +86,11 @@ response_contract:
   acceptance: 現snapshot、全対象COMPLETE、自層の指摘/質問/必要証拠ゼロ、実委譲と必要相談、既存native判定条件を満たすときだけAPPROVEです。欠落や本文との矛盾は未承認です。
 pause_and_resume:
   failure: source変更、CLI失敗、利用上限、権限不足はBLOCKED/未確認です。結果と全未了をMDへ保持します。上限到達を承認へ読み替えません。
+dispatch_limits:
+  scope: 起動回数の上限です。レビュー内容、承認条件、model/effortは変えません。Claude利用量のガードは対象外です(CodexはClaude CLIを起動しません)。
+  redispatch: 各roundは新しいfresh execです。修正を一括し予定した検証を終えた後の再レビューは、新しい利用者依頼なしに自動で再起動できます(想定どおり)。禁止は次の2つだけです。(1)利用者が選んだ層を超える追加層の起動、(2)原因を報告せずに3回を超える修理round。
+  layers_cap: 利用者が選んだ層の部分集合が上限です。追加の層を起動しません。
+  sequential: 既定は逐次です。並列は利用者が明示した場合だけです。
 handoff:
   terminal_state: draft_pr_awaiting_human_ready
   conditions: md-review.mdの7–9に従い、選択層の現snapshot承認、実装側Local-ci成功、実Codex ci-reviewerの指摘なし判定、最終commitとの内容対応を確認します。

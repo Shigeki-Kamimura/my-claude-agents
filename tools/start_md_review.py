@@ -21,6 +21,11 @@ receipt_spec = importlib.util.spec_from_file_location("review_receipts", Path(__
 receipts = importlib.util.module_from_spec(receipt_spec)
 receipt_spec.loader.exec_module(receipts)
 
+digest_spec = importlib.util.spec_from_file_location("review_state_digest", Path(__file__).with_name("review_state_digest.py"))
+sdigest = importlib.util.module_from_spec(digest_spec)
+digest_spec.loader.exec_module(sdigest)
+provenance = review.provenance
+
 BACKLOG_READ = ("get_issue", "get_issue_comments", "get_document", "get_document_comments",
                 "get_project", "get_wiki", "get_wikis", "get_documents", "get_document_tree")
 TOOLS = ["Read", "Glob", "Grep", "Agent", "SendMessage"]
@@ -166,8 +171,12 @@ BRIEFING_IDENTITY = ("workflow_id", "phase", "reviewer", "review_kind", "round_i
                      "previous_snapshot_id", "layers", "rule_source_files", "role_section", "workflow_file", "contract_file",
                      "required_diff_views", "previous_owner", "owner_continuity", "fresh_owner_notice")
 
-FRESH_OWNER_NOTICE = ("新規担当です。前担当の承認・判定は引き継がれません。全ての未解決IDを今回の差分と原本規則で独立に再確認してください。")
-FRESH_AFTER_SECONDS = 300
+FRESH_OWNER_NOTICE = ("新規担当です。前担当の承認・判定は引き継がれません。全ての未解決IDを今回のdeltaと必要な原本で独立に再判定してください。"
+                      "review_state_digestがある場合、現shaがmanifestと一致する規則のうち前担当が読んだと記録された範囲は、Supplied根拠として扱えます(自分の承認ではありません)。"
+                      "shaが変わった規則、manifestにない節でdeltaが必要とするもの、delta、各未解決IDの再判定に必要な原本はReadしてください。")
+# 既定は継続(resume)です。TTL(秒)による新規化は0以下で無効の任意設定、文脈サイズ(token)の上限が既定の新規化条件です。
+FRESH_AFTER_SECONDS = 0
+FRESH_ABOVE_TOKENS = 150000
 
 
 def utc_now():
@@ -191,10 +200,22 @@ def owner_finished_at(folder, phase_state):
     return None
 
 
-def decide_continuity(folder, phase_state, owner, threshold):
-    """resume / fresh を決めます。時刻が不明または閾値以下・無効ならresumeです。"""
+def owner_context_tokens(project, owner):
+    """前担当の子転記に記録された直近のinput規模。読めなければNone(推測しません)。"""
+    try:
+        return sdigest.context_tokens(sdigest.child_transcript(receipts, project, owner))
+    except (ValueError, OSError):
+        return None
+
+
+def decide_continuity(folder, phase_state, owner, threshold, context_tokens=None, token_cap=0):
+    """resume / fresh を決めます。既定はresumeで、記録済みの文脈が上限を超える場合、
+    または任意のTTL閾値(秒、正の値のとき)を超える場合だけfreshです。不明な値は推測せずresumeです。"""
     ids = {k: owner[k] for k in ("parent_session_id", "reviewer_id")}
-    info = {"mode": "resumed", "decision": "resume", "gap_seconds": None, "threshold_seconds": threshold, "previous_owner": ids}
+    info = {"mode": "resumed", "decision": "resume", "gap_seconds": None, "threshold_seconds": threshold, "previous_owner": ids,
+            "context_tokens": context_tokens, "context_cap_tokens": token_cap}
+    if type(token_cap) is int and token_cap > 0 and type(context_tokens) is int and context_tokens > token_cap:
+        return {**info, "mode": "fresh_over_context_cap", "decision": "fresh"}
     if not isinstance(threshold, int) or threshold <= 0:
         return {**info, "mode": "resumed_ttl_disabled"}
     finished = owner_finished_at(folder, phase_state)
@@ -235,7 +256,7 @@ def build_dispatch(folder, request):
     return body, review.digest(body.encode())
 
 
-def build_briefing(folder, request, plan, sections, cap):
+def build_briefing(folder, request, plan, sections, cap, digest=None):
     """ホストが保持する原本だけを逐語で並べます。要約・言い換えはしません。
     全文を入れた欄は読取計画のrequired_sectionsから外し、入らない欄はNOT_INLINEDとして残します。"""
     identity = {k: request[k] for k in BRIEFING_IDENTITY if request.get(k) is not None}
@@ -244,6 +265,9 @@ def build_briefing(folder, request, plan, sections, cap):
     head = ("## Identity\n```json\n" + json.dumps(identity, ensure_ascii=False, indent=2) + "\n```\n\n" + dispatch_text +
             "## Open item IDs\n```json\n" + json.dumps(plan["pending_item_ids"], ensure_ascii=False) + "\n```\n\n"
             "## Handoffs (ledger, verbatim)\n```json\n" + json.dumps(request.get("handoff_index", {}), ensure_ascii=False, indent=2) + "\n```\n")
+    if digest:
+        head += (f"\n## review_state_digest (host-built from state/MD/prior records; Supplied, not an approval)\n"
+                 f"<<REVIEW_STATE_DIGEST sha256={digest[1]}>>\n{digest[0]}\n<<END REVIEW_STATE_DIGEST>>\n")
     used, blocks, inlined, skipped = len(head), [], [], []
     manifest = [("identity+open_ids+handoffs", len(head), "INLINED")]
     for name in BRIEFING_PRIORITY:
@@ -266,7 +290,16 @@ def build_briefing(folder, request, plan, sections, cap):
     text = ("<manifest cap_chars=%d>\n" % cap + "\n".join(lines) + "\n</manifest>\n\n" + head + "".join(blocks))
     return text, {"chars": len(text), "cap_chars": cap, "inlined": inlined, "not_inlined": skipped,
                   "sha256": review.digest(text.encode()),
+                  **({"review_state_digest_sha256": digest[1], "review_state_digest_chars": len(digest[0])} if digest else {}),
                   "child_dispatch_sha256": dispatch[1] if dispatch else None, "child_dispatch_chars": len(dispatch[0]) if dispatch else 0}
+
+
+def make_digest(folder, config, previous, predecessor, snapshot, changed, rule_changes, handoffs):
+    """新規担当用のreview_state_digestです。前回の確認済みsnapshotと実記録だけを使い、モデルを起動しません。"""
+    old = json.loads((folder / previous["round_id"] / "snapshot.json").read_text())
+    reads = sdigest.read_requests(sdigest.child_transcript(receipts, config["project"], predecessor))
+    return sdigest.build(config["project"], old, snapshot["rules"], snapshot["snapshot_id"], changed, rule_changes, reads,
+                         predecessor, previous.get("journal_reference"), previous["result"]["open_item_ids"], handoffs)
 
 
 def print_briefing(args):
@@ -294,14 +327,22 @@ def print_briefing(args):
                "required_diff_views": ["delta"] if rereview else ["branch", "staged", "unstaged"],
                "previous_owner": {k: owner[k] for k in ("parent_session_id", "reviewer_id")} if owner else None,
                "handoff_index": state.get("handoffs", {})}
-    continuity = decide_continuity(folder, phase_state, owner, getattr(args, "fresh_after_seconds", FRESH_AFTER_SECONDS)) if is_claude and owner else None
+    continuity = (decide_continuity(folder, phase_state, owner, getattr(args, "fresh_after_seconds", FRESH_AFTER_SECONDS),
+                                    owner_context_tokens(config["project"], owner), getattr(args, "fresh_above_tokens", FRESH_ABOVE_TOKENS))
+                  if is_claude and owner else None)
     fresh = bool(continuity and continuity["decision"] == "fresh")
     if continuity:
         request["owner_continuity"] = continuity
     if fresh:
         request["fresh_owner_notice"] = FRESH_OWNER_NOTICE
     plan, sections = reading_context(folder, config, phase_state, args.phase, bool(is_claude and owner and not fresh))
-    text, report = build_briefing(folder, request, plan, sections, args.briefing_max_chars)
+    digest = None
+    if fresh and rereview:
+        old = json.loads((folder / previous["round_id"] / "snapshot.json").read_text())
+        current = review.capture(config)
+        changed, rule_changes = sdigest.snapshot_delta(old, current)
+        digest = make_digest(folder, config, previous, continuity["previous_owner"], current, changed, rule_changes, state.get("handoffs", {}))
+    text, report = build_briefing(folder, request, plan, sections, args.briefing_max_chars, digest)
     report["review_md_chars"] = len(review.journal_body(folder))
     report["owner_continuity"] = continuity
     report["required_sections_after"] = plan["required_sections"]
@@ -377,6 +418,54 @@ def preflight_owner(project, phase, state, owner, previous, policy_id, resume):
         raise ValueError("記録済みの子が記録済みの親sessionに属することを原本で確認できません")
 
 
+def rate_limit_signal(round_dir, exit_code):
+    """Claudeの終了が利用上限によるかを、失敗した終了の最終resultと標準エラー末尾だけから判定します。
+    正常終了した回(判定欄がない親の言い換えを含む)は対象にしません(child_verbatimで回復でき、上限を扱うPRの本文での誤検出も避けます)。"""
+    final, status, is_error = "", None, False
+    try:
+        with (round_dir / "stdout.jsonl").open() as records:
+            for line in records:
+                try:
+                    record = json.loads(line)
+                except ValueError:
+                    continue
+                if isinstance(record, dict) and record.get("type") == "result":
+                    final = record.get("result") if isinstance(record.get("result"), str) else ""
+                    status, is_error = record.get("api_error_status"), bool(record.get("is_error"))
+    except OSError:
+        pass
+    try:
+        data = (round_dir / "stderr.log").read_bytes()[-4000:].decode("utf-8", "replace")
+    except OSError:
+        data = ""
+    # 親の言い換えで判定欄がない場合は、実子原本の採用(child_verbatim)で回復できるため、上限とは扱いません。
+    failed = bool(exit_code != 0 or is_error or not final)
+    return provenance.detect_rate_limit(final, status, data, failed)
+
+
+def finish_rate_limited(folder, state, request, meta, limit, phase, round_dir):
+    """利用上限に達したroundを記録して終了します。再試行も追加の子の起動もしません。"""
+    hint = limit["reset_hint"]
+    meta.update({"status": "RATE_LIMITED", "failure": "rate_limited", "reset_hint": hint, "rate_limit_signal": limit["signal"]})
+    body = ("Claudeの利用上限に達したため、このroundは未完了です(再試行しません)。作業は保存済みで再開できます。\n"
+            f"検出: {limit['signal']}\nリセット: {hint or '出力から特定できません'}")
+    review.private_write(round_dir / "result.md", body)
+    review.private_write(round_dir / "execution.json", json.dumps(meta, ensure_ascii=False, indent=2))
+    reference = review.append(folder, f"{phase} / {round_dir.name}",
+                              "```json\n" + json.dumps({k: v for k, v in meta.items() if k != "argv"}, ensure_ascii=False, indent=2) + "\n```\n\n" + body)
+    state["phases"][phase].update({"status": "RATE_LIMITED", "latest_reference": reference})
+    state["rate_limit"] = {"phase": phase, "round_id": round_dir.name, "reset_hint": hint, "detected_at": utc_now().isoformat()}
+    save_state(folder, state)
+    request["phase_index"] = {p: {k: v.get(k) for k in ("status", "snapshot_id", "latest_attempt")} for p, v in state["phases"].items()}
+    request["handoff_index"] = state["handoffs"]
+    request["execution_result_file"] = str(round_dir / "execution.json")
+    review.current_request(folder, request)
+    print(json.dumps({k: v for k, v in meta.items() if k != "argv"}, ensure_ascii=False))
+    print(f"RATE_LIMITED: Claudeの利用上限に達しました。作業は保存済みで再開できます。リセット: {hint or '出力から特定できません'}。"
+          "自動の再試行はしません。リセット後に利用者が確認し、--after-rate-limit-ackを付けて再実行してください", file=sys.stderr)
+    return 3
+
+
 def run(args):
     if args.print_briefing:
         return print_briefing(args)
@@ -404,13 +493,31 @@ def run(args):
         policy_id = review.digest(b"".join((review.ROOT / name).read_bytes() for name in (
             "tools/start_md_review.py", "tools/md_review.py", "tools/md_review_tool_gate.py", "tools/review_receipts.py", ".codex/workflows/md-review.md")))
         is_claude = config["direction"] == "codex-claude-review" and args.phase != "ci"
+        cost = None
+        if is_claude:
+            # 利用量ガード: 拒否はround作成やPENDING書込みより前に行い、何も残しません。
+            if state.get("rate_limit"):
+                if not args.after_rate_limit_ack:
+                    raise ValueError("直前のroundがClaudeの利用上限に達しています(リセット: "
+                                     + str(state["rate_limit"].get("reset_hint") or "出力から特定できません")
+                                     + ")。作業は保存済みで再開できます。リセット後、利用者が確認して--after-rate-limit-ackを付けた場合だけ再開します")
+                state.setdefault("rate_limit_acks", []).append({**state.pop("rate_limit"), "acknowledged_at": utc_now().isoformat()})
+            cost = provenance.estimate_cost_class(config["layers"], len(scope["changed_paths"]))
+            if config.get("claude_usage") == "unknown":
+                started = sorted(p for p, entry in state["phases"].items() if p != args.phase and isinstance(entry, dict) and entry.get("latest_attempt"))
+                print(f"claude_usage: unknown。推定コスト区分={cost}(層={len(config['layers'])}, 変更path={len(scope['changed_paths'])}"
+                      + (", adv含む" if "adv" in config["layers"] else "") + ")。測定値ではありません", file=sys.stderr)
+                if started and not args.confirm_more_layers:
+                    raise ValueError(f"利用量が未入力のため、起動済みの層({', '.join(started)})の後に別の層は起動しません。"
+                                     "利用者が追加の層を確認した場合だけ--confirm-more-layersを付けてください")
         continuity, fresh, active_owner = None, False, owner
         if owner and is_claude:
             preflight_owner(config["project"], args.phase, state, owner, previous, policy_id, args.resume)
             args.resume = owner["parent_session_id"]
-            continuity = decide_continuity(folder, phase_state, owner, args.fresh_after_seconds)
+            continuity = decide_continuity(folder, phase_state, owner, args.fresh_after_seconds,
+                                           owner_context_tokens(config["project"], owner), args.fresh_above_tokens)
             if continuity["decision"] == "fresh":
-                # 検証済みで再開可能な担当でもcacheが冷えているため、新規担当で始めます（承認は引き継ぎません）。
+                # 記録済みの文脈が上限を超える(または任意のTTLを超えた)ため新規担当で始めます（承認は引き継ぎません）。
                 fresh, active_owner, args.resume = True, None, None
         elif args.resume:
             raise ValueError("このrun/phaseの検証済みClaude親子を確認できません")
@@ -463,7 +570,13 @@ def run(args):
         request["reading_plan"]["required_diff_views"] = request["required_diff_views"]
         request["head"] = before["head"]
         request["snapshot_id"] = before["snapshot_id"]
-        briefing, briefing_report = build_briefing(folder, request, request["reading_plan"], sections, args.briefing_max_chars)
+        digest = None
+        if fresh and rereview:
+            digest = make_digest(folder, config, previous, continuity["previous_owner"], before,
+                                 comparison["changed_paths"], comparison["rule_changes"], state["handoffs"])
+            # 実際のreviewer(子)はreview_context("current")だけを読めるため、digest本体もここへ置きます。
+            request["review_state_digest"] = {"sha256": digest[1], "chars": len(digest[0]), "digest": json.loads(digest[0])}
+        briefing, briefing_report = build_briefing(folder, request, request["reading_plan"], sections, args.briefing_max_chars, digest)
         del request["head"], request["snapshot_id"]
         request["reading_plan"]["briefing_sha256"] = briefing_report["sha256"]
         review.private_write(round_dir / "briefing.md", briefing)
@@ -527,9 +640,12 @@ def run(args):
             changed = True
         meta = {"transport": "md-v3", "phase": args.phase, "snapshot_id": before["snapshot_id"], "exit_code": exit_code,
                 "source_changed": changed, "resume": args.resume, "artifacts": str(round_dir),
-                "failure": failure, "argv": argv, "finished_at": utc_now().isoformat(), "owner_continuity": continuity, "tool_contract_sha256": policy_id, "briefing": briefing_report,
+                "failure": failure, **({"cost_class": cost} if cost else {}), "argv": argv, "finished_at": utc_now().isoformat(), "owner_continuity": continuity, "tool_contract_sha256": policy_id, "briefing": briefing_report,
                 "status": "PENDING_RESULT_VALIDATION" if exit_code == 0 and not changed and not failure else "BLOCKED"}
         if is_claude:
+            limit = rate_limit_signal(round_dir, exit_code)
+            if limit:
+                return finish_rate_limited(folder, state, request, meta, limit, args.phase, round_dir)
             try:
                 native = {}
                 with (round_dir / "stdout.jsonl").open() as records:
@@ -596,6 +712,7 @@ def run(args):
                 body, meta["result_source"] = verbatim, "child_verbatim"
             state["handoffs"] = handoffs
             meta.update({k: checked[k] for k in ("parent_session_id", "reviewer_id", "approved")})
+            meta.update(provenance.independence_record(config, checked["result"]["invocation_evidence"]))
             meta["status"] = "APPROVED" if checked["approved"] else "REVIEWED"
             if fresh:
                 continuity["new_owner"] = {"parent_session_id": checked["parent_session_id"], "reviewer_id": checked["reviewer_id"]}
@@ -603,7 +720,7 @@ def run(args):
                 "latest_attempt": round_dir.name,
                 **{k: phase_state[k] for k in ("previous_owner", "previous_owners") if k in phase_state},
                 **({"previous_owner": continuity["previous_owner"], "previous_owners": state["phases"][args.phase]["previous_owners"],
-                    "owner_continuity": "fresh_after_ttl"} if fresh else {}),
+                    "owner_continuity": continuity["mode"]} if fresh else {}),
                 "owner": {"parent_session_id": checked["parent_session_id"], "reviewer_id": checked["reviewer_id"],
                           "tool_contract_sha256": policy_id, "result": {"open_item_ids": []}},
                     "last_valid": {**checked, "round_id": round_dir.name, "tool_contract_sha256": policy_id,
@@ -635,7 +752,13 @@ def main():
     parser.add_argument("--resume", help="同phaseの検証済みClaude親session IDだけです")
     parser.add_argument("--timeout", type=int, default=1800)
     parser.add_argument("--fresh-after-seconds", type=int, default=FRESH_AFTER_SECONDS,
-                        help="同phaseの前回終了からこの秒数を超えたら、resumeせず新規Claude担当で始めます。0以下で無効")
+                        help="任意設定: 同phaseの前回終了からこの秒数を超えたら、resumeせず新規Claude担当で始めます。既定0(無効=継続優先)")
+    parser.add_argument("--fresh-above-tokens", type=int, default=FRESH_ABOVE_TOKENS,
+                        help="前担当の子転記に記録された直近のinput規模(token)がこの値を超えたら新規担当で始めます。0以下で無効。目安であり測定値ではありません")
+    parser.add_argument("--after-rate-limit-ack", action="store_true",
+                        help="直前の利用上限(RATE_LIMITED)を利用者が確認した後の再実行に必要です。自動再試行はありません")
+    parser.add_argument("--confirm-more-layers", action="store_true",
+                        help="claude_usageが未入力のrunで、最初の層の後に別の層を起動することを利用者が確認した場合だけ指定します")
     parser.add_argument("--briefing-max-chars", type=int, default=60000, help="依頼文へ逐語で入れる本文の上限文字数")
     parser.add_argument("--print-briefing", action="store_true", help="briefingと大きさだけを標準出力へ出します。書込みもモデル起動もしません")
     args = parser.parse_args()

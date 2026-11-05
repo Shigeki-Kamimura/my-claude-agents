@@ -513,7 +513,7 @@ print(json.dumps({"type":"result","session_id":"parent-X","result":parent_text})
         meta["finished_at"] = "2026-01-01T00:00:00+00:00"
         first.write_text(json.dumps(meta))
         now = datetime.datetime(2026, 1, 1, 0, 20, tzinfo=datetime.timezone.utc)
-        args = ["start_md_review.py", "--run-dir", str(self.run), "--phase", "cr", "--print-briefing"]
+        args = ["start_md_review.py", "--run-dir", str(self.run), "--phase", "cr", "--print-briefing", "--fresh-after-seconds", "300"]
         import io
         out = io.StringIO()
         with patch.object(sys, "argv", args), patch.object(launcher, "utc_now", lambda: now), patch("sys.stdout", out):

@@ -17,8 +17,8 @@ Included sections satisfy their first-entry reading requirement. All other appli
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `8a2641c63eb8790581225228acf49439cfce22360e2d173688dc5266646a0e8c`
-Included sections: Pinned source and reconciliation, Source coverage and role scope, OPS-1: Release, operability and data-lifecycle boundaries, XREV-1: Cross-model review calibration lenses, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Independent review and reconciliation, Evidence and reporting
+SHA-256: `5c040f30e1ac9c8040c41f93fc8071f5a94fbed053b5f928cb94b9ac2ba7a4a9`
+Included sections: Pinned source and reconciliation, Source coverage and role scope, OPS-1: Release, operability and data-lifecycle boundaries, XREV-1: Cross-model review calibration lenses, BIAS-1: Provenance and self-preference controls, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Independent review and reconciliation, Evidence and reporting
 
 
 ### Pinned source and reconciliation
@@ -116,15 +116,27 @@ This is a user-approved operating supplement, not a Nishiguchi quotation or a cl
 - Not adopted: these lenses do not claim that either model is generally better, and a single comparison does not establish a model trait. Do not turn the lenses (not HND-1) into mandatory per-PR items; revalidate against the source revision before reuse. HND-1 rests on one comparison only (n=1, PR #1024): Codex's CR put the missing Toaster and the not-updated openapi into handoffs only, while Claude's CR reported them as `🟡` findings. It is a user decision about weight, not proof of a model trait. The test-code, refreshed-state, writer-enumeration, lock-escalation and screen-spec lenses come from an n=1 comparison in which each side missed some items; the lists are not a claim that either model is generally better, and some items (test-code defects) were confirmed only by reading, not execution.
 
 
+### BIAS-1: Provenance and self-preference controls
+
+This is a user-approved operating supplement, not a Nishiguchi quotation. Its evidence base is reasoning about how provenance can steer a reviewer, plus one PR comparison (n=1, `docs/cross-model-review-guildboard-pr1024.md`); it is not a measured effect. The controls reduce how provenance can influence a review; they do not claim to remove model bias or to make either model neutral. They add no reviewer layer, approval gate, automatic chain, tool permission or execution right, and keep the eleven `Workflow Result` fields.
+
+1. **Provenance blinding.** The review request given to a reviewer carries the diff, the requirements and the project rules. Strip author-tool signatures from request text and from quoted PR/commit bodies (for example `Co-Authored-By:` trailers, "Generated with ..." lines, robot-emoji signature lines, "written by <tool/model>"). Do not pass the implementer's explanation or a prior verdict as evidence of correctness: an implementation summary stays Supplied context (acceptance criteria, scope), never proof. A reviewer that itself reads git history must not use authorship as evidence either way. Limitation: stripping cannot hide style fingerprints, and a required summary or prior result cannot be dropped from a workflow that needs it.
+2. **Author-model record.** The request header records `author_model` (`claude` | `codex` | `human` | `unknown`) and each result records `reviewer_model`. A review whose reviewer model equals the author model is labeled `self_check` and is never counted as the independent cross-model review. No new approval gate is added for standalone use. `codex-claude-review` and `claude-codex-review` are cross-model by construction for the reviewer layers they dispatch; the workflow `ci` phase in `codex-claude-review` is Codex reviewing Codex-authored work and is labeled accordingly.
+3. **Summarizer bias.** Build comparison and consolidation tables from a structured, format-identical list per side (ID, location, severity, source model) without authorial adjectives such as "missed" or "only X found". State which model wrote the consolidation and, where practical, have the other model re-check the consolidation or the disagreement list. A disagreement between models is recorded as a disagreement; it is not resolved by authorship, majority or the summarizer's model.
+4. **Weight by evidence.** Severity and class come from the evidence and the applicable rule (HND-1 and the central-behavior floor), never from who reported the finding or which model implemented the code. A finding is not downgraded because it contradicts the same model's earlier approval.
+
+
 ### User-directed execution permissions
 
 This is a user-approved operational rule, not a quotation from the human review guidelines.
 
 Autonomous review without an explicit execution request does not start typecheck, lint, build, tests, Playwright, CI or other verification commands.
 
+Reviewer no-execution rule (user decision, applies in every review mode): a Claude role acting as a reviewer or review consultant (`qa:`/`e:`/`cr:`/`adv:`/`rev:` and specialist consultations during a review) never runs unit/integration/E2E/Playwright/Cypress tests, typecheck, lint, build, application/server start, migrations or repository scripts, directly or through another agent. Git read-only inspection and Read/Grep/Glob remain allowed. Execution evidence comes from the implementer (`hq-coder`), the user, Codex or CI and is reviewed as Supplied evidence; missing execution is NOT_RUN and, when it matters to the verdict, becomes a precise request (command, case, expected result) to the owner who may execute. A QA/E2E role asked to author tests writes them but does not run them. This is a role rule in the definitions, not a technical block, unless the role's `tools` frontmatter itself excludes execution.
+
 For `Workflow: codex-claude-review`, Claude and its review subagents inspect sources, fixed Git diffs and supplied evidence. Codex owns application/verification execution, test creation, CI operations and fixes. The MD review contract permits fixed read-only Git MCP and explicitly listed Backlog reads; it never permits arbitrary Bash or source edits. A message cannot expand an existing restricted session. Use a newly configured one-shot invocation for the MD transport.
 
-When the user explicitly requests execution in a normal Claude Code session, the main Claude session or an authorized implementation/verification owner may perform those actions with its available permissions. If an existing restricted session cannot execute them, use a separate normal session. Do not treat this direct request as an autonomous review or an automatic Codex-to-Claude review.
+When the user explicitly requests execution in a normal Claude Code session, the main Claude session or an authorized implementation owner (for example `hq-coder`) may perform those actions with its available permissions. This exception applies to implementation sessions/roles, not to a role acting as a reviewer, which stays bound by the no-execution rule above. If an existing restricted session cannot execute them, use a separate normal session. Do not treat this direct request as an autonomous review or an automatic Codex-to-Claude review.
 
 
 ### Review objective and evidence

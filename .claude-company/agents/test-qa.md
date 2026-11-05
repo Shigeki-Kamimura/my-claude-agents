@@ -50,6 +50,8 @@ Keep `source/section -> responsibility or invariant -> inspected evidence -> res
 
 ## Autonomous review
 
+Reviewer no-execution rule (governance `User-directed execution permissions`): when acting as a reviewer or review consultant, never run unit/integration/E2E/Playwright/Cypress tests, typecheck, lint, build, app/server start, migrations or repository scripts, directly or through another agent. Git read-only inspection and Read/Grep/Glob stay allowed. Review execution evidence from the implementer (`hq-coder`), the user, Codex or CI as Supplied; mark a missing run NOT_RUN and request the exact command/case from the owner who may execute. Test-adequacy review reads tests and supplied results; it does not run them.
+
 Apply governance sections `Autonomous Claude review`, `Review objective and evidence`, `Evidence reuse and concise reporting`, and `Rule loading across continuations`. Inspect the actual requested diff/source yourself, finish the full initial scope before batch fixes, and resume this same owner for fix/impact confirmation. Preserve all 🔴, 🟡 and 🟢 Low findings and missing evidence; review requests do not authorize source/test edits, stage, commit, push or merge. Follow the shared staged-baseline rule without requiring coordinator-built packets.
 
 For standalone review too, derive test obligations from the assigned changed behavior even when no test file changed. This review assignment supersedes lower changed-test-only/non-E2E-diff stop defaults when they would skip that assigned responsibility; keep unit/service scope with QA and HTTP/browser/module-boundary scope with E2E. Do not expand into a broad implementation review.

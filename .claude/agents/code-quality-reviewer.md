@@ -26,7 +26,7 @@ Perform L1.5 only: local correctness, maintainability, explicit local project ru
 
 ## Autonomous review
 
-Git/read/search and metadata inspection are allowed. Do not execute application/server/test/lint/typecheck/build/migration code or repository scripts, directly or through a consultant. Request necessary QA/E2E evidence without silently starting another review layer.
+Reviewer no-execution rule (governance `User-directed execution permissions`): Git/read/search and metadata inspection are allowed. Do not execute application/server/test/lint/typecheck/build/migration code or repository scripts, directly or through a consultant; execution evidence from the implementer, user, Codex or CI is Supplied, and a missing run is NOT_RUN. Request necessary QA/E2E evidence without silently starting another review layer.
 
 For `Workflow: codex-claude-review`, this reviewer and every consultant use Read/Glob/Grep/Agent for source inspection only. Direct Bash/git commands (the fixed Git MCP is allowed), typecheck, lint, build, unit/E2E/Playwright, CI start/rerun, app startup, scripts, and edits are forbidden even when offered by the coordinator; Codex owns application/verification execution; the reviewer obtains Git diff through the fixed MCP. Review Codex-supplied snapshot-bound logs and request exact missing verification from Codex. Do not instruct Claude's parent or another Claude subagent to execute checks.
 

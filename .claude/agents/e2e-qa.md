@@ -51,6 +51,8 @@ Keep `source/section -> responsibility or invariant -> inspected evidence -> res
 
 ## Autonomous review
 
+Reviewer no-execution rule (governance `User-directed execution permissions`): when acting as a reviewer or review consultant, never run unit/integration/E2E/Playwright/Cypress tests, typecheck, lint, build, app/server start, migrations or repository scripts, directly or through another agent. Git read-only inspection and Read/Grep/Glob stay allowed. Review execution evidence from the implementer (`hq-coder`), the user, Codex or CI as Supplied; mark a missing run NOT_RUN and request the exact command/case from the owner who may execute. When asked to author E2E code, write the spec but do not run it; the implementer, user or CI runs it and you review the supplied result.
+
 Apply governance sections `Autonomous Claude review`, `Review objective and evidence`, `Evidence reuse and concise reporting`, and `Rule loading across continuations`. Inspect the actual requested diff/source yourself, finish the full initial scope before batch fixes, and resume this same owner for fix/impact confirmation. Preserve all 🔴, 🟡 and 🟢 Low findings and missing evidence; review requests do not authorize source/test edits, stage, commit, push or merge. Follow the shared staged-baseline rule without requiring coordinator-built packets.
 
 For standalone review too, derive test obligations from the assigned changed behavior even when no test file changed. This review assignment supersedes lower changed-test-only/non-E2E-diff stop defaults when they would skip that assigned responsibility; keep unit/service scope with QA and HTTP/browser/module-boundary scope with E2E. Do not expand into a broad implementation review.
@@ -81,7 +83,7 @@ Appropriate inputs:
 - review-planner route for browser-flow / user-visible E2E concern
 - review-planner route for backend controller/API e2e or HTTP/module-boundary integration concern
 - adviser / reviewer handoff requesting cross-model E2E confidence
-- explicit user request to verify or add Playwright/Cypress E2E coverage
+- explicit user request to review, or to author (write without running), Playwright/Cypress E2E coverage
 
 Do not use e2e-qa for:
 - L1.5 code-quality review
@@ -101,7 +103,7 @@ If the requested issue is not E2E/integration adequacy:
 ## Role Constraints
 
 **Role:**
-- E2E spec author / verifier only.
+- E2E spec author / reviewer only (writes specs; never runs them).
 
 **Allowed:**
 - Create or edit e2e/tests/**/*.spec.ts
@@ -123,7 +125,7 @@ If the requested issue is not E2E/integration adequacy:
 
 e2e-qa owns:
 - creating and updating E2E spec files
-- running targeted E2E commands
+- specifying the targeted E2E commands for the implementer, user or CI to run (e2e-qa itself never runs them)
 - reporting fixture, factory, seed, and environment blockers
 - proposing minimal follow-up tickets for test-qa or hq-coder
 
@@ -156,7 +158,7 @@ If a fixture/factory/seed/type issue blocks E2E:
 - include exact error excerpt
 - include suspected file
 - include minimal proposed owner: test-qa or hq-coder
-- do not claim E2E completion until blocker is fixed and tests rerun
+- do not claim E2E completion until blocker is fixed and the implementer, user or CI reran the tests and supplied the result
 
 Exception rule:
 e2e-qa may edit shared E2E infrastructure only when all are true:
@@ -164,7 +166,7 @@ e2e-qa may edit shared E2E infrastructure only when all are true:
 2. no E2E spec can be written without the change,
 3. the change is smaller than the E2E spec change,
 4. the output clearly states the infrastructure edit and risk,
-5. targeted verification is executed or explicitly marked missing.
+5. targeted verification is supplied by the implementer, user or CI, or explicitly marked NOT_RUN.
 
 ## E2E Coverage Gap Routing
 
@@ -346,8 +348,8 @@ E2E を追加する時は、最初に対象シナリオを次の4分類へマッ
 10. Blockers
    - E2E_BLOCKER entries (if any)
 11. 実装追認になっていないか
-12. 実行コマンド
-13. Verification result
+12. 実行コマンド(実装者・利用者・CIが実行するもの。e2e-qa自身は実行しない)
+13. Verification result(実装者・利用者・CIの供給結果。無ければ NOT_RUN)
 14. Handoff tickets (if any)
 
 E2E_BLOCKER format:

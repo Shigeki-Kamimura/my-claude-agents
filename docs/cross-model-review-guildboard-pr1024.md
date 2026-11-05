@@ -258,3 +258,22 @@ Claude は e2e を含む全4層に 🟡 以上があった。
 - 変更C: adv は、判定前に変更ソース(テスト以外)ごとの読み状況(全文/部分/未読)を列挙する。プロジェクトが変更ファイルの全文読みを求めるときは、部分読み・未読があれば coverage を PARTIAL とし、`APPROVE` を出さない(DEFER/REQUEST_CHANGES、未読ファイル名を明記)。変更テストは QA/E2E が所有するときに限り全文読みを省ける。
 - 次の A/B(条件「観点あり」)は、この更新後の定義で実行する。したがって基準 `01728a3` と同一条件ではなく、e2e・adv の読み方の変化が結果に混ざる(効果を XREV-1 だけに帰属できない)。
 
+
+#### 自己選好バイアスと使用量ガード
+
+- 利用者の懸念は2つです。(1) 実装したモデルと同じモデルが見ると甘くなる、または出典を知ると判断が傾く恐れ。(2) Codexから Claude へレビューを送ると、Pro の5時間枠を使い切りやすいこと。
+- BIAS-1(ガバナンスの補足)は、レビュー依頼から作成ツールの署名(Co-Authored-By、Generated with、🤖、written by)を除き、実装者の説明や過去の判定を正しさの証拠にせず、`author_model`/`reviewer_model`を記録して同一モデルを `self_check` と表示します。比較表は形式を揃え、モデル間の不一致は不一致のまま残し、重みは根拠で決めます。
+- 使用量ガード(`dispatch_limits`)は、利用者が選んだ層だけを逐次で起動し、複数層またはadvでは利用者が入力した使用量(未入力なら unknown)を記録します。unknown の間は最初の層だけ起動します。上限(429など)で終えたら RATE_LIMITED を記録し、再試行せず、利用者のackまで次を拒否します。修正を一括した後の再レビューは想定どおりで、修理roundは最大3回で、禁止は上限シグナル後の盲目的な再試行・選択層を超える追加・原因報告なしの3回超過の3つだけです。
+- 限界: 署名の除去では文体の痕跡は隠せません。使用量は測定も問合せもせず、利用者の入力と上限シグナルの文字列検出だけを使います(アカウント全体の上限は検知できません)。効果はまだ測定していません。この実験の比較表はClaudeが書いたため、Claudeに有利な言い回しが混ざっている可能性があります。
+
+#### 再レビューの読み直し削減
+
+- 原因: `decide_continuity` の `FRESH_AFTER_SECONDS=300`(prompt cacheのTTL約5分を理由に新規化)により、前回終了から300秒を超えた同phase担当は再開されず、新規の親子が全open IDを原本規則と差分で再確認していました。修正は5分を超えることが多く、CLAUDE.mdや規則ファイルと差分がほぼ毎回ゼロから読み直されていました。
+- 変更: 既定を継続(resume)にし、`--fresh-after-seconds` は既定0(無効)の任意設定にしました。新規化の既定条件は、前担当の子転記に記録された直近のinput規模(`--fresh-above-tokens`、既定150000)です。新規化が避けられない場合は、ホストが `review_state_digest`(規則manifestとsha、前担当のRead要求台帳、open ID、deltaの変更path)を状態と転記だけから作って渡し、現shaが一致する規則の前担当が読んだ範囲だけをSupplied根拠にできます。承認は引き継がず、全open IDは再判定します。初回にはdigestを付けません。
+- 未検証: 実際のtoken削減は未測定です(150000という既定も目安です)。1時間のprompt cache TTLは、ローカルのリリースノートに設定名の記載があるだけで、サブスクリプションの `claude -p` と子agentで有効かを `--help` や文書で確認できていないため、採用していません。Read台帳はRead要求の記録で、本文が届いた証明ではありません。callerの特定は行わず、変更ファイルだけを示します。
+
+#### レビュアーのテスト実行禁止
+
+- 利用者の最終判断: Claude Code がレビュアー(qa/e2e/cr/adv/rev と、レビュー中の specialist 相談)として動くときは、テスト・typecheck・lint・build・アプリ起動・migration・リポジトリのスクリプトを、直接も他agent経由も実行しません。Git の読み取りと Read/Grep/Glob は許可のままです。実行の証拠は実装担当(hq-coder)・利用者・Codex・CI が出し、Supplied として評価します。未実行は NOT_RUN とし、必要なら実行できる担当へ具体的に依頼します。
+- 対象: test-qa、e2e-qa、code-quality-reviewer、adviser、reviewer、sec-arch、data-platform、react-ui-flow、nestjs-backend、vue-frontend、spring-boot(両profile)。hq-coder は対象外です。e2e-qa はE2Eコードを書いても自分では実行しません。正本はガバナンスの `User-directed execution permissions` に置きました。
+- 技術的な強制はしていません。frontmatter の `disallowedTools` はBash全体を外すためgit読み取りも失われ、`tools` のBashパターン指定は公式文書で確認できません(frontmatter hooks は文書上あるが信頼設定に依存し未検証)。したがって規則文と固定テストだけで担保しています。Codex側のレビュアーは read-only sandbox ですが、`test-qa.toml` と `e2e-qa.toml` には sandbox_mode の指定がなく、標準利用では実行を許す文言が残っています(今回は未変更です)。

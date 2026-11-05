@@ -225,5 +225,42 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
                                  "Never launch a separate subagent", "QA/E2E"):
                     self.assertIn(required, cost)
 
+    def test_every_claude_review_role_states_the_reviewer_no_execution_rule(self):
+        review_roles = ("test-qa", "e2e-qa", "code-quality-reviewer", "adviser", "reviewer",
+                        "sec-arch", "data-platform", "react-ui-flow", "nestjs-backend",
+                        "vue-frontend", "spring-boot")
+        for profile in (".claude", ".claude-company"):
+            governance = read(f"{profile}/knowledge/engineering-governance.md")
+            permissions = governance.split("### User-directed execution permissions\n", 1)[1].split("\n### ", 1)[0]
+            for required in ("Reviewer no-execution rule", "never runs unit/integration/E2E/Playwright/Cypress tests",
+                             "directly or through another agent", "Supplied evidence", "NOT_RUN",
+                             "not to a role acting as a reviewer"):
+                with self.subTest(profile=profile, required=required):
+                    self.assertIn(required, permissions)
+            core = read(f"{profile}/skills/engineering-review-core/SKILL.md")
+            self.assertIn("Reviewer no-execution rule", core)
+            for role in review_roles:
+                with self.subTest(profile=profile, role=role):
+                    text = read(f"{profile}/agents/{role}.md")
+                    self.assertIn("Reviewer no-execution rule (governance `User-directed execution permissions`)", text)
+                    self.assertRegex(text, r"(?s)Reviewer no-execution rule.*(?:typecheck|lint)")
+                    self.assertRegex(text, r"directly or through (?:another agent|a consultant)")
+                    self.assertIn("NOT_RUN", text)
+            hq = read(f"{profile}/agents/hq-coder.md")
+            self.assertNotIn("Reviewer no-execution rule", hq)
+            self.assertIn("Bash", hq.split("---", 2)[1])
+        e2e = read(".claude/agents/e2e-qa.md")
+        self.assertIn("write the spec but do not run it", e2e)
+        self.assertNotIn("running targeted E2E commands\n", e2e)
+        self.assertNotIn("explicit user request to verify or add Playwright", e2e)
+
+    def test_reviewer_no_execution_rule_is_text_only_not_a_frontmatter_block(self):
+        # git読取を残す必要があり、frontmatterでのBashパターン制限は未検証のため、技術的強制はしていないことを固定する
+        for profile in (".claude", ".claude-company"):
+            for role in ("test-qa", "e2e-qa", "code-quality-reviewer", "adviser", "reviewer"):
+                with self.subTest(profile=profile, role=role):
+                    front = read(f"{profile}/agents/{role}.md").split("---", 2)[1]
+                    self.assertNotIn("disallowedTools", front)
+
 if __name__ == "__main__":
     unittest.main()
