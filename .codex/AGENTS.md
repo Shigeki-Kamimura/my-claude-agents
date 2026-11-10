@@ -91,18 +91,20 @@ Default strategy:
 - review-planner -> GPT-6 Luna / medium
 - code-quality-reviewer -> GPT-6.1 Sol / high
 - ci-reviewer -> GPT-6.1 Terra / high (requires Codex CLI >= 0.159.0)
-- adviser -> GPT-6.1 Sol / xhigh
+- adviser -> GPT-6 Astra / high
 - reviewer -> GPT-6.1 Sol / high
 - test-qa -> GPT-6.1 Sol / high
-- e2e-qa -> GPT-6 Luna / high
+- e2e-qa -> GPT-6.1 Sol / high
 - sec-arch -> GPT-6.1 Sol / xhigh
 - data-platform -> GPT-6.1 Sol / xhigh
-- React/Vue/NestJS/Spring specialists -> GPT-6 Luna / xhigh
+- NestJS/Spring specialists -> GPT-6.1 Sol / high
+- React/Vue specialists -> GPT-6 Luna / xhigh
 - sol-escalation -> GPT-6.1 Sol / high
 
 Reasoning:
 - Use GPT-6.1 Sol for normal requirement planning, implementation, and high-value review.
-- Keep routing, E2E, and narrow framework checks on Luna when the task boundary is explicit.
+- Use GPT-6 Astra only for adviser (first-pass L2 boundary review), where a missed risk costs most.
+- Keep routing and narrow React/Vue checks on Luna when the task boundary is explicit.
 - Escalate only the unresolved decision, never an entire PR, task, or repository.
 - Model choice follows task complexity and decision cost, not project name, workflow stage, or diff size.
 

@@ -5,7 +5,9 @@
 # Strategy:
 # - Keep the primary coordinator on GPT-6.1 Sol / high.
 # - Use GPT-6.1 Sol for requirement planning, implementation, and high-value review.
-# - Keep routing, E2E, and narrow framework specialists on GPT-6 Luna.
+# - Use GPT-6 Astra / high only for adviser (first-pass L2 review).
+# - Use GPT-6.1 Sol / high for E2E and NestJS/Spring specialists.
+# - Keep routing and React/Vue specialists on GPT-6 Luna.
 # - Keep CLI profiles in CODEX_HOME as separate *.config.toml files.
 ################################################################################
 
