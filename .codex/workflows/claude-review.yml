@@ -1,107 +1,107 @@
-# 利用者指定のMDレビュー契約です。実行エンジンではありません。
+# User-selected MD review contract; not an execution engine.
 schema_version: 3
 workflow_id: codex-claude-review
 runtime_validation: NOT_RUN
-goal: MDを共有し、利用者が選んだ層を確認後、Local-ci、Codex ciレビュー、draft PRへ進みます。
+goal: Share one MD; review user-selected layers, then Local-ci, Codex ci review and a draft PR.
 common_contract: md-review.md
 request_template: "{review_md_path} を基にレビューしてください。"
 rereview_template: "{review_md_path} を基に再レビューしてください。"
 activation:
   marker: 'Workflow: codex-claude-review'
-  rule: 現在の利用者の実依頼で向きを確認します。引用は起動しません。層は利用者が指定し、未指定なら1つ質問します。既定層も自動昇格もありません。
-  locate: 対象projectの.codex/workflows、なければ解決済み.codex/AGENTS.mdの隣のworkflowsを使います。Claude入口しかない場合は解決済み.claude/CLAUDE.mdまたは.claude-company/CLAUDE.mdの兄弟.codex/workflowsを使います。md-review.mdも同じ場所で解決します。見つからなければ設定不足です。
-  selection: qa/e2e/cr/advの指定した部分集合だけをqa→e2e→cr→advの順で実行します。列挙は有効です。全層は明示指定時だけです。
-  direction: 両方向の混在や実依頼との不一致はBLOCKEDです。通常の単独reviewコマンドは変更しません。
+  rule: Choose direction from the current actual user request. Quotes do not activate it. The user selects layers; ask once if absent. No default layers or automatic progression.
+  locate: Use the target project .codex/workflows, else workflows beside the resolved .codex/AGENTS.md. With only a Claude entry, use sibling .codex/workflows of the resolved .claude/CLAUDE.md or .claude-company/CLAUDE.md. Resolve md-review.md there too; absence is a configuration gap.
+  selection: Run only the requested qa/e2e/cr/adv subset in qa→e2e→cr→adv order. Lists are valid; all layers require explicit selection.
+  direction: Mixed directions or disagreement with the actual request is BLOCKED. Standalone review commands remain unchanged.
 authority:
-  required_sources: [.claude/knowledge/engineering-governance.md, .claude/knowledge/human-review-patterns.md, projectの適用規則と要件]
-  rules: 原本と例外、独立レビュー、必須React/Nest相談、既存roleのmodel/effort、実行権限を維持します。
+  required_sources: [.claude/knowledge/engineering-governance.md, .claude/knowledge/human-review-patterns.md, applicable project rules and requirements]
+  rules: Preserve originals/exceptions, independent review, mandatory React/Nest consultation, existing role model/effort and execution permissions.
 ownership:
-  implementation: Codexが実装、修正、検証、Local-ciを担当します。
-  coordinator: 実装担当がMDと必要な証拠を保ち、reviewerの判定を書き換えません。
+  implementation: Codex owns implementation, fixes, verification and Local-ci.
+  coordinator: The implementer maintains the MD and required evidence without rewriting reviewer verdicts.
   reviewers: {qa: test-qa, e2e: e2e-qa, l1_5: code-quality-reviewer, l2: adviser}
-  receiver: Claude Codeは指定した実agentへ委譲します。主セッションだけの代読は不可です。
-  preloaded_rule_sources: .claude/knowledge/engineering-governance.mdと.claude/knowledge/human-review-patterns.mdの解決済み原本とSHA-256をMDへ一度記録します。同一ownerの再開は保持値を使い、原文変更時だけ更新します。未注入の原文を要約で代用しません。
-  execution: reviewerはsource/testを編集せず、アプリ、テスト、lint、型確認、build、CIを実行しません。必要な実行は実装担当へ返します。
-  git: 開始時と修正中のindexを変更しません。最終承認とLocal-ciとCodex ci判定後だけ、実装担当が対象を限定してstage/commit/pushしdraft PRを作ります。対象外と既存indexを保全できなければ保留します。
+  receiver: Claude Code delegates to the selected actual agents; parent-only reading is forbidden.
+  preloaded_rule_sources: Record resolved originals and SHA-256 of .claude/knowledge/engineering-governance.md and .claude/knowledge/human-review-patterns.md in MD once. Same-owner resumes reuse retained values; update only when originals change. Summaries never replace originals not injected.
+  execution: Reviewers neither edit source/tests nor run apps, tests, lint, typecheck, build or CI. Return required execution to the implementer.
+  git: Keep the initial and repair-time index unchanged. Only after final approvals, Local-ci and the Codex ci verdict may the implementer stage/commit/push scoped content and create a draft PR. Hold if unrelated work or the existing index cannot be preserved.
 review_entry:
-  contract_delivery: md-review.mdの原本のpath/版を渡し、各担当が自分で完全な適用節と例外を確認します。Rules loadedへ注入済み/Read/未確認を記録します。親の要約だけでは既読にしません。切詰めは不足を回収し、依存する承認を保留します。
+  contract_delivery: Pass the original md-review.md path/version. Each owner reads complete applicable sections and exceptions independently. Record injected/Read/unconfirmed in Rules loaded; a parent summary is not reading. Recover truncated ranges and hold dependent approval.
   role_sections:
-    phase_common: authority、ownership、review_entry、execution、review_cycle、review_gates、findings、questions、response_contract、handoffとmd-review.mdの開始条件、1、2、3–6、待機、Backlog、MD依頼と判定欄の機械照合の完全な節です。
-    l1_5: phase_commonです。md-review.mdのCRのnative判定、局所とhandoffの条件も適用します。
-    qa: phase_commonとqa_contractです。
-    e2e: phase_commonとqa_contractです。
-    l2: phase_commonとconsultationです。
-    ci: phase_common、md-review.mdの7–9と対象revisionのdocs/review/review-prompt.mdです。
-    consultants: authority、ownership、execution、consultationと担当質問の適用原文だけです。全体Approveや11項目の代理作成はしません。
-  required_intake: 原本/例外込みの適用project規則を確認し、Rules loadedへ残します。既知pathはReadで直接確認します。未確認はUNCONFIRMEDです。
-  reading_scope: 全変更hunk、変更責務、必要な直接caller/calleeを確認します。利用者やproject規則の全文確認義務を維持し、未確認の義務を残します。
-  request_delivery: 依頼先はreview.mdだけです。層別・再依頼・形式修正用のMDを追加しません。summary-stdin/note-stdinで直接登録し、reading_planとreview_contextで必要欄を取得します。
-  source_delivery: MDへ実base/HEAD、working source、staged/unstaged/untracked、rename/削除両端と元版、対象/除外、規則の版を記録します。サマリーはSuppliedです。reviewerが独立にgit_diffと現ソースを確認します。初回は全3view、再レビューは前回の実確認版からのdeltaと影響先を中心にします。
-  rule_delta_delivery: 旧原文と現原文を同じ種類のhashで対応させ、変更した完全な節と例外、追加/削除した義務をMDへ追記します。旧原文が失われた場合は未確認です。親の要約で置換せず、今回の現物確認で出典を更新します。
+    phase_common: Complete authority, ownership, review_entry, execution, review_cycle, review_gates, findings, questions, response_contract, handoff and md-review.md sections 開始条件, 1, 2, 3–6, 待機, Backlog, MD依頼と判定欄の機械照合.
+    l1_5: phase_common plus md-review.md CR native-verdict and local/handoff conditions.
+    qa: phase_common and qa_contract.
+    e2e: phase_common and qa_contract.
+    l2: phase_common and consultation.
+    ci: phase_common, md-review.md 7–9 and docs/review/review-prompt.md at the target revision.
+    consultants: Only authority, ownership, execution, consultation and originals applicable to the assigned question. No overall Approve or proxy eleven-field result.
+  required_intake: Read applicable original project rules and exceptions; record them in Rules loaded. Read known paths directly. Unchecked obligations stay UNCONFIRMED.
+  reading_scope: Inspect every changed hunk/responsibility and necessary direct callers/callees. Preserve user/project whole-document obligations and all unchecked obligations.
+  request_delivery: Use only review.md as the request entry. Add no per-layer, re-request or format-correction MD. Register directly with summary-stdin/note-stdin; obtain required sections through reading_plan and review_context.
+  source_delivery: Record actual base/HEAD, working source, staged/unstaged/untracked content, both rename/deletion endpoints and original versions, scope/exclusions and rule versions in MD. Summaries are Supplied. Reviewers independently inspect git_diff and current source. Initially inspect all three views; re-review focuses on delta since the actual prior-reviewed source and affected scope.
+  rule_delta_delivery: Pair old/current originals using the same hash kind; append complete changed sections/exceptions and added/removed obligations to MD. Lost originals stay unconfirmed. Update source evidence through current inspection, never a parent summary.
 execution:
-  cr_adv: Git読取とsource/規則/既存証拠の確認だけです。検証コマンドは実装担当です。
-  qa_e2e: 正常系（happy path）と異常系（fail path）のテスト過不足と提示証拠を確認します。実行やテスト作成は実装担当です。
+  cr_adv: Only Git reads and inspection of source/rules/existing evidence. Verification commands belong to the implementer.
+  qa_e2e: Check happy-path and fail-path test adequacy, excess tests and supplied evidence. Execution and test authoring belong to the implementer.
 review_cycle:
-  initial: 指定した層の全対象と必須相談を独立確認します。途中終了は未確認を保持します。
-  fix: 全指摘を一括修正し、失敗を含む予定済み検証結果と修正の対応を同じMDへ一度に追記します。全テスト成功を一律の再依頼条件にはしません。
-  rereview_reading: 前回の実確認版からのdeltaと、その担当の前回確認以降の全追記を読みます。ホストが新規Claude担当を起動した再レビューでは、依頼のreview_state_digest(review_contextのcurrent)も読み、現shaが一致する規則の前担当の読取範囲はSupplied根拠として扱います(自分の承認ではありません)。未解決IDと影響先は保持します。同じClaude担当は保持済みの本文を再読せず、fresh Codex担当は受入条件と前回実結果、必須原本を確認します。
-  rereview_inputs: staged/unstaged/untrackedの修正、新規内容、実source、正確な利用者回答、実コマンド/ケース/終了コード、結果と限界をMDから参照します。
-  verification_evidence: assertionと読み込んだ対象の狭いRead参照を示します。実装担当の提示証拠をSuppliedとして確認します。
-  rereview_exceptions: NOT_RUN/FAILED/PARTIAL、明示的な検証免除、追加質問、未了義務は維持します。単層承認で代替しません。
-  impact_mapping: 指摘ID→変更責務→caller/consumer/テスト/規則→検証をMDで対応させ、担当が独立に確かめ必要なら広げます。テスト/仕様/規則変更の義務、全open ID、他ownerを落としません。
-  origin_evidence: 元IDと新旧の証拠でOriginを確認します。既存Infoの付替えは禁止です。不明は保持します。既存Origin定義・上限は変更しません。
-  closure: 実装担当のfix_candidateでは閉じません。元担当のreviewer_confirmed_fixedまたは根拠付きreviewer_withdrawnだけです。
+  initial: Independently check the full selected-layer scope and required consultation. An interrupted pass retains unchecked obligations.
+  fix: Batch all finding fixes; append their mapping to planned verification results, including failures, to the same MD once. Passing every test is not a universal re-request condition.
+  rereview_reading: Read the delta since the actual prior-reviewed source and every append since that owner last checked. For host-started fresh Claude re-review, also read request review_state_digest (review_context current); predecessor-read rule ranges with matching current SHA are Supplied evidence, never your own approval. Retain unresolved IDs and affected scope. The same Claude owner does not reread retained text; a fresh Codex owner reads acceptance conditions, the prior native result and required originals.
+  rereview_inputs: Read staged/unstaged/untracked fixes, new content, actual source, exact user answers, actual commands/cases/exit codes, results and limits from MD.
+  verification_evidence: Give assertions and narrow Read references to the loaded target. Assess implementer-provided execution evidence as Supplied.
+  rereview_exceptions: Preserve NOT_RUN/FAILED/PARTIAL, explicit verification waivers, further questions and unfinished obligations. Single-layer approval cannot replace them.
+  impact_mapping: Map finding ID→changed responsibility→caller/consumer/tests/rules→verification in MD. The owner independently validates and expands it as needed. Retain test/spec/rule-change obligations, every open ID and other owners.
+  origin_evidence: Confirm Origin from the original ID and before/after evidence. Never relabel existing Info. Retain uncertainty and existing Origin definitions/caps.
+  closure: Implementer fix_candidate never closes an item. Only the original owner may return reviewer_confirmed_fixed or evidenced reviewer_withdrawn.
 consultation:
-  required: L2のReact/Nest条件が該当すれば独立相談が必須です。実装時の相談で代用しません。
-  completion: 最小限の実境界で質問をまとめ、依頼を遅らせません。可能なら前景Agent、run_in_background対応時はfalseです。model/effortや許可toolは変更しません。SPECIALIST_REQUESTは同じadviserへ返します。起動確認や回答待ちは未完了です。tool追加や待機agentで埋めません。取得不能は未承認です。実回答の受領後に統合し、必要な11項目を保持します。
-  delta_questions: 前回確認範囲、変更責務、未回答と反証を同じ専門担当へまとめます。必須の独立初回相談は省略しません。
+  required: Triggered L2 React/Nest consultation must be independent; implementation consultation cannot replace it.
+  completion: Batch questions at the minimal actual boundary; do not delay consultation. Prefer foreground Agent; set run_in_background=false when supported. Keep model/effort and allowed tools. Return SPECIALIST_REQUEST to the same adviser. Launch acknowledgement or waiting is unfinished. Add no tools or waiting agents. Unavailable results prevent approval. Integrate actual replies after receipt; retain all eleven required fields.
+  delta_questions: Batch prior checked scope, changed responsibilities, unanswered questions and counterevidence for the same specialist. Preserve required independent first-pass consultation.
 qa_contract:
-  assignment: qa/e2eのうち利用者が選択した実agentだけをexternal_test_adequacy_reviewerとして呼びます。
-  checks: テスト変更ゼロでも、担当する責務の正常系・異常系、要件/assertion/fixture/mock/既存結果を照合します。適用なしは実担当が根拠を残します。欠落も不要な重複も確認し、必要な保証を消しません。
+  assignment: Invoke only user-selected actual qa/e2e agents as external_test_adequacy_reviewer.
+  checks: Even without test changes, compare owned happy/fail paths against requirements/assertions/fixtures/mocks/existing results. The actual owner records any not-applicable basis. Check omissions and needless duplication without removing required guarantees.
 review_gates:
   order: [qa, e2e, l1_5, l2]
-  selection: この順から利用者の選択層だけを取り出します。未選択層を起動しません。
-  coverage: COMPLETEは当該層の全対象と必須確認の完了です。slice終了や指摘ゼロだけでは不可です。
-  snapshot_change: source/テスト/要件/規則の変更で古い選択層の承認を失効させます。影響確認と未変更証拠の現版での有効性を担当が確認し、新承認を返します。親は付け替えません。
-  handoffs: 自層判断に必要な未確認をhandoffへ移して承認しません。独立した他層の義務は残せます。最終引渡しには全必須handoffの解消が必要です。HND-1として、証拠付きの不一致はhandoffでなく自層の指摘にします。handoffは証拠で確定できないことに限り、🔴🟡🟢の重みを必須とします。🟡🔴の未解決handoffが残る間は承認しません。HND-1 rule 5として、handoffとUNCONFIRMEDが求める証拠は、source/diffで読めるものか既に出ているローカル検証結果に限ります。GitHub Actionsの費用・時間、課金・利用量、本番指標、外部アカウント、CI起動、許可済み読取り以外のAPI呼出しはhandoffにせず、承認に影響しないNOT_MEASURED/NOT_RUNの注記に留めます(利用者またはprojectが明示した義務を除く)。🟡🔴の重みは、sourceで示せる到達可能な危険に限ります。
+  selection: Take only user-selected layers from this order. Never start unselected layers.
+  coverage: COMPLETE requires the full layer scope and every mandatory check, not a finished slice or zero findings alone.
+  snapshot_change: Source/test/requirement/rule changes invalidate old selected-layer approvals. Owners check impact and current validity of unchanged evidence, then renew approval. The parent never reassigns old approvals.
+  handoffs: Never move a local judgment dependency to handoffs to approve. Independent other-layer obligations may remain; final handoff requires all mandatory handoffs closed. Under HND-1, evidenced mismatches are owned findings; handoffs are only matters evidence cannot establish and require 🔴🟡🟢 weights. Open 🟡🔴 handoffs prevent approval. HND-1 rule 5 limits handoff/UNCONFIRMED evidence to source/diff or already-produced local verification results. GitHub Actions cost/time, billing/usage, production metrics, external accounts, CI triggering and API calls beyond permitted reads stay non-gating NOT_MEASURED/NOT_RUN notes, not handoffs, unless the user/project explicitly requires them. 🟡🔴 weights require reachable source-shown risk.
 findings:
-  severity: 🔴重、🟡中、🟢Lowです。Infoは記載しません。既存Low上限とOrigin/再レビュー上限を維持します。
-  closure: 全IDを担当と根拠付きで保持します。実装担当の判断で解消/却下しません。MD内の起票をBacklog課題作成の許可にしません。
+  severity: 🔴重, 🟡中, 🟢Low. Omit Info. Preserve existing Low and Origin/re-review caps.
+  closure: Retain every ID with owner and evidence. The implementer cannot close/reject findings. Recording an item in MD does not authorize Backlog issue creation.
 questions:
-  recipient: 上村さんです。実際の質問と出典付き回答をMDへ追記します。依存する判断はNEEDS_USER_INPUTです。推測で閉じません。
+  recipient: 上村さん. Append actual questions and sourced answers to MD. Dependent judgments stay NEEDS_USER_INPUT; never close by assumption.
 response_contract:
   block_name: Workflow Result
   fields:
-    workflow_id: md-review.mdの3–6で定義した実担当の値です。
-    phase: qa/e2e/l1_5/l2/ciです。ciはci-reviewerに対応します。
-    reviewer: md-review.mdの3–6で定義した実担当の値です。
-    snapshot_id: md-review.mdの3–6で定義した実担当の値です。
-    native_verdict: md-review.mdの3–6で定義した実担当の値です。
-    coverage: md-review.mdの3–6で定義した実担当の値です。
-    decision: md-review.mdの3–6で定義した実担当の値です。
-    open_item_ids: md-review.mdの3–6で定義した実担当の値です。
-    questions: md-review.mdの3–6で定義した実担当の値です。
-    handoffs: md-review.mdの3–6で定義した実担当の値です。
-    invocation_evidence: md-review.mdの3–6で定義した実担当の値です。
-  acceptance: 現snapshot、全対象COMPLETE、自層の指摘/質問/必要証拠ゼロ、実委譲と必要相談、既存native判定条件を満たすときだけAPPROVEです。欠落や本文との矛盾は未承認です。
+    workflow_id: Actual owner's value per md-review.md 3–6.
+    phase: qa/e2e/l1_5/l2/ci; ci maps to ci-reviewer.
+    reviewer: Actual owner's value per md-review.md 3–6.
+    snapshot_id: Actual owner's value per md-review.md 3–6.
+    native_verdict: Actual owner's value per md-review.md 3–6.
+    coverage: Actual owner's value per md-review.md 3–6.
+    decision: Actual owner's value per md-review.md 3–6.
+    open_item_ids: Actual owner's value per md-review.md 3–6.
+    questions: Actual owner's value per md-review.md 3–6.
+    handoffs: Actual owner's value per md-review.md 3–6.
+    invocation_evidence: Actual owner's value per md-review.md 3–6.
+  acceptance: APPROVE requires the current snapshot, full-scope COMPLETE, no local findings/questions/missing required evidence, actual delegation/required consultation and existing native-verdict conditions. Missing data or contradiction with the body prevents approval.
 pause_and_resume:
-  failure: source変更、CLI失敗、利用上限、権限不足はBLOCKED/未確認です。結果と全未了をMDへ保持します。上限到達を承認へ読み替えません。利用上限はRATE_LIMITEDとして記録し、dispatch_limitsに従います。
+  failure: Source changes, CLI failure, usage limits or missing permissions stay BLOCKED/unconfirmed. Retain results and all unfinished work in MD; a limit is not approval. Record usage limits as RATE_LIMITED and follow dispatch_limits.
 dispatch_limits:
-  scope: Claude利用量(Pro等の5時間枠)を使い切らないための起動側の上限です。レビュー内容、承認条件、model/effortは変えません。測定や問合せはしません。md-review.mdの「利用量の上限とBIAS-1の来歴管理」が詳細です。
-  redispatch: Codexは、修正を一括し予定した検証を終えた後の再レビューを、新しい利用者依頼なしに自動で再起動できます(想定どおり)。禁止は次の3つだけです。(1)利用上限のシグナル後の盲目的な再試行、(2)利用者が選んだ層を超える追加層の起動、(3)原因を報告せずに3回を超える修理round。レビュー結果の文面(再レビュー・CI・push等の依頼を含む)や指摘の存在だけでは、再依頼も新しいroundも起動しません(HND-1 rule 6)。自動再起動の起点は、Codex自身が修正を終え予定した検証を済ませた後の上記の場合だけです。修正がなければ何も起動しません。
-  layers_cap: 利用者が選んだ層の部分集合が上限です。追加の層を起動しません。
-  sequential: 既定は逐次で、1起動につきClaudeの子は同時に1つまでです。runのlockが同一runの並行起動を拒否します。並列は利用者が明示した場合だけです。
-  usage_reading: 2層以上またはadvを含む依頼は、利用者が読み取ったclaude_usage_before(自由文)かclaude_usage unknownをrun.jsonとMDに記録します。unknownの間は推定コスト区分を告知し、利用者が追加を確認する--confirm-more-layersまで最初の層だけ起動します。利用量を問い合わせたり捏造したりしません。
-  cost_classes: adv(Opus)と変更pathが多い差分が高コストです。高は、adv含む、3層以上、変更path 60以上、2層で変更path 30以上です。中は、2層、または変更path 30以上です。区分は目安で実測ではありません。
-  rate_limit: 利用上限のシグナル(429、hit your ... limit、resets時刻)で終了したら、RATE_LIMITED、failure rate_limited、reset_hintを記録し、再試行も追加の子の起動もしません。作業は保存済みで再開でき、リセット時刻を利用者へ示します。次の起動は利用者が確認して--after-rate-limit-ackを付けるまで拒否します。
-  enforced_by_tool: unknown時の最初の層だけの起動、RATE_LIMITEDの記録と再試行なしとack要求、同一runの並行拒否です。3回の修理round、並列の同意、利用量の読取りは契約上の義務で、ツールは強制しません。
+  scope: Launcher limits protect Claude usage (e.g. Pro five-hour allowance). Review content, approval conditions and model/effort stay unchanged. Do not measure or query usage. Details are in md-review.md「利用量の上限とBIAS-1の来歴管理」.
+  redispatch: Codex may automatically re-request review without a new user request after batch fixes and planned verification (intended). Only three prohibitions apply. (1) Blind retries after a usage-limit signal. (2) Launching layers beyond user selection. (3) More than three repair rounds without reporting the cause. Review-result wording (including requests for re-review/CI/push) or findings alone never starts a re-request or new round (HND-1 rule 6). Only Codex itself completing batch fixes and planned verification can trigger the automatic redispatch above. No fix means no launch.
+  layers_cap: The user-selected subset is the limit; start no additional layers.
+  sequential: Sequential by default, with at most one concurrent Claude child per launch. The run lock rejects concurrent launches in the same run. Parallelism requires explicit user direction.
+  usage_reading: For two or more layers or any adv request, record user-read claude_usage_before (free text) or claude_usage unknown in run.json and MD. While unknown, announce the estimated cost class and launch only the first layer until user confirmation via --confirm-more-layers. Never query or invent usage.
+  cost_classes: adv (Opus) and many changed paths are costly. High means any adv, at least 3 layers, at least 60 changed paths, or 2 layers with at least 30 paths. Medium means 2 layers or at least 30 paths. Classes are estimates, not measurements.
+  rate_limit: On exit with a usage-limit signal (429, hit your ... limit, resets time), record RATE_LIMITED, failure rate_limited and reset_hint; no retry or additional child launch. Work is saved and resumable; show the reset time to the user. Reject the next launch until user acknowledgement with --after-rate-limit-ack.
+  enforced_by_tool: The tool enforces first-layer-only launch while unknown, RATE_LIMITED recording/no retry/ack requirement, and no concurrent same-run launch. Three repair rounds, parallel consent and usage reading are contractual, not tool-enforced.
 handoff:
   terminal_state: draft_pr_awaiting_human_ready
-  conditions: md-review.mdの7–9に従い、選択層の現snapshot承認、実装側Local-ci成功、実Codex ci-reviewerの指摘なし判定、最終commitとの内容対応を確認します。
-  human_ready: draft PRまでです。Ready for reviewは上村さん本人だけが行います。
+  conditions: Under md-review.md 7–9, confirm selected-layer approvals for the current snapshot, implementation-side Local-ci success, a clean actual Codex ci-reviewer verdict and content correspondence with the final commit.
+  human_ready: Stop at a draft PR. Only 上村さん personally selects Ready for review.
 claude_cli:
   runner: tools/start_md_review.py
-  lifecycle: --printで指定1層を1回実行して終了します。修正・CI・他AIの待機、heartbeat、sleep用agentは禁止です。再レビュー時だけ終了済みの同phase親子をstate.jsonの実IDで自動再開します。
-  restrictions: dontAsk、Read/Glob/Grep/Agent/SendMessage、固定Git読取MCP、限定Backlog読取を使用します。Bash/Edit/Write/NotebookEdit、未許可MCP呼出しをtool gateで拒否します。managed制限は解除しません。
-  resume: 安全な現tool構成を証明できない旧親子は再開せず、新規初回にします。過去の指摘はSuppliedです。親だけのresumeを子の再開証拠にしません。実IDが欠ける場合はBLOCKEDです。
-  advisor: CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1を初回と再開に設定し、autoCompactWindow=200000をprocess内だけに指定します。実行時の有効性は別途確認し、設定だけで効果や成功を断定しません。
+  lifecycle: --print runs one selected layer once, then exits. No waiting for fixes/CI/other AI, heartbeat or sleeping agents. Only for re-review, automatically resume completed same-phase parent/child using actual state.json IDs.
+  restrictions: Use dontAsk, Read/Glob/Grep/Agent/SendMessage, fixed read-only Git MCP and limited Backlog reads. The tool gate rejects Bash/Edit/Write/NotebookEdit and unapproved MCP calls. Never lift managed restrictions.
+  resume: Never resume old parents/children whose safe current tools cannot be proven; start a new initial review. Prior findings are Supplied. Parent-only resume is not child-resumption evidence. Missing actual IDs means BLOCKED.
+  advisor: Set CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1 for initial/resumed runs and autoCompactWindow=200000 only within the process. Check runtime effectiveness separately; configuration alone proves neither benefit nor success.

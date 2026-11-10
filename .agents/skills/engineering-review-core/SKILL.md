@@ -7,17 +7,17 @@ description: Shared engineering principles, execution boundaries and evidence ru
 
 # engineering-review-core
 
-These are exact source excerpts, not a claim of whole-document reading. Apply only your assigned role and active workflow. Preloading never expands tools, execution permissions, review layers or file scope.
+Exact excerpts for your assigned role/workflow; no whole-document credit or added tools, execution, layers, delegation, approval authority or file scope.
 
-Record `Rules loaded: <skill names>; <source SHA-256>; <included sections>; missing/changed rules` once in retained invocation evidence. Configured skills alone do not prove delivery: require the injected content in your own context. If missing, read the applicable originals with permitted tools and report the setup gap.
+Retain actual injected sections, skill names, source SHA-256 and missing/changed rules once in `Rules loaded`. A declaration is not delivery. Compare current project-source identity supplied by the coordinator. Use source identity supplied by the coordinator or permitted read-only metadata tools once at intake; do not repeat hash checks for each read.
 
-Compare fingerprints with current source evidence supplied by the coordinator. Use source identity supplied by the coordinator or permitted read-only metadata tools once at intake; do not repeat hash checks for each read. On changed, ambiguous, conflicting or unverifiable source identity, inspect the affected originals with permitted read/search tools or request exact missing evidence; dependent judgment stays pending. Project-specific rules override only their explicit fields.
+Missing, changed, uncertain or conflicting delivery/identity requires complete affected originals and exceptions through permitted tools, or an exact evidence request. Report setup gaps; dependent judgment stays pending. Project rules override only explicit fields.
 
-Included sections satisfy their first-entry reading requirement. All other applicable sections and project design rules, including their exceptions, still require targeted reading. Reuse unchanged, verified injected sections on the same-owner continuation; do not claim omitted sections were read. The source index, workflow/phase ownership, consultation duties, finding closure, and retained blockers remain mandatory when triggered.
+Complete delivered sections satisfy first-entry reading. Reuse only complete, retained, verified unchanged sections on same-owner continuation. Omitted applicable originals/design rules and exceptions remain unread and required; preserve source-index, workflow/phase, consultation, closure and retained-blocker duties.
 
 
 Source: `.claude/knowledge/engineering-governance.md` (company: `.claude-company/knowledge/engineering-governance.md`)
-SHA-256: `f4740b3804519e2aa92d7727b62473814398110d74c0899999ac58ba951a67cc`
+SHA-256: `68fc51a6d829c9c36a07818c3cc04b15ebc54d3aa4f8787b3fadf5a41c5bad22`
 Included sections: Pinned source and reconciliation, Source coverage and role scope, OPS-1: Release, operability and data-lifecycle boundaries, XREV-1: Cross-model review calibration lenses, BIAS-1: Provenance and self-preference controls, User-directed execution permissions, Review objective and evidence, Mandatory UI consistency and task usability, Independent review and reconciliation, Evidence and reporting
 
 
@@ -212,6 +212,8 @@ No majority vote overrides a reproducible blocker or a sourced mandatory violati
 
 ## Evidence and reporting
 
+### Shared evidence and reporting
+
 Write user-facing results in polite, plain Japanese. State the decision first and keep sentences short.
 `Checked` means inspected file/content. `Executed` means an observed command run; imported CI evidence must identify its source, revision, command/test, and result.
 Never invent a test command, execution, line number, requirement, or original quotation. Suggested verification is labeled not executed.
@@ -219,6 +221,8 @@ When a rule source is missing, mark the affected judgment unconfirmed, not the r
 
 Final approval requires complete evidence for the requested layer, completed required consultation, and no unresolved blocker affecting that judgment.
 A scoped clean result is not full PR approval. A single-layer approval is valid only for that layer and snapshot, is not four-layer or final approval, and joins a later four-layer run only as Supplied evidence. Confirmed open blockers keep overall merge readiness at `REQUEST_CHANGES`; missing blocking evidence keeps it deferred.
+
+### Review-layer approval and handoffs
 
 For `codex-claude-review` single-layer results, apply the workflow's `review_gates.handoffs`, `response_contract.acceptance` and `md-review.md` approval/result-consistency rules. With complete current-snapshot local coverage, required evidence/consultation, no local findings (including Low), questions or unchecked obligations, and an accepted native verdict, the owner reports `decision: APPROVE` even when independent other-layer handoffs remain open, provided every open handoff is weighted `🟢` (XREV-1 HND-1); an open `🟡`/`🔴` handoff prevents a clean result and the owner uses its existing non-approval label with Reason `NEEDS_CONFIRMATION`. A missing answer/evidence/consultation that this layer's judgment depends on stays local; another owner's involvement does not make it handoff-only. Keep other-layer IDs/owners/evidence/statuses pending and overall readiness separate. Required handoffs still block final workflow handoff until closed. Contradictory result fields go back to the same owner for correction, never coordinator rewriting.
 

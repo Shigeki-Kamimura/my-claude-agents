@@ -7,6 +7,8 @@ effort: high
 permissionMode: plan
 skills:
   - engineering-review-core
+  - engineering-principles
+  - engineering-ui-rules
 ---
 
 ## UI/UX quality

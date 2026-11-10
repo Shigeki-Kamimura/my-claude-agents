@@ -5,6 +5,8 @@ model: sonnet
 effort: high
 skills:
   - engineering-review-core
+  - engineering-principles
+  - engineering-review-evidence
   - engineering-review-lenses
 ---
 

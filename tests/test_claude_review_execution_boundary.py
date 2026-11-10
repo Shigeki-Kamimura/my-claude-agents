@@ -15,23 +15,23 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             workflow = read(".codex/workflows/" + path)
             self.assertIn("workflow_id: " + direction, workflow)
             self.assertIn("common_contract: md-review.md", workflow)
-            self.assertIn("既定層も自動昇格もありません", workflow)
-            self.assertIn("利用者が選択した実agentだけ", workflow)
+            self.assertIn("No default layers or automatic progression.", workflow)
+            self.assertIn("Invoke only user-selected actual qa/e2e agents", workflow)
             fields = workflow.split("response_contract:\n", 1)[1].split("pause_and_resume:\n", 1)[0]
             self.assertEqual({"workflow_id", "phase", "reviewer", "snapshot_id", "native_verdict", "coverage", "decision", "open_item_ids", "questions", "handoffs", "invocation_evidence"}, set(re.findall(r"(?m)^    ([a-z_]+):", fields)))
-        for text in ("Infoは本文にもMDにも記載しません", "Ready for review", "gitignore", "全必須handoff", "state.json"):
+        for text in ("Omit Info from both the response and MD", "Ready for review", "gitignore", "all mandatory handoffs closed", "state.json"):
             self.assertIn(text, common)
 
     def test_pipeline_preserves_actual_owners_and_human_ready(self):
         common = read(".codex/workflows/md-review.md")
-        for text in ("実装担当がprojectの実Local-ci手順を実行", "実際のCodex `ci-reviewer`", "**draft**", "AIは`gh pr ready`や同等APIを呼びません", "全対象blob/mode", "終了コード0やMD本文のApproveという文字だけ"):
+        for text in ("The implementer runs the project's actual Local-ci procedure", "actual Codex `ci-reviewer`", "**draft**", "AI never calls `gh pr ready` or an equivalent API", "every in-scope blob/mode", "Exit code 0 or the word Approve in MD alone"):
             self.assertIn(text, common)
         for path in ("AGENTS.md", ".codex/AGENTS.md", ".claude/CLAUDE.md", ".claude-company/CLAUDE.md"):
             self.assertIn("md-review.md", read(path))
 
     def test_profiles_keep_source_read_only_and_finite_lifecycle(self):
         common = read(".codex/workflows/md-review.md")
-        for text in ("Bash/Edit/Write/NotebookEditは禁止", "修正待ち、Local-ci待ち、Codex待ち", "NEW_UNRELATEDのLow", "NEEDS_USER_INPUT", "必須React/Nest相談", "実装時の相談は独立したL2相談の代わり"):
+        for text in ("Bash/Edit/Write/NotebookEdit remain prohibited", "waiting for fixes, Local-ci or Codex", "NEW_UNRELATED Low", "NEEDS_USER_INPUT", "mandatory React/Nest consultations", "Implementation consultation cannot replace independent L2 consultation"):
             self.assertIn(text, common)
         for role in ("hq-coder", "code-quality-reviewer", "adviser", "test-qa", "e2e-qa"):
             a = read(".claude/agents/" + role + ".md")
@@ -40,7 +40,7 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
             self.assertIn("eleven Workflow Result fields", a)
             self.assertIn("Omit Info entirely", a)
             self.assertIn("never keep Claude AI waiting", a)
-        for text in ("毎roundで新しいexec", "exec resumeや--lastを使いません"):
+        for text in ("Start a fresh exec every round.", "Never use exec resume or --last in this workflow."):
             self.assertIn(text, read(".codex/workflows/codex-review.yml"))
 
     def test_governance_has_no_conflicting_git_or_hash_execution_instruction(self):
@@ -117,7 +117,7 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         for path in (".codex/workflows/claude-review.yml", ".codex/workflows/codex-review.yml"):
             self.assertIn("HND-1", read(path))
         contract = read(".codex/workflows/md-review.md")
-        for text in ("weight", "🟡/🔴の未解決handoff", "旧台帳"):
+        for text in ("weight", "Any unresolved 🟡/🔴 handoff", "Legacy ledger"):
             self.assertIn(text, contract)
         self.assertIn('"weight"(🔴|🟡|🟢)', read("tools/start_md_review.py"))
 
@@ -136,13 +136,16 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
 
     def test_e2e_must_fully_read_files_and_project_rules_before_gap_verdict(self):
         clause = ('Before declaring any E2E coverage gap, fully Read each affected E2E file (a grep-only search '
-                  'yields "not found by grep", never a gap verdict), and list in `Rules loaded` the work copy\'s '
-                  'CLAUDE.md sections actually Read with line ranges; if that CLAUDE.md was not Read, '
-                  'design-alignment judgments are UNCONFIRMED and no clean or approve result may be returned.')
+                  'yields "not found by grep", never a gap verdict), and list in `Rules loaded` the resolved '
+                  'applicable project rule sources and complete sections verified by original reading or exact '
+                  'preloaded delivery, with source identity and line ranges or section names; if any required '
+                  'clause, including exceptions, is unavailable or unverified, dependent design-alignment '
+                  'judgments are UNCONFIRMED and no clean or approve result may be returned.')
         for profile in (".claude", ".claude-company"):
             text = read(f"{profile}/agents/e2e-qa.md")
             self.assertEqual(1, text.count(clause), profile)
             self.assertIn("an open 🟡/🔴 handoff prevents a clean result." + " " + clause, text)
+            self.assertNotIn("if that CLAUDE.md was not Read", text)
 
     def test_adviser_changed_source_read_status_gate_bars_approve(self):
         gate = ("Before the verdict, list every changed non-test source file with its Read status (full / partial / not read). "
@@ -188,7 +191,7 @@ class ClaudeReviewExecutionBoundaryTests(unittest.TestCase):
         self.assertIn("any 🟢 Low finding is open (including one labeled DEFER)", cr_toml)
         self.assertNotIn("non-blocking notes", cr_toml)
         self.assertIn("any open owned 🟢 Low finding", read(".codex/agents/adviser.toml"))
-        self.assertIn("DEFER指定を含め", read(".codex/workflows/md-review.md"))
+        self.assertIn("including DEFER", read(".codex/workflows/md-review.md"))
         cases = read("tests/agent-review-contract-cases.yml")
         for case in ("approval-info-only-clean-label", "approval-open-low-defer-no-approve-label"):
             self.assertEqual(cases.count("  - id: " + case + "\n"), 1)

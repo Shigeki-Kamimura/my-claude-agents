@@ -6,6 +6,8 @@ model: sonnet
 effort: medium
 skills:
   - engineering-review-core
+  - engineering-principles
+  - engineering-ui-rules
 ---
 
 ## Preloaded engineering rules

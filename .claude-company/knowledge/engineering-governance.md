@@ -41,11 +41,28 @@ An explicitly mandatory rule violation does not need an invented runtime crash t
 
 ### Preloaded rule delivery
 
-Claude and Codex owners may satisfy first-entry reading for exact sections delivered by the generated `engineering-review-core`, `engineering-react-rules`, and `engineering-nest-rules` skills. This is a user-approved delivery rule, not a new quotation from Nishiguchi. Each owner must actually receive the skill text in its own context and retain its included section names and source SHA-256 as `Rules loaded` evidence. A frontmatter declaration alone is not delivery evidence or whole-document reading.
+Claude and Codex owners may satisfy first-entry reading for exact sections delivered by the generated `engineering-review-core`, `engineering-react-rules`, and `engineering-nest-rules` skills. Claude also uses the generated `engineering-principles`, `engineering-review-evidence`, `engineering-ui-rules`, and `engineering-review-lenses` skills under the same delivery rule. This is a user-approved delivery rule, not a new quotation from Nishiguchi. Each owner must actually receive the skill text in its own context and retain its included section names and source SHA-256 as `Rules loaded` evidence. A frontmatter declaration alone is not delivery evidence or whole-document reading.
 
 The coordinator checks source identity against the active project's current rules and supplies permitted digest/metadata evidence; SHA-256 here is not a Git blob hash. Missing, changed, unverified or conflicting sources require targeted original reading, including exceptions, or an exact evidence request. Claude reviewers do not run shell/hash commands for this check. Project-local configured sources take precedence; never replace a project-specific document with a shared summary without checking its identity. Existing read-at-entry instructions remain mandatory for applicable sections not actually injected. Codex source checks use only tools allowed by the active platform/workflow; a skill never grants shell access. Owners without verified delivered sections retain their normal original-reading requirements.
 
 Reuse unchanged, verified injected sections on the same-owner continuation. Read only missing/changed relevant sections and project design rules; preloading does not expand routing/planning/consultation scope, permissions, or approval authority. Missing mandatory evidence stays pending. Regenerate both Claude profiles and Codex `.agents/skills` with `python3 -I -B tools/sync_engineering_preloads.py --write` after a source change and check without `--write` before publishing. Existing deployments need setup again to link new skill directories, followed by a fresh session. Keep Codex outputs in repository `.agents/skills`; verify actual delivery in a fresh owner rather than assuming discovery or injection. Do not infer runtime compliance or token savings from static configuration checks.
+
+### Conditional rule intake
+
+Use complete current project-local sections, including exceptions, before the dependent judgment. Verified delivery satisfies only its included sections; all other applicable originals remain required. The human source is `.claude/knowledge/human-review-patterns.md` (company: `.claude-company/knowledge/human-review-patterns.md`); governance sections below are in this document.
+
+| Role or trigger within the assigned scope | Complete original sections and delivery |
+| --- | --- |
+| Every role except metadata-only `review-planner` | Preloaded `engineering-principles`: `Review objective and evidence`; human sections `Responsibility Separation`, `Exception Handling`, `Type Safety`, `Refactoring Scope`, `Design Document Alignment`. |
+| `test-qa`, `e2e-qa`, `code-quality-reviewer`, `adviser`, `reviewer` | Preloaded `engineering-review-evidence`: `Review-layer approval and handoffs`; preserve actual role/workflow closure rules. |
+| User-facing changes: visible copy/styling/layout or API/error/state changes affecting the experience | Read complete `Mandatory UI consistency and task usability` before editing/judging. `engineering-ui-rules` preloads it for React/Vue/UX roles; other affected owners read the original. Work with no user-facing effect may be NOT_APPLICABLE with a concrete reason. |
+| QA/E2E/CR/ADV, including standalone review | Preloaded `engineering-review-lenses`: complete `XREV-1: Cross-model review calibration lenses` and `BIAS-1: Provenance and self-preference controls`. HND-1 stays standing; individual lenses stay triggered-only. |
+
+`review-planner` only passes section IDs from supplied metadata, without code tracing/compliance judgment. Bounded escalation reuses supplied unchanged evidence and reads missing/changed clauses for its one question. Existing source-index, supplement, consultation/phase, continuation and closure duties remain. Conditional UI reads add intake when triggered; smaller preloads prove no total-token/runtime saving.
+
+### Conditional UI rule intake
+
+Before editing or judging a user-facing change, read this current project-local source's complete `Mandatory UI consistency and task usability` section unless its exact text is already verified in your context. This includes visible copy/styling/layout and API/error/state changes affecting the experience; retain both axes, evidence limits, ownership and exemptions. Work with no user-facing effect may be NOT_APPLICABLE with a concrete reason. Routing-only planners pass the reference from metadata without code tracing. Bounded escalation retains its existing one-question scope and supplied-evidence reuse.
 
 ### Claude role-scoped intake
 
@@ -441,6 +458,8 @@ A completed invocation with insufficient evidence still leaves its review obliga
 
 ## Evidence and reporting
 
+### Shared evidence and reporting
+
 Write user-facing results in polite, plain Japanese. State the decision first and keep sentences short.
 `Checked` means inspected file/content. `Executed` means an observed command run; imported CI evidence must identify its source, revision, command/test, and result.
 Never invent a test command, execution, line number, requirement, or original quotation. Suggested verification is labeled not executed.
@@ -448,6 +467,8 @@ When a rule source is missing, mark the affected judgment unconfirmed, not the r
 
 Final approval requires complete evidence for the requested layer, completed required consultation, and no unresolved blocker affecting that judgment.
 A scoped clean result is not full PR approval. A single-layer approval is valid only for that layer and snapshot, is not four-layer or final approval, and joins a later four-layer run only as Supplied evidence. Confirmed open blockers keep overall merge readiness at `REQUEST_CHANGES`; missing blocking evidence keeps it deferred.
+
+### Review-layer approval and handoffs
 
 For `codex-claude-review` single-layer results, apply the workflow's `review_gates.handoffs`, `response_contract.acceptance` and `md-review.md` approval/result-consistency rules. With complete current-snapshot local coverage, required evidence/consultation, no local findings (including Low), questions or unchecked obligations, and an accepted native verdict, the owner reports `decision: APPROVE` even when independent other-layer handoffs remain open, provided every open handoff is weighted `🟢` (XREV-1 HND-1); an open `🟡`/`🔴` handoff prevents a clean result and the owner uses its existing non-approval label with Reason `NEEDS_CONFIRMATION`. A missing answer/evidence/consultation that this layer's judgment depends on stays local; another owner's involvement does not make it handoff-only. Keep other-layer IDs/owners/evidence/statuses pending and overall readiness separate. Required handoffs still block final workflow handoff until closed. Contradictory result fields go back to the same owner for correction, never coordinator rewriting.
 

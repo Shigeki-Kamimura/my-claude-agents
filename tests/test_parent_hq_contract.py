@@ -142,17 +142,17 @@ class ParentHqContractTests(unittest.TestCase):
         self.assertEqual({"review_md_path"}, set(names))
 
     def test_reverse_transport_approval_and_result_fields_remain(self):
-        for required in ("- read-only", "毎roundで新しいexec", "exec resumeや--lastを使いません",
-                         "主セッションだけの代読は不可", "利用者が選択した実agentだけ",
-                         "正常系（happy path）と異常系（fail path）", "[qa, e2e, l1_5, l2]"):
+        for required in ("- read-only", "Start a fresh exec every round.", "Never use exec resume or --last in this workflow.",
+                         "parent-only reading is forbidden.", "Invoke only user-selected actual qa/e2e agents",
+                         "happy-path and fail-path", "[qa, e2e, l1_5, l2]"):
             self.assertIn(required, self.workflow)
         result = self.workflow.split("response_contract:\n", 1)[1].split("pause_and_resume:\n", 1)[0]
         fields = set(re.findall(r"(?m)^    ([a-z_]+):", result))
         self.assertEqual(fields, {"workflow_id", "phase", "reviewer", "snapshot_id", "native_verdict",
                                   "coverage", "decision", "open_item_ids", "questions", "handoffs",
                                   "invocation_evidence"})
-        self.assertIn("古い選択層の承認を失効", self.workflow)
-        self.assertIn("原文変更時だけ更新", self.workflow)
+        self.assertIn("invalidate old selected-layer approvals", self.workflow)
+        self.assertIn("update only when originals change", self.workflow)
 
 
 if __name__ == "__main__":

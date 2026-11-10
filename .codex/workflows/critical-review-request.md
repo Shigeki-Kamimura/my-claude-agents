@@ -1,34 +1,34 @@
 # 批判的レビュー依頼のひな形
 
-用途: 層プレフィックスのない「レビューして」を、親が下の依頼文に展開し、既存のレビュー agent へ渡します。
-一次レビュー用です。新しいレビュー層も自動連鎖も作らず、各 agent の出力契約も上書きしません。
-展開する条件と手順は `.codex/AGENTS.md` の `Bare review requests` が正本です。
-文面は共有できますが、運用は Codex 専用です(`.claude/CLAUDE.md` に対応する展開規則はありません)。
+Purpose: The parent expands an unprefixed 「レビューして」 into the request below for an existing review agent.
+First-pass only; no new review layer, automatic chain or override of any agent's output contract.
+Expansion conditions and procedure are defined by `.codex/AGENTS.md` `Bare review requests`.
+The wording is shareable; operation is Codex-only (`.claude/CLAUDE.md` has no corresponding expansion rule).
 
-次の依頼には使いません。
-- いずれかのロールのプレフィックス(`p:` `rp:` `cr:` `ci:` `rev:` `adv:` `qa:` `e2e:` `hq:` `sol:` とその別名)付きの依頼。通常どおり、そのロールへ渡します。
-- 明示的なワークフロー依頼(どちらの方向も。`crからadvまで` のように層名を含むものも)、または有効な `Workflow` marker。そのワークフローの規則に従います。
-- 再レビュー、継続、修正確認の依頼。元の owner を再開します。再開できない場合の扱いは `.codex/AGENTS.md` の `Bare review requests` に従います。
+Do not use for:
+- Requests with a role prefix (`p:` `rp:` `cr:` `ci:` `rev:` `adv:` `qa:` `e2e:` `hq:` `sol:` and aliases); route to that role normally.
+- Explicit workflow requests in either direction, including layer names such as `crからadvまで`, or an active `Workflow` marker; follow that workflow.
+- Re-review, continuation or fix-confirmation requests; resume the original owner. If unavailable, follow `.codex/AGENTS.md` `Bare review requests`.
 
 ## プレースホルダー
 
-展開する側が埋めます。展開前に git などで解決を試み、解決できない項目だけをユーザーに1つ質問します。
+The expander fills these. Try Git or other available evidence first; ask the user one question only for an unresolved item.
 
-- `{layer}`: `cr` / `adv` / `qa` / `e2e`。層名が文中にあればその層(語彙と一致条件は `.codex/AGENTS.md` を参照。`qa` / `e2e` はレビューの意図を含む句がある場合のみ)、なければ `cr`。`rev` は明示プレフィックスのみです。
-- `{base}`: 実際の比較元(名前と SHA)。優先順位は、ユーザー指定、PR メタデータ、プロジェクト規則の順です。
-  upstream や merge-base は確認用の補助です。採用した場合は、仮定として依頼文に書きます。`main` や `HEAD~1` を仮定しません。
-- `{head}`: 実際の比較先(名前と SHA)。
-  未コミットの変更がなければ、通常の base/head の差分のみです。未コミットの変更だけを見る場合は、base を `HEAD <sha>`、head を「作業ツリー」とします。
-  コミット済みの差分と未コミットの変更が混在する場合は、`{scope}` の既定どおり両方を対象にし、head は「ブランチ先端 + 作業ツリー」と書きます。
-- `{scope}`: 既定は「`{base}` と `{head}` の差分、およびステージ済み・未ステージ・未追跡の変更」です。
-  除外、secret、ignore の方針は保ちます。作業ツリーを含む場合は、HEAD だけでなく未コミット変更の内容で対象を特定します。
-- `{focus}`: ユーザーが指定した場合のみ使います。指定がなければ、`{layer}` の担当範囲すべてです。
-  複数の観点への分割は、ユーザーが求めた場合のみ、別の依頼にします。
+- `{layer}`: `cr` / `adv` / `qa` / `e2e`. Use the layer named in the request; see `.codex/AGENTS.md` for vocabulary/matching (`qa` / `e2e` require a phrase expressing review intent). Otherwise use `cr`. `rev` requires an explicit prefix.
+- `{base}`: Actual comparison base (name and SHA), in precedence order of user selection, PR metadata, project rules.
+  Upstream/merge-base are confirmation aids; if adopted, state the assumption in the request. Never assume `main` or `HEAD~1`.
+- `{head}`: Actual comparison target (name and SHA).
+  With no uncommitted changes, use only the normal base/head diff. For uncommitted-only review, use base `HEAD <sha>` and head 「作業ツリー」.
+  For mixed committed/uncommitted changes, include both under the default `{scope}` and use head 「ブランチ先端 + 作業ツリー」.
+- `{scope}`: Default is 「`{base}` と `{head}` の差分、およびステージ済み・未ステージ・未追跡の変更」.
+  Preserve exclusions, secret and ignore policies. For working-tree review, identify scope by uncommitted contents as well as HEAD.
+- `{focus}`: Use only when user-specified; otherwise cover the entire `{layer}` responsibility.
+  Split perspectives into separate requests only when the user asks.
 
 ## 依頼文
 
 ```text
-{layer} のレビューを依頼します。可能な範囲で新しいタスクまたはコンテキストで、実装側の説明に頼らず独立して確認してください。
+Request a {layer} review. Use a fresh task/context where possible; inspect independently of the implementer's explanation.
 
 対象
 - base: {base}
@@ -37,52 +37,52 @@
 - 観点: {focus}
 
 前提
-- 最初に、対象操作・責務、受入条件・規則の出典、期待する変更前後を、既存の確認台帳へ`Review objective`として短く記録してください。確認項目と専門相談は、その目的または必須規則・未解決IDに対応させます。目的が未確認でも必須確認を落とさず、依存する判断を保留します。
-- 承認を前提にせず、壊れる条件を探してください。
-- 担当層の確認範囲に限り、「通る」と判断した箇所について、反証のために壊れる入力・状態を一度考えてください。
-  考えた入力はそのまま報告しないでください。反証できず筋道もない場合のみ、「未確認」に1行で記録してください。
+- First record the operation/responsibility, acceptance/rule sources and expected before/after briefly as `Review objective` in the existing coverage ledger. Map checks/consultations to that objective, mandatory rules or open IDs. An unconfirmed objective never waives mandatory checks; hold dependent judgments.
+- Seek failure conditions without assuming approval.
+- For each part judged to pass within your layer, consider a failing input/state once to challenge it.
+  Do not report the contemplated inputs themselves. Only if you can neither refute it nor establish a rationale, record one line in 「未確認」.
 
 指摘の条件
-- 欠陥: 到達条件、因果経路、結果を示してください。
-- 規則違反: 適用される必須規則と、具体的な不一致の箇所を示してください。実行時のクラッシュを作り出す必要はありません。
-- 検証ギャップ: 欠けている義務と、判断がそれに依存する理由を示してください。
-- いずれも示せないものは指摘にせず、「未確認」として理由を書いてください。
-- 好みや代替案は、適用される規則または具体的なリスクがなければ、必須にしないでください。
-- 実装側の主張(「到達しない」「テストで保証されている」など)は、そのまま受け取らず、コードで裏を取ってください。
-- 指摘ゼロ件も有効です。指摘を作らないでください。
+- Defect: show reachable conditions, causal path and consequence.
+- Rule violation: cite the applicable mandatory rule and concrete mismatch. No invented runtime crash is needed.
+- Verification gap: identify the missing obligation and why judgment depends on it.
+- Without any of these, record the reason in 「未確認」, not as a finding.
+- Preferences/alternatives are mandatory only with an applicable rule or concrete risk.
+- Check implementer claims (「到達しない」「テストで保証されている」, etc.) against code; do not accept them at face value.
+- Zero findings is valid; never manufacture findings.
 
 独立性
-- 実装者の自己申告、メモ、過去のレビュー台帳は、結論の根拠にしないでください。この依頼で明示されたものは除きます。
-- 要件、設計、プロジェクト規則は、証拠として使ってください。
-- 実際の差分と周辺のソースを、自分で取得してください。
+- Do not base conclusions on implementer self-reports, notes or prior review ledgers, except those explicitly supplied in this request.
+- Use requirements, design and project rules as evidence.
+- Obtain the actual diff and surrounding source independently.
 
 報告
-- 見た範囲と見ていない範囲を明示してください。
-  確認範囲が完了している場合に限り、指摘ゼロ件は有効です。未確認の範囲が残る場合は、承認の根拠にしないでください。
-- 🔴🟡 の全件を、件数制限なしで重要度順に報告してください。
-  軽微な所見は 🟢Low と 🟢Info に分けます。🟢Low は指摘で、重要度の高いものから最大5件です。それを超える分は 🟢Info で、指摘ではなく、1行で簡潔に書くか省略できます。ただし証拠付きの欠陥・仕様不一致はInfoにせず、🟢重みのhandoffとして追跡します(HND-1)。一度 🟢Info と分類した所見は 🟢Low に格上げも付け替えもしません。分類は初回報告時の証拠で1回だけ行い、修正で新たに生じた 🟢Low は新規の分類で `Origin: FIX_INDUCED` です(既存のOriginと再レビュー上限は変えません)。未解決の 🟢Low が残る間は、`DEFER` 指定でも承認系ラベルを返さず、`L1.5_REQUEST_CHANGES` / `REQUEST_CHANGES` にします。再レビューで新たに見つけた根拠付きの 🟢Low は、新しい指摘として出せます。
-  予算を超える場合は、未確認の範囲と次のスライスを報告してください。
-- 作業ツリーを含む場合は、確認した base/HEAD と、未コミット変更の内容を特定できる形で報告してください。
-- 規則への適合は `source/section -> responsibility or invariant -> inspected evidence -> result` で記録してください。
-  result は `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED` です。
-  簡潔に報告する範囲は、governance の `Evidence reuse and concise reporting` と、担当 agent の出力契約に従ってください。
-- この依頼文は、担当 agent の出力契約を上書きしません。
+- State inspected and uninspected scope.
+  Zero findings is valid only with complete coverage. Unchecked scope never supports approval.
+- Report every 🔴🟡 finding in severity order, without a count limit.
+  Split minor observations into 🟢Low and 🟢Info. 🟢Low findings are capped at 5, highest impact first. Overflow is 🟢Info, not findings; one concise line each or omit. Evidenced defects/spec mismatches instead stay tracked as 🟢-weighted handoffs (HND-1), never Info. Never promote/relabel existing 🟢Info as 🟢Low. Classify once from first-report evidence; a fix-induced new 🟢Low is a fresh classification with `Origin: FIX_INDUCED` (existing Origin/re-review caps unchanged). Any open 🟢Low, even `DEFER`, requires `L1.5_REQUEST_CHANGES` / `REQUEST_CHANGES`, never an approval label. New evidence-backed 🟢Low found on re-review may be reported as new findings.
+  On budget exhaustion, report unchecked scope and the next slice.
+- For working-tree review, report checked base/HEAD and identify the uncommitted contents.
+- Record rule compliance as `source/section -> responsibility or invariant -> inspected evidence -> result`.
+  result is `COMPLIANT / NON_COMPLIANT / NOT_APPLICABLE / UNCONFIRMED`.
+  Follow governance `Evidence reuse and concise reporting` and the assigned agent's output contract for concise reporting.
+- This request never overrides the assigned agent's output contract.
 
 制約
-- ソースとテストを編集しないでください。stage、commit、push、merge もしません。
-- Git、読み取り、検索のみで確認してください。アプリ、ビルド、テストは実行しないでください。
-  (qa / e2e は、担当 agent の定義に従い、必要な検証を自分で選んで実行できます。)
-- 他の review 層は起動しないでください。担当 agent に必須の framework 相談は除きます。
-  引き継ぎは、担当 agent の出力契約の形式で報告してください。
+- Do not edit source/tests or stage, commit, push or merge.
+- Inspect only with Git, reads and search. Do not run apps, builds or tests.
+  (qa / e2e may choose and run necessary verification under their agent definitions.)
+- Start no other review layers, except the assigned agent's required framework consultation.
+  Report handoffs in the assigned agent's output-contract format.
 ```
 
 ## 参照する規則
 
-`.claude/knowledge/engineering-governance.md` の次の節です。
-- `Pinned source and reconciliation`、`Principle application`、`Source coverage and role scope`、`User-approved technical supplements`
-- `Review objective and evidence`、`Scope, budgets, and stop conditions`、`Independent review and reconciliation`
-- `Evidence reuse and concise reporting`、`Rule loading across continuations`
-- `Autonomous Claude review`(Claude 向けの節です。Codex で準用するのは、既定の `{scope}`(ステージ済み・未ステージ・未追跡)だけです。Claude 固有の full access と staged-baseline の手順は準用しません)
+Use these `.claude/knowledge/engineering-governance.md` sections:
+- `Pinned source and reconciliation`, `Principle application`, `Source coverage and role scope`, `User-approved technical supplements`
+- `Review objective and evidence`, `Scope, budgets, and stop conditions`, `Independent review and reconciliation`
+- `Evidence reuse and concise reporting`, `Rule loading across continuations`
+- `Autonomous Claude review` (a Claude section; Codex borrows only the default `{scope}` of staged/unstaged/untracked changes, never Claude-specific full access or staged-baseline procedures)
 
-各層の担当範囲と出力契約は、対応する agent の定義(`.codex/agents/*.toml`)が正本です。
-アプリ、ビルド、テストを実行しない方針の根拠と、作業ツリーの変更を別に記録して範囲を特定する方針は、`code-quality-reviewer.toml` の記述です。
+The corresponding agent definition (`.codex/agents/*.toml`) governs each layer's scope and output contract.
+`code-quality-reviewer.toml` supplies the no-app/build/test-execution policy and separate working-tree content identification.

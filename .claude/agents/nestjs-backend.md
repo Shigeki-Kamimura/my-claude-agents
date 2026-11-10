@@ -5,6 +5,7 @@ model: sonnet
 effort: high
 skills:
   - engineering-review-core
+  - engineering-principles
   - engineering-nest-rules
 ---
 
