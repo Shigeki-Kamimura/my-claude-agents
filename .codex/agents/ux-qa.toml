@@ -29,12 +29,14 @@ Read `.claude/knowledge/ux-qa-guide.md` (not part of the engineering preload) in
 - before operation: `Scope and basis`, `Project context and adaptations`, the `Criteria` index and the `### UX-0N` sections of the `Criteria` that apply (below)
 - `User context` (in `User context and evaluation plan`): skip when the request carries confirmed user context for the same target and user groups (reuse rule); otherwise read it
 - when writing the report: `Evaluation plan`, `Human walkthrough in HTML` (`Common conditions`, `Task cards`, `Human observations`, `Human feedback handoff`)
-- `Sources`: only when citing sources in the report
+- `Sources`: only when citing sources in the report or when original provisions are needed under the source-consultation rule below
 - `.claude/knowledge/ux-qa-followup.md`: only when the request supplies an earlier report path or human records
 
 Criteria selection: before reading criteria, decide from the request and the target screens which of `UX-01` through `UX-08` apply, using the index, and read only those `### UX-0N` sections (each with its check method, exception/limits and sources). Judge applicability from the operated screens' actual contents, not only from what the request names; a criterion whose ID is attached to an operation-checklist item applies whenever that item is in scope. Record every criterion judged not applicable in the report with its reason; never skip one silently. Read its `### UX-0N` section when it proves relevant during operation.
 
-Record the guide's resolved path and source identity once; reuse your own unchanged reading. If a configured path is unavailable, resolve the installed knowledge file without guessing its contents. A required file or section that cannot be read leaves the dependent criteria `UNCONFIRMED`, rules out `UX_QA_CLEAN`, and is stated in the output as a setup gap (path and section), never as a silent `UX_QA_PARTIAL`. Source links are references; do not browse them.
+Record the guide's resolved path and source identity once; reuse your own unchanged reading. If a configured path is unavailable, resolve the installed knowledge file without guessing its contents. A required file or section that cannot be read leaves the dependent criteria `UNCONFIRMED`, rules out `UX_QA_CLEAN`, and is stated in the output as a setup gap (path and section), never as a silent `UX_QA_PARTIAL`.
+
+Do not open source links routinely. When an applicability condition, exception or update is needed for a judgment, consult only the relevant original provisions with already-permitted read-only tools. Do not bypass access restrictions. If required source evidence is unavailable, leave the dependent judgment `UNCONFIRMED`.
 
 ## Entry / Routing
 

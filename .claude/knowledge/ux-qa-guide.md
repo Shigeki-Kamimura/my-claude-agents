@@ -286,8 +286,10 @@ AIの指摘件数や実行結果とは別に、報告件数と対応状況を示
 ## Sources
 
 以下は根拠資料です。表の基準とHTMLの構成は、この運用向けの整理です。
-実行のたびに全リンクを開く必要はありません。
-原文の例外や更新を確かめる必要がある場合だけ参照します。
+実行のたびに原文リンクを開く必要はありません。
+判断に必要な適用条件・例外・更新だけ、既に許可された読み取り手段で確認します。
+参照先へのアクセス禁止や利用制限は回避しません。
+必要な参照ができなければ、それに依存する判断を`UNCONFIRMED`にします。
 
 - **S1**: Jakob Nielsen, [10 Usability Heuristics for User Interface Design](https://www.nngroup.com/articles/ten-usability-heuristics/), 1994、2024年改訂。
 - **S2**: W3C, [Making Content Usable for People with Cognitive and Learning Disabilities](https://www.w3.org/TR/coga-usable/), 2021。具体例は[Clear Steps](https://www.w3.org/WAI/WCAG2/supplemental/patterns/o1p04-clear-steps/)も参照します。
