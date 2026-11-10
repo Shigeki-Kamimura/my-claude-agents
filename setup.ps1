@@ -1,5 +1,5 @@
 ﻿# Why: upstream リポジトリを汚さずに個人用 agents/skills/settings を各プロジェクトへ展開するため（Windows ネイティブ環境向け）。
-# Scope: 設定リンクの作成、管理元が一致する旧 Codex リンクの移行、.git/info/exclude への登録。upstream ファイルは変更しない。
+# Scope: Claude/Copilot はリンク、Codex TOML は管理下の実ファイルを同期。.git/info のみ使用し upstream を保護。
 # Usage: pwsh ~/.claude/setup.ps1 [-Target C:\path\to\your-project] [-p|-Profile personal|company]
 # 前提: 開発者モード ON（管理者権限不要でシンボリックリンクが使えるようになる）
 #   設定 > システム > 開発者向け > 開発者モード: オン
@@ -79,6 +79,14 @@ function Add-Exclude {
     }
 }
 
+# Gitで追跡中のファイルやシンボリックリンクを変更しません。
+function Test-TrackedPath {
+    param([string]$Relative)
+    $found = @(git -C $Target ls-files --cached -- "$Relative")
+    if ($LASTEXITCODE -ne 0) { throw "git ls-files に失敗しました: $Relative" }
+    return ($found.Count -gt 0)
+}
+
 # --- agents: ファイル単位でリンク（upstream 実ファイルは skip） ---
 New-Item -ItemType Directory -Path (Join-Path $ClaudeDir "agents") -Force | Out-Null
 Add-Exclude ".claude/agents"
@@ -87,7 +95,7 @@ $linkedAgents = 0; $skippedAgents = 0
 foreach ($src in (Get-ChildItem -Path $SrcAgents -Filter "*.md" -File)) {
     $dest = Join-Path $ClaudeDir "agents\$($src.Name)"
 
-    if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+    if ((Test-TrackedPath ".claude/agents/$($src.Name)") -or ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink")) {
         # upstream に実ファイルが存在 → 上書き禁止
         Write-Host "  [SKIP upstream] agents/$($src.Name)"
         $skippedAgents++
@@ -108,7 +116,7 @@ if (Test-Path $SrcSkills) {
     foreach ($src in (Get-ChildItem -Path $SrcSkills -Directory)) {
         $dest = Join-Path $ClaudeDir "skills\$($src.Name)"
 
-        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+        if ((Test-TrackedPath ".claude/skills/$($src.Name)") -or ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink")) {
             Write-Host "  [SKIP upstream] skills/$($src.Name)/"
             $skippedSkills++
         } else {
@@ -129,7 +137,7 @@ if (Test-Path $SrcKnowledge) {
     foreach ($src in (Get-ChildItem -Path $SrcKnowledge -Filter "*.md" -File)) {
         $dest = Join-Path $ClaudeDir "knowledge\$($src.Name)"
 
-        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+        if ((Test-TrackedPath ".claude/knowledge/$($src.Name)") -or ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink")) {
             Write-Host "  [SKIP upstream] knowledge/$($src.Name)"
             $skippedKnowledge++
         } else {
@@ -143,7 +151,7 @@ if (Test-Path $SrcKnowledge) {
 
 # --- CLAUDE.md: upstream が持っていれば触らない ---
 $claudeMdDest = Join-Path $ClaudeDir "CLAUDE.md"
-if ((Test-Path $claudeMdDest) -and (Get-Item $claudeMdDest).LinkType -ne "SymbolicLink") {
+if ((Test-TrackedPath ".claude/CLAUDE.md") -or ((Test-Path $claudeMdDest) -and (Get-Item $claudeMdDest).LinkType -ne "SymbolicLink")) {
     Write-Host "  [SKIP upstream] CLAUDE.md（upstream 優先）"
 } else {
     if (Test-Path $claudeMdDest) { Remove-Item $claudeMdDest -Force }
@@ -155,7 +163,7 @@ if ((Test-Path $claudeMdDest) -and (Get-Item $claudeMdDest).LinkType -ne "Symbol
 # --- SKILL.md: upstream が持っていれば触らない ---
 if (Test-Path $SrcSkillMd) {
     $skillMdDest = Join-Path $ClaudeDir "SKILL.md"
-    if ((Test-Path $skillMdDest) -and (Get-Item $skillMdDest).LinkType -ne "SymbolicLink") {
+    if ((Test-TrackedPath ".claude/SKILL.md") -or ((Test-Path $skillMdDest) -and (Get-Item $skillMdDest).LinkType -ne "SymbolicLink")) {
         Write-Host "  [SKIP upstream] SKILL.md（upstream 優先）"
     } else {
         if (Test-Path $skillMdDest) { Remove-Item $skillMdDest -Force }
@@ -167,7 +175,7 @@ if (Test-Path $SrcSkillMd) {
 
 # --- settings.json: upstream が持っていれば触らない ---
 $settingsDest = Join-Path $ClaudeDir "settings.json"
-if ((Test-Path $settingsDest) -and (Get-Item $settingsDest).LinkType -ne "SymbolicLink") {
+if ((Test-TrackedPath ".claude/settings.json") -or ((Test-Path $settingsDest) -and (Get-Item $settingsDest).LinkType -ne "SymbolicLink")) {
     Write-Host "  [SKIP upstream] settings.json（upstream 優先）"
 } else {
     if (Test-Path $settingsDest) { Remove-Item $settingsDest -Force }
@@ -177,11 +185,18 @@ if ((Test-Path $settingsDest) -and (Get-Item $settingsDest).LinkType -ne "Symbol
 }
 
 # --- Codex: AGENTS.md ---
+# フォルダー全体のリンクへコピーすると共有元を変更するため禁止。
+foreach ($dir in @($CodexDir, (Join-Path $CodexDir "agents"))) {
+    $item = Get-Item -LiteralPath $dir -Force -ErrorAction SilentlyContinue
+    if ($null -ne $item -and $item.LinkType -in @("SymbolicLink", "Junction")) {
+        throw "Codex フォルダーがリンクです。共有先への書き込みを避けるため停止します: $dir"
+    }
+}
 New-Item -ItemType Directory -Path $CodexDir -Force | Out-Null
 Add-Exclude ".codex"
 
 $codexInstructionsDest = Join-Path $CodexDir "AGENTS.md"
-if ((Test-Path $codexInstructionsDest) -and (Get-Item $codexInstructionsDest).LinkType -ne "SymbolicLink") {
+if ((Test-TrackedPath ".codex/AGENTS.md") -or ((Test-Path $codexInstructionsDest) -and (Get-Item $codexInstructionsDest).LinkType -ne "SymbolicLink")) {
     Write-Host "  [SKIP upstream] .codex/AGENTS.md（upstream 優先）"
 } else {
     if (Test-Path $codexInstructionsDest) { Remove-Item $codexInstructionsDest -Force }
@@ -189,20 +204,46 @@ if ((Test-Path $codexInstructionsDest) -and (Get-Item $codexInstructionsDest).Li
     Write-Host "  [LINK] .codex/AGENTS.md -> $SrcCodexInstructions"
 }
 
-# --- Codex: config.toml ---
-$codexConfigDest = Join-Path $CodexDir "config.toml"
-if ((Test-Path $codexConfigDest) -and (Get-Item $codexConfigDest).LinkType -ne "SymbolicLink") {
-    Write-Host "  [SKIP upstream] .codex/config.toml（upstream 優先）"
-} else {
-    if (Test-Path $codexConfigDest) { Remove-Item $codexConfigDest -Force }
-    New-Item -ItemType SymbolicLink -Path $codexConfigDest -Target $SrcCodexConfig | Out-Null
-    Write-Host "  [LINK] .codex/config.toml -> $SrcCodexConfig"
+# --- Codex TOML: 管理下のファイルだけ実体コピーして同期 ---
+# 管理履歴は .git/info 配下に保存します。.gitignore は変更しません。
+New-Item -ItemType Directory -Path (Join-Path $CodexDir "agents") -Force | Out-Null
+$codexStateFile = Join-Path $Target ".git\info\codex-setup-managed.tsv"
+$codexState = @{}
+if (Test-Path -LiteralPath $codexStateFile) {
+    foreach ($line in (Get-Content -LiteralPath $codexStateFile)) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        $parts = $line.Split([char]9, 2)
+        if ($parts.Length -ne 2 -or $parts[1] -notmatch '^[a-fA-F0-9]{64}$') {
+            throw "Codex同期の管理履歴が不正です: $codexStateFile"
+        }
+        $codexState[$parts[0]] = $parts[1].ToLowerInvariant()
+    }
 }
 
-# --- Codex agents: ファイル単位でリンク ---
-New-Item -ItemType Directory -Path (Join-Path $CodexDir "agents") -Force | Out-Null
+function Get-CodexSha256 {
+    param([string]$Path)
+    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
 
-# リンク先の実在を要求せず、壊れた旧リンクも管理元を照合します。
+function Save-CodexChecksum {
+    param([string]$Relative, [string]$Checksum)
+    if ($codexState.ContainsKey($Relative) -and $codexState[$Relative] -eq $Checksum) { return }
+    $codexState[$Relative] = $Checksum
+    $lines = [string[]]@(
+        $codexState.Keys | Sort-Object | ForEach-Object { "{0}{1}{2}" -f $_, [char]9, $codexState[$_] }
+    )
+    $tmp = Join-Path (Split-Path -Parent $codexStateFile) (
+        ".codex-setup-managed-" + [guid]::NewGuid().ToString("N") + ".tmp"
+    )
+    try {
+        [System.IO.File]::WriteAllLines($tmp, $lines, [System.Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $tmp -Destination $codexStateFile -Force
+    } finally {
+        if (Test-Path -LiteralPath $tmp) { Remove-Item -LiteralPath $tmp -Force }
+    }
+}
+
+# リンク先が消えていても、管理元の元パスで照合します。
 function Test-ManagedCodexLink {
     param($Item, [string]$ExpectedTarget)
     if ($null -eq $Item -or $Item.LinkType -ne "SymbolicLink") { return $false }
@@ -223,49 +264,125 @@ function Test-ManagedCodexLink {
     )
 }
 
+function Sync-CodexToml {
+    param([string]$Source, [string]$Relative)
+    $dest = Join-Path $CodexDir ($Relative.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
+
+    # upstream の追跡済みファイルは、同名のリンクでも変更しません。
+    $tracked = @(git -C $Target ls-files --cached -- ".codex/$Relative")
+    if ($LASTEXITCODE -ne 0) { throw "git ls-files に失敗しました: .codex/$Relative" }
+    if ($tracked.Count -gt 0) {
+        Write-Host "  [SKIP tracked] .codex/$Relative"
+        return "skipped"
+    }
+
+    $existing = Get-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue
+    $sourceHash = Get-CodexSha256 $Source
+    if ($null -ne $existing -and $existing.LinkType -eq "SymbolicLink") {
+        if (-not (Test-ManagedCodexLink $existing $Source)) {
+            Write-Warning "  [CONFLICT preserved] .codex/$Relative（外部リンク）"
+            return "conflict"
+        }
+    } elseif ($null -ne $existing) {
+        if ($existing.PSIsContainer) {
+            Write-Warning "  [CONFLICT preserved] .codex/$Relative（ファイルではありません）"
+            return "conflict"
+        }
+        $current = Get-CodexSha256 $dest
+        $recorded = if ($codexState.ContainsKey($Relative)) { $codexState[$Relative] } else { $null }
+        if ($null -eq $recorded -and $current -ne $sourceHash) {
+            Write-Host "  [SKIP upstream] .codex/$Relative（管理外の実ファイル）"
+            return "skipped"
+        }
+        if ($null -ne $recorded -and $current -ne $recorded -and $current -ne $sourceHash) {
+            Write-Warning "  [CONFLICT preserved] .codex/$Relative（同期後に編集されています）"
+            return "conflict"
+        }
+    }
+
+    # 手動でリンクを実体化してあっても、原本と同じなら引き継ぎます。
+    if ($null -ne $existing -and $existing.LinkType -ne "SymbolicLink" -and
+        (Get-CodexSha256 $dest) -eq $sourceHash) {
+        Save-CodexChecksum $Relative $sourceHash
+        Write-Host "  [CURRENT] .codex/$Relative"
+        return "current"
+    }
+
+    # コピーを先に完成させ、リンクの原本を触らずに置換します。
+    $temp = Join-Path (Split-Path -Parent $dest) (
+        ".codex-toml-" + [guid]::NewGuid().ToString("N") + ".tmp"
+    )
+    $linkBackup = $null
+    try {
+        Copy-Item -LiteralPath $Source -Destination $temp
+        if ($null -ne $existing -and $existing.LinkType -eq "SymbolicLink") {
+            $linkBackup = Join-Path (Split-Path -Parent $dest) (
+                ".codex-old-link-" + [guid]::NewGuid().ToString("N") + ".bak"
+            )
+            Move-Item -LiteralPath $dest -Destination $linkBackup
+        }
+        try {
+            Move-Item -LiteralPath $temp -Destination $dest -Force
+        } catch {
+            if ($null -ne $linkBackup -and (Test-Path -LiteralPath $linkBackup)) {
+                Move-Item -LiteralPath $linkBackup -Destination $dest -Force
+            }
+            throw
+        }
+        if ($null -ne $linkBackup -and (Test-Path -LiteralPath $linkBackup)) {
+            Remove-Item -LiteralPath $linkBackup -Force
+        }
+    } finally {
+        if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Force }
+    }
+    Save-CodexChecksum $Relative (Get-CodexSha256 $dest)
+    Write-Host "  [COPY] .codex/$Relative"
+    return "copied"
+}
+
+if (-not (Test-Path -LiteralPath $SrcCodexConfig -PathType Leaf)) {
+    throw "Codex の原本 config.toml がありません: $SrcCodexConfig"
+}
+$codexCopied = 0; $codexCurrent = 0; $codexSkipped = 0; $codexConflicts = 0
+$allStatuses = @()
+$allStatuses += (Sync-CodexToml -Source $SrcCodexConfig -Relative "config.toml")
+
 $retiredCodexNames = @("hq.toml", "pl.toml", "qa.toml")
-$codexConflicts = 0
 foreach ($retiredName in $retiredCodexNames) {
     $dest = Join-Path $CodexDir "agents\$retiredName"
+    $tracked = @(git -C $Target ls-files --cached -- ".codex/agents/$retiredName")
+    if ($LASTEXITCODE -ne 0) { throw "git ls-files に失敗しました: $retiredName" }
     $existing = Get-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue
-    if (Test-ManagedCodexLink $existing (Join-Path $SrcCodexAgents $retiredName)) {
+    if ($tracked.Count -gt 0) {
+        Write-Warning "  [CONFLICT preserved] .codex/agents/$retiredName（git追跡対象）"
+        $codexConflicts++
+    } elseif (Test-ManagedCodexLink $existing (Join-Path $SrcCodexAgents $retiredName)) {
         Remove-Item -LiteralPath $dest -Force
         Write-Host "  [REMOVE retired] .codex/agents/$retiredName"
     } elseif ($null -ne $existing) {
-        Write-Warning "  [CONFLICT preserved] .codex/agents/$retiredName（実ファイル・外部リンクを保持。重複定義を手動確認してください）"
+        Write-Warning "  [CONFLICT preserved] .codex/agents/$retiredName（独自ファイル・リンク）"
         $codexConflicts++
     }
 }
 
-$linkedCodexAgents = 0; $skippedCodexAgents = 0
-if (Test-Path $SrcCodexAgents) {
-    foreach ($src in (Get-ChildItem -Path $SrcCodexAgents -Filter "*.toml" -File)) {
+# *.toml を都度列挙するので、新しく増えた定義も次回 setup で同期されます。
+if (Test-Path -LiteralPath $SrcCodexAgents) {
+    foreach ($src in (Get-ChildItem -LiteralPath $SrcCodexAgents -Filter "*.toml" -File)) {
         if ($retiredCodexNames -contains $src.Name) { continue }
-        $dest = Join-Path $CodexDir "agents\$($src.Name)"
-        $existing = Get-Item -LiteralPath $dest -Force -ErrorAction SilentlyContinue
-
-        if ($null -ne $existing -and $existing.LinkType -eq "SymbolicLink" -and -not (Test-ManagedCodexLink $existing $src.FullName)) {
-            Write-Warning "  [CONFLICT preserved] .codex/agents/$($src.Name)（外部リンクを保持。適用する定義を確認してください）"
-            $codexConflicts++
-            $skippedCodexAgents++
-        } elseif ($null -ne $existing -and $existing.LinkType -ne "SymbolicLink") {
-            Write-Host "  [SKIP upstream] .codex/agents/$($src.Name)"
-            $skippedCodexAgents++
-        } else {
-            if ($null -ne $existing) { Remove-Item -LiteralPath $dest -Force }
-            New-Item -ItemType SymbolicLink -Path $dest -Target $src.FullName | Out-Null
-            Write-Host "  [LINK] .codex/agents/$($src.Name) -> $($src.FullName)"
-            $linkedCodexAgents++
-        }
+        $allStatuses += (Sync-CodexToml -Source $src.FullName -Relative "agents/$($src.Name)")
     }
 }
+$codexCopied += @($allStatuses | Where-Object { $_ -eq "copied" }).Count
+$codexCurrent += @($allStatuses | Where-Object { $_ -eq "current" }).Count
+$codexSkipped += @($allStatuses | Where-Object { $_ -eq "skipped" }).Count
+$codexConflicts += @($allStatuses | Where-Object { $_ -eq "conflict" }).Count
 
 # --- Copilot: copilot-instructions.md ---
 New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
 Add-Exclude ".copilot"
 
 $copilotInstructionsDest = Join-Path $CopilotDir "copilot-instructions.md"
-if ((Test-Path $copilotInstructionsDest) -and (Get-Item $copilotInstructionsDest).LinkType -ne "SymbolicLink") {
+if ((Test-TrackedPath ".copilot/copilot-instructions.md") -or ((Test-Path $copilotInstructionsDest) -and (Get-Item $copilotInstructionsDest).LinkType -ne "SymbolicLink")) {
     Write-Host "  [SKIP upstream] .copilot/copilot-instructions.md（upstream 優先）"
 } else {
     if (Test-Path $copilotInstructionsDest) { Remove-Item $copilotInstructionsDest -Force }
@@ -281,7 +398,7 @@ if (Test-Path $SrcCopilotAgents) {
     foreach ($src in (Get-ChildItem -Path $SrcCopilotAgents -Filter "*.md" -File)) {
         $dest = Join-Path $CopilotDir "agents\$($src.Name)"
 
-        if ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink") {
+        if ((Test-TrackedPath ".copilot/agents/$($src.Name)") -or ((Test-Path $dest) -and (Get-Item $dest).LinkType -ne "SymbolicLink")) {
             Write-Host "  [SKIP upstream] .copilot/agents/$($src.Name)"
             $skippedCopilotAgents++
         } else {
@@ -299,10 +416,10 @@ Write-Host "=== 完了 ===" -ForegroundColor Green
 Write-Host "  claude agents   : $linkedAgents linked, $skippedAgents skipped (upstream)"
 Write-Host "  claude skills   : $linkedSkills linked, $skippedSkills skipped (upstream)"
 Write-Host "  claude knowledge: $linkedKnowledge linked, $skippedKnowledge skipped (upstream)"
-Write-Host "  codex agents    : $linkedCodexAgents linked, $skippedCodexAgents skipped (upstream/external)"
+Write-Host "  codex TOML      : $codexCopied copied/updated, $codexCurrent current, $codexSkipped skipped"
 Write-Host "  copilot agents  : $linkedCopilotAgents linked, $skippedCopilotAgents skipped (upstream)"
 if ($codexConflicts -gt 0) {
-    Write-Warning "  Codex移行: $codexConflicts 件の競合が残っています。統合完了ではありません。"
+    Write-Warning "  Codex同期: $codexConflicts 件の競合が残っています。統合完了ではありません。"
 }
 Write-Host ""
 Write-Host "upstream を汚さないために .git/info/exclude を使用しています（.gitignore は変更していません）"
