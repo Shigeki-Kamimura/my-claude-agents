@@ -1,26 +1,24 @@
 # UX QA follow-up contract
 
-後から届いた人の記録を、新しい`ux:`依頼で渡すときの契約です。
-`ux-qa`は、依頼が前回レポートのパスか人の記録を含む場合だけ、この資料を読みます。
-正本は`.claude/knowledge/ux-qa-followup.md`です。
-会社版の同名ファイルも、同じ内容に保ちます。
-人の課題の記録項目は、[UX QA guide](ux-qa-guide.md)の`Human feedback handoff`にあります。
+Use for later human results supplied by the requester or caller in a new `ux:` request. Read only when the request includes a prior report path or human records.
 
-## Follow-up request
+Canonical: `.claude/knowledge/ux-qa-followup.md`; keep the company copy identical.
+Human issue fields: [UX QA guide](ux-qa-guide.md), `Human feedback handoff`.
 
-後から届いた人の記録は、依頼者または呼出元が新しい`ux:`依頼の入力として渡します。
-その依頼には、次を含めます。
+## Input
 
-- 前回レポートの絶対パス。パスがなければ推測せず、依頼者に質問します。
-- 人の記録。記録者の識別名、日時、`case_id`／`step_id`、内容です。
-- 依頼者の回答と、その回答者・日時などの出所です。
+- Prior report's absolute path. If absent, ask the requester; never guess.
+- Human records: recorder name/ID, timestamp, `case_id`/`step_id`, content.
+- Requester answers with provenance: respondent and timestamp.
 
-前回レポートは読み取り専用で、変更しません。
-新しい出力先に新しいレポートを作り、前回のrun IDを参照します。
-各レポートは、先頭付近に自身のrun IDを示します。
-前回の`case_id`は、同じ作業なら再利用します。
-作業が変わった場合は、旧IDと新IDの対応を新しいレポートに記録します。
-対応が確認できない記録は、推測で結び付けず未確定のまま残します。
-依頼者の回答で差分が`CONFIRMED`になる場合、出所は人の発言として回答者・日時を残し、AIの推測にしません。
-この依頼も通常の`ux:`依頼で、安全条件の手順5は弱めません。
-アプリが未起動なら停止して質問し、記録だけのレポートは作りません。
+## Report continuity
+
+- Keep the prior report read-only and unchanged.
+- Write a new report to a new output directory. Show its own run ID near the start and reference the prior run ID.
+- Reuse `case_id` for the same task. For changed tasks, record the old-to-new ID mapping in the new report.
+- Keep records with unconfirmed mappings unresolved; never guess links.
+- If requester answers make an adaptation `CONFIRMED`, attribute them as human statements with respondent and timestamp, never as AI inference.
+
+## Execution boundary
+
+This remains a normal `ux:` run; safety-gate step 5 still applies. If the app is not running, stop and ask. Do not create a record-only report.
