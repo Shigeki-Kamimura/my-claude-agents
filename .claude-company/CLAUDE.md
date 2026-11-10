@@ -114,6 +114,7 @@ Default strategy:
 - reviewer -> Sonnet / high
 - test-qa -> Sonnet / high
 - e2e-qa -> Sonnet / medium
+- ux-qa -> Sonnet / medium
 - sec-arch / data-platform -> Sonnet / high
 - framework specialists -> Sonnet / high
 - opus-escalation -> Opus / high
@@ -226,6 +227,7 @@ Use agents by prefix:
 - `q:` / `qa:` -> `test-qa`
 - `a:` / `adv:` -> `adviser` (L2+ review routing)
 - `e:` / `e2e:` -> `e2e-qa`
+- `ux:` / `ux-qa:` -> `ux-qa` (explicit operation/UX test run of a running local/staging app by a tester that reports observed facts; not a review layer)
 - `o:` / `opus:` -> `opus-escalation` (explicit bounded override only)
 
 These are input aliases, not separate registered agents. Normalize an explicit

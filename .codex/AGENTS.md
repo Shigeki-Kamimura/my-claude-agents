@@ -50,6 +50,7 @@ Apply governance `Rule loading across continuations` and `Evidence reuse and con
 - reviewer
 - test-qa
 - e2e-qa
+- ux-qa
 - code-quality-reviewer
 - ci-reviewer
 - hq-coder
@@ -71,6 +72,7 @@ Apply governance `Rule loading across continuations` and `Evidence reuse and con
 - a: / adv: -> adviser
 - q: / qa: -> test-qa
 - e: / e2e: -> e2e-qa
+- ux: / ux-qa: -> ux-qa (explicit operation/UX test run of a running local/staging app by a tester that reports observed facts; not a review layer)
 - h: / hq: / hq-coder -> hq-coder role in the parent by default (see Parent implementation ownership)
 - sol: -> sol-escalation (explicit manual override only)
 
@@ -95,6 +97,7 @@ Default strategy:
 - reviewer -> GPT-6.1 Sol / high
 - test-qa -> GPT-6.1 Sol / high
 - e2e-qa -> GPT-6.1 Sol / high
+- ux-qa -> GPT-6.1 Sol / high
 - sec-arch -> GPT-6.1 Sol / xhigh
 - data-platform -> GPT-6.1 Sol / xhigh
 - NestJS/Spring specialists -> GPT-6.1 Sol / high
@@ -151,7 +154,7 @@ For authorized Codex implementation, the main session owns the HQ role by defaul
 - An isolated HQ worker implements its slice; it is not a second coordinator. It returns required `SPECIALIST_REQUEST` items to the parent, which invokes the consultant and returns the evidence. No parent -> HQ relay -> specialist hierarchy is required.
 - Parent implementation is implementer self-check, never independent review. All required QA/E2E happy/fail adequacy checks, CR/ADV reviews, cross-model evidence, first-pass review consultations and final-snapshot approvals remain mandatory.
 - In `claude-codex-review`, Codex remains a read-only review receiver. It must delegate the real requested reviewer; parent HQ execution is unavailable. A conflicting implementation request is BLOCKED. Never widen tool permissions or reinterpret review approval as implementation authorization.
-- Other explicit role routes remain delegated: `req-pl`, `review-planner`, `test-qa`, `e2e-qa`, `code-quality-reviewer`, `adviser`, `reviewer`, and `sol-escalation`. A requested QA/E2E role or independent review cannot be replaced by parent self-check.
+- Other explicit role routes remain delegated: `req-pl`, `review-planner`, `test-qa`, `e2e-qa`, `ux-qa`, `code-quality-reviewer`, `adviser`, `reviewer`, and `sol-escalation`. A requested QA/E2E role or independent review cannot be replaced by parent self-check.
 - No model, effort or permission settings change. Report `EXECUTION: parent` without inventing a child ID; every real delegated review/consultation retains its required invocation evidence. Missing delegation never becomes approval. Do not automatically start extra review layers.
 
 ### Compact handoffs
@@ -276,6 +279,15 @@ Owns:
 Does not own unit/service/controller adequacy.
 E2E QA does not escalate models directly; route unresolved boundary risk to adviser/sec/data.
 
+### ux-qa
+Owns:
+- explicit operation of a running local/staging app with test accounts and disposable data
+- happy-path and bug-inducing operation checks, reporting observed facts and separate impressions with the stated basis
+- the HTML report with reproducible steps, captured evidence and a hq-coder/e2e-qa handoff, written only to a directory the user designates each time
+
+Is a tester, not a reviewer: not a qa/e2e/cr/adv review layer and has no Workflow Result. Does not own test-code adequacy, source edits, or production operation.
+UX QA does not escalate models directly; it fixes nothing and spawns no agents, and returns anomalies as a handoff so the coordinator routes hq-coder (fix) and e2e-qa (automation).
+
 ### reviewer
 Owns convergence only:
 - prior Review Tickets
@@ -307,6 +319,7 @@ These specialists may return `ESCALATE_SOL` only when:
 Not eligible for direct automatic model escalation:
 - review-planner
 - e2e-qa
+- ux-qa
 - req-pl
 - code-quality-reviewer
 - test-qa
