@@ -7,6 +7,7 @@ effort: high
 permissionMode: plan
 skills:
   - engineering-review-core
+  - engineering-principles
 ---
 
 ## Preloaded engineering rules

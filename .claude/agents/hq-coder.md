@@ -7,6 +7,7 @@ effort: high
 permissionMode: default
 skills:
   - engineering-review-core
+  - engineering-principles
 ---
 
 ## MD cross-model review

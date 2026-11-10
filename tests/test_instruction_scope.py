@@ -116,8 +116,8 @@ class InstructionScopeTests(unittest.TestCase):
         reviewer = read(".codex/agents/reviewer.toml")
         self.assertIn("Perform convergence only", reviewer)
         reverse_workflow = read(".codex/workflows/codex-review.yml")
-        self.assertIn("毎roundで新しいexecを起動", reverse_workflow)
-        self.assertIn("この手順ではexec resumeや--lastを使いません", reverse_workflow)
+        self.assertIn("Start a fresh exec every round.", reverse_workflow)
+        self.assertIn("Never use exec resume or --last in this workflow.", reverse_workflow)
 
 
 if __name__ == "__main__":

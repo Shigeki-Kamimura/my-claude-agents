@@ -450,27 +450,27 @@ class ContractTextTests(unittest.TestCase):
         limits = claude.split("\ndispatch_limits:\n", 1)[1].split("\nhandoff:\n", 1)[0]
         for key in ("redispatch", "layers_cap", "sequential", "usage_reading", "cost_classes", "rate_limit", "enforced_by_tool"):
             self.assertIn("  " + key + ":", limits)
-        for text in ("新しい利用者依頼なしに自動で再起動できます", "禁止は次の3つだけです", "(1)利用上限のシグナル後の盲目的な再試行",
-                     "(2)利用者が選んだ層を超える追加層の起動", "(3)原因を報告せずに3回を超える修理round", "claude_usage_before",
-                     "--confirm-more-layers", "--after-rate-limit-ack", "再試行も追加の子の起動もしません", "model/effortは変えません"):
+        for text in ("without a new user request", "Only three prohibitions apply.", "(1) Blind retries after a usage-limit signal.",
+                     "(2) Launching layers beyond user selection.", "(3) More than three repair rounds without reporting the cause.", "claude_usage_before",
+                     "--confirm-more-layers", "--after-rate-limit-ack", "no retry or additional child launch.", "model/effort stay unchanged."):
             self.assertIn(text, limits)
-        self.assertNotIn("失敗後の盲目的な再起動", limits)  # 一般の再起動禁止ではない
-        self.assertIn("新しい利用者依頼なしに自動で再起動できます", self.read(".codex/workflows/codex-review.yml"))
+        self.assertNotIn("blind restarts after failure", limits)  # 一般の再起動禁止ではない
+        self.assertIn("without a new user request", self.read(".codex/workflows/codex-review.yml"))
         self.assertIn("dispatch_limits:", self.read(".codex/workflows/codex-review.yml"))
         # eleven Workflow Result fieldsの検査範囲(response_contract〜pause_and_resume)にdispatch_limitsが入り込まない
         fields = claude.split("response_contract:\n", 1)[1].split("pause_and_resume:\n", 1)[0]
         self.assertNotIn("dispatch_limits", fields)
         common = self.read(".codex/workflows/md-review.md")
-        for text in ("新しい利用者依頼なしに自動で再起動できます", "禁止は次の3つだけです", "## 利用量の上限とBIAS-1の来歴管理", "RATE_LIMITED", "claude_usage: unknown", "--author-model", "self_check"):
+        for text in ("may automatically restart re-review without a new user request", "Only these three dispatch actions are prohibited", "## 利用量の上限とBIAS-1の来歴管理", "RATE_LIMITED", "claude_usage: unknown", "--author-model", "self_check"):
             self.assertIn(text, common)
         self.assertNotIn("利用量の上限とBIAS-1", claude.split("review_entry:", 1)[1].split("role_sections:", 1)[1].split("required_intake", 1)[0])
 
     def test_continuity_first_contract_and_unverified_cache_ttl_are_stated(self):
         common = self.read(".codex/workflows/md-review.md")
-        for text in ("継続優先(既定)", "既定0(無効)", "--fresh-above-tokens", "review_state_digest", "前回の承認・判定は移りません",
-                     "実際のtoken削減は未測定", "オプションにも主張にもしません", "初回には付けません"):
+        for text in ("Continuity first (default)", "defaults to 0 (disabled)", "--fresh-above-tokens", "review_state_digest", "Prior approvals and judgments do not transfer",
+                     "Actual token savings are unmeasured", "Neither offer it as an option nor claim it works", "never on a first pass"):
             self.assertIn(text, common)
-        self.assertNotIn("既定300", common)
+        self.assertNotIn("defaults to 300", common)
 
     def test_bias1_is_in_lenses_and_codex_core_only_and_xrev1_is_intact(self):
         heading = "### BIAS-1: Provenance and self-preference controls"

@@ -69,6 +69,43 @@ class PreloadTests(unittest.TestCase):
                     self.assertIn(preloads.section(data.decode(), title), rendered)
         self.assertIn("Never run Bash/git merely", preloads.render(ROOT, "engineering-nest-rules"))
 
+    def test_claude_partition_preserves_complete_originals_and_universal_rules(self):
+        core = preloads.render(ROOT, "engineering-review-core")
+        governance = (ROOT / ".claude" / preloads.SOURCES["governance"]).read_text()
+        for title in ("Core rules for Claude preload", "Claude role-scoped intake",
+                      "Pinned source and reconciliation", "User-directed execution permissions",
+                      "Shared evidence and reporting", "Conditional UI rule intake"):
+            self.assertIn(preloads.section(governance, title), core)
+        for name, sources in preloads.SECTIONS.items():
+            rendered = preloads.render(ROOT, name)
+            for source, titles in sources.items():
+                relative = preloads.SOURCES[source]
+                data = (ROOT / ".claude" / relative).read_bytes()
+                self.assertIn(f"`.claude/{relative}`", rendered)
+                self.assertIn(hashlib.sha256(data).hexdigest(), rendered)
+                for title in titles:
+                    self.assertEqual(rendered.count(preloads.section(data.decode(), title)), 1)
+        for title in ("Review objective and evidence", "Mandatory UI consistency and task usability",
+                      "Review-layer approval and handoffs"):
+            self.assertNotIn(f"### {title}\n", core)
+        self.assertNotIn("## Responsibility Separation\n", core)
+        delivery = preloads.section(governance, "Preloaded rule delivery")
+        for name in preloads.SECTIONS:
+            self.assertIn(f"`{name}`", delivery)
+
+    def test_role_supplements_preserve_the_former_core_sections(self):
+        governance = (ROOT / ".claude" / preloads.SOURCES["governance"]).read_text()
+        human = (ROOT / ".claude" / preloads.SOURCES["human"]).read_text()
+        principles = preloads.render(ROOT, "engineering-principles")
+        self.assertIn(preloads.section(governance, "Review objective and evidence"), principles)
+        for title in ("Responsibility Separation", "Exception Handling", "Type Safety",
+                      "Refactoring Scope", "Design Document Alignment"):
+            self.assertIn(preloads.section(human, title), principles)
+        self.assertIn(preloads.section(governance, "Review-layer approval and handoffs"),
+                      preloads.render(ROOT, "engineering-review-evidence"))
+        self.assertIn(preloads.section(governance, "Mandatory UI consistency and task usability"),
+                      preloads.render(ROOT, "engineering-ui-rules"))
+
     def test_ops_supplement_is_codex_core_only(self):
         heading = "### OPS-1: Release, operability and data-lifecycle boundaries"
         self.assertIn(heading, preloads.render(ROOT, "engineering-review-core", "codex"))
@@ -127,7 +164,9 @@ class PreloadTests(unittest.TestCase):
             codex.write_text(codex.read_text().replace(".claude/knowledge", ".Codex/knowledge"))
             self.assertEqual(preloads.sync(root), [str(codex.relative_to(root))])
             preloads.sync(root, write=True)
-            output = root / ".claude/skills/engineering-review-core/SKILL.md"
+            core = root / ".claude/skills/engineering-review-core/SKILL.md"
+            core_before = core.read_bytes()
+            output = root / ".claude/skills/engineering-principles/SKILL.md"
             before = output.read_bytes()
             for profile in preloads.PROFILES:
                 source = root / profile / preloads.SOURCES["human"]
@@ -136,7 +175,20 @@ class PreloadTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(), before)
             preloads.sync(root, write=True)
             self.assertNotEqual(output.read_bytes(), before)
+            self.assertEqual(core.read_bytes(), core_before)
             self.assertEqual(preloads.sync(root), [])
+
+    def test_missing_original_or_profile_mirror_refuses_all_writes(self):
+        for profile in preloads.PROFILES:
+            for relative in preloads.SOURCES.values():
+                with self.subTest(profile=profile, source=relative), tempfile.TemporaryDirectory() as folder:
+                    root = Path(folder)
+                    self.copy_sources(root)
+                    (root / profile / relative).unlink()
+                    with self.assertRaises(FileNotFoundError):
+                        preloads.sync(root, write=True)
+                    for destination in (*preloads.PROFILES, ".agents"):
+                        self.assertFalse((root / destination / "skills").exists())
 
     def test_conflicting_profile_sources_refuse_generation(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -159,6 +211,16 @@ class PreloadTests(unittest.TestCase):
                 self.assertIsNotNone(match, str(role))
                 names = [line[4:] for line in match[1].splitlines()]
                 self.assertIn("engineering-review-core", names)
+                self.assertEqual(len(names), len(set(names)), str(role))
+                self.assertEqual(role.stem != "review-planner", "engineering-principles" in names,
+                                 str(role))
+                review_owners = {"test-qa", "e2e-qa", "code-quality-reviewer", "adviser", "reviewer"}
+                self.assertEqual(role.stem in review_owners, "engineering-review-evidence" in names,
+                                 str(role))
+                ui_owners = {"react-ui-flow", "vue-frontend", "ux-qa"}
+                self.assertEqual(role.stem in ui_owners, "engineering-ui-rules" in names, str(role))
+                if role.stem == "review-planner":
+                    self.assertEqual(names, ["engineering-review-core"])
                 expected_extra = {"react-ui-flow": "engineering-react-rules",
                                   "nestjs-backend": "engineering-nest-rules"}.get(role.stem)
                 if expected_extra:
@@ -167,8 +229,8 @@ class PreloadTests(unittest.TestCase):
                     skill = ROOT / profile / "skills" / name / "SKILL.md"
                     self.assertTrue(skill.is_file(), str(skill))
                     self.assertNotIn("disable-model-invocation: true", skill.read_text())
-        core = (ROOT / ".claude/skills/engineering-review-core/SKILL.md").read_text()
-        self.assertIn("### Reject Condition", core)
+        principles = (ROOT / ".claude/skills/engineering-principles/SKILL.md").read_text()
+        self.assertIn("### Reject Condition", principles)
         react = (ROOT / ".claude/skills/engineering-react-rules/SKILL.md").read_text()
         self.assertIn("### Required Check", react)
 
@@ -180,13 +242,13 @@ class PreloadTests(unittest.TestCase):
         for source in preloads.SOURCES.values():
             self.assertIn(".claude/" + source, source_rule[1])
         self.assertIn("SHA-256", source_rule[1])
-        self.assertIn("同一ownerの再開", source_rule[1])
-        self.assertIn("変更時だけ更新", source_rule[1])
+        self.assertIn("Same-owner resumes", source_rule[1])
+        self.assertIn("update only when originals change", source_rule[1])
         self.assertIn("common_contract: md-review.md", workflow)
-        self.assertIn("原文変更時だけ更新", source_rule[1])
+        self.assertIn("Summaries never replace originals not injected.", source_rule[1])
         common = (ROOT / ".codex/workflows/md-review.md").read_text()
-        self.assertIn("全対象、累積coverage、全open ID", common)
-        self.assertIn("終了済みの同phase親session", common)
+        self.assertIn("all scope, cumulative coverage, all open IDs", common)
+        self.assertIn("completed same-phase parent session", common)
 
     def test_xrev1_lenses_skill_reaches_only_four_claude_review_layers(self):
         name = "engineering-review-lenses"

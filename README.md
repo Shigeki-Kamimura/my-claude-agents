@@ -646,7 +646,19 @@ L2自身が必要とする証拠の不足は、その層の未了として残し
 
 ## サブエージェントへの規則の事前読込
 
-Claudeの全担当は、`skills`指定で`engineering-review-core`を起動時に読み込みます。ReactとNestには、それぞれの担当範囲の追加スキルも渡します。レビュー4層(test-qa・e2e-qa・code-quality-reviewer・adviser)には、XREV-1(HND-1を含む)だけの`engineering-review-lenses`も渡します(Codex側は変更なし)。ガバナンスと人のレビュー方針から節単位で原文を抽出し、禁止事項・条件・例外を保持します。設計書は変更に関係する部分を別途確認します。
+Claudeの全担当は、`skills`指定で`engineering-review-core`を起動時に読み込みます。共通coreには、出典確認・実行権限・一般的な証拠ルールを残します。担当別の原文は、次のように配布します。
+
+| スキル | 事前配布する担当と内容 |
+| --- | --- |
+| `engineering-principles` | `review-planner`以外へ、人間レビューの5節とレビュー目的を渡します。 |
+| `engineering-review-evidence` | QA/E2E/CR/ADV/`reviewer`へ、レビュー層の承認・引継ぎ条件を渡します。 |
+| `engineering-ui-rules` | React/Vue/UX担当へ、UI整合性と使いやすさの全文を渡します。 |
+| `engineering-review-lenses` | QA/E2E/CR/ADVへ、XREV-1(HND-1を含む)とBIAS-1を渡します。 |
+| `engineering-react-rules` / `engineering-nest-rules` | 対応するReact/Nest担当へ、従来の追加規則を渡します。 |
+
+ガバナンスと人のレビュー方針から、条件・例外を含む原文を抽出します。UI規則が未配布の担当も、利用者向け変更では該当節の全文を読みます。振り分け専用の担当は、資料の参照先を渡します。設計書は変更に関係する部分を別途確認します。Codex側の3スキルと収録節は維持します。
+
+分割によって初期配布量が減っても、追加読込や出典説明で総量が増える場合があります。[比較結果と未測定事項](docs/agent-intake-slim-validation.md)を確認し、実利用量の削減とは区別します。
 
 正本は`.claude/knowledge/`の2資料です。`.claude-company/knowledge/`との一致を確認し、`tools/sync_engineering_preloads.py --write`で両profileとCodexの`.agents/skills/`を生成します。通常の実行は変更せず、出典の変更や生成物の欠落を検出します。生成物には原文のSHA-256と収録節を記録します。
 
