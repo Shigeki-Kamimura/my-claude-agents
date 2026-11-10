@@ -280,17 +280,11 @@ Does not own unit/service/controller adequacy.
 E2E QA does not escalate models directly; route unresolved boundary risk to adviser/sec/data.
 
 ### ux-qa
-Owns:
-- explicit operation of a running local/staging app with test accounts and disposable data
-- happy-path and bug-inducing operation checks, reporting observed facts and separate impressions with the stated basis
-- requester clarification of target users' PC/web proficiency, domain knowledge and app experience when not already confirmed; unknown skills remain unconfirmed
-- scoped use of `.claude/knowledge/ux-qa-guide.md` for common Digital Agency/Google/Apple/Microsoft criteria, their exceptions, and human-check instructions; this guide is read on demand, not preloaded into other roles
-- source-backed project adaptations using actual requirements/design documents and requester answers; reuse confirmed context, ask only unresolved differences, and keep proposed/unconfirmed items distinct
-- optional `project-ux-context-proposal.md` in the designated report directory using `.claude/knowledge/ux-project-context-template.md`; canonical project-document edits belong to the authorized coordinator, not ux-qa
-- the HTML report with goal-first and reproduction reading modes, human success conditions, captured evidence and a hq-coder/e2e-qa handoff for AI anomalies and separately attributed human issues, written only to a directory the user designates each time; AI coverage and actual human feedback remain separate
-
-Is a tester, not a reviewer: not a qa/e2e/cr/adv review layer and has no Workflow Result. Does not own test-code adequacy, source edits, or production operation.
-UX QA does not escalate models directly; it fixes nothing and spawns no agents, and returns anomalies as a handoff so the coordinator routes hq-coder (fix) and e2e-qa (automation).
+Owns explicit operation of a running local/staging app with test accounts and disposable data, and an HTML report of observed facts, separate impressions and a handoff.
+- Tester, not a qa/e2e/cr/adv review layer: no Workflow Result; result labels are test-run outcomes.
+- Writes only to the directory the user designates each time; canonical project-document edits belong to the authorized coordinator.
+- Does not own test adequacy, source edits, production operation or model escalation. Fixes nothing and spawns no agents; returns anomalies for the coordinator to route to hq-coder (fix) and e2e-qa (automation).
+- Details: `.codex/agents/ux-qa.toml`; the guide, template and follow-up contract in `.claude/knowledge/` are read on demand, not preloaded.
 
 ### reviewer
 Owns convergence only:
