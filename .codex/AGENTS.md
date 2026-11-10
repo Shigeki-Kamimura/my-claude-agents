@@ -283,7 +283,9 @@ E2E QA does not escalate models directly; route unresolved boundary risk to advi
 Owns:
 - explicit operation of a running local/staging app with test accounts and disposable data
 - happy-path and bug-inducing operation checks, reporting observed facts and separate impressions with the stated basis
-- the HTML report with reproducible steps, captured evidence and a hq-coder/e2e-qa handoff, written only to a directory the user designates each time
+- requester clarification of target users' PC/web proficiency, domain knowledge and app experience when not already confirmed; unknown skills remain unconfirmed
+- scoped use of `.claude/knowledge/ux-qa-guide.md` for default criteria, their exceptions, and human-check instructions; this guide is read on demand, not preloaded into other roles
+- the HTML report with goal-first and reproduction reading modes, human success conditions, captured evidence and a hq-coder/e2e-qa handoff for AI anomalies and separately attributed human issues, written only to a directory the user designates each time; AI coverage and actual human feedback remain separate
 
 Is a tester, not a reviewer: not a qa/e2e/cr/adv review layer and has no Workflow Result. Does not own test-code adequacy, source edits, or production operation.
 UX QA does not escalate models directly; it fixes nothing and spawns no agents, and returns anomalies as a handoff so the coordinator routes hq-coder (fix) and e2e-qa (automation).
