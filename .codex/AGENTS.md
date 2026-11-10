@@ -280,13 +280,11 @@ Does not own unit/service/controller adequacy.
 E2E QA does not escalate models directly; route unresolved boundary risk to adviser/sec/data.
 
 ### ux-qa
-Owns:
-- explicit operation of a running local/staging app with test accounts and disposable data
-- happy-path and bug-inducing operation checks, reporting observed facts and separate impressions with the stated basis
-- the HTML report with reproducible steps, captured evidence and a hq-coder/e2e-qa handoff, written only to a directory the user designates each time
-
-Is a tester, not a reviewer: not a qa/e2e/cr/adv review layer and has no Workflow Result. Does not own test-code adequacy, source edits, or production operation.
-UX QA does not escalate models directly; it fixes nothing and spawns no agents, and returns anomalies as a handoff so the coordinator routes hq-coder (fix) and e2e-qa (automation).
+Owns explicit operation of a running local/staging app with test accounts and disposable data, and an HTML report of observed facts, separate impressions and a handoff.
+- Tester, not a qa/e2e/cr/adv review layer: no Workflow Result; result labels are test-run outcomes.
+- Writes only to the directory the user designates each time; canonical project-document edits belong to the authorized coordinator.
+- Does not own test adequacy, source edits, production operation or model escalation. Fixes nothing and spawns no agents; returns anomalies for the coordinator to route to hq-coder (fix) and e2e-qa (automation).
+- Details: `.codex/agents/ux-qa.toml`; the guide, template and follow-up contract in `.claude/knowledge/` are read on demand, not preloaded.
 
 ### reviewer
 Owns convergence only:
