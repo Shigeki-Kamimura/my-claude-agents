@@ -156,9 +156,9 @@ class MDReviewTests(unittest.TestCase):
         self.assertEqual(before, self.git("status", "--porcelain").stdout)
 
     def test_tool_gate_allows_read_and_rejects_backlog_mutations_and_bash(self):
-        for name, code in [("Read", 0), ("mcp__md_review__git_diff", 0), ("mcp__md_review__review_context", 0), ("mcp__backlog__get_issue", 0),
+        for name, code in [("Read", 0), ("Agent", 0), ("Task", 0), ("mcp__md_review__git_diff", 0), ("mcp__md_review__review_context", 0), ("mcp__backlog__get_issue", 0),
                            ("mcp__backlog__add_issue", 2), ("mcp__backlog__delete_issue", 2),
-                           ("Bash", 2), ("Write", 2), ("mcp__other__get_issue", 2)]:
+                           ("Bash", 2), ("Write", 2), ("Edit", 2), ("NotebookEdit", 2), ("mcp__other__get_issue", 2)]:
             result = subprocess.run([sys.executable, "-I", "-B", str(ROOT / "tools/md_review_tool_gate.py")],
                                     input=json.dumps({"tool_name": name}), text=True, capture_output=True)
             self.assertEqual(code, result.returncode, name)

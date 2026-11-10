@@ -28,7 +28,7 @@ provenance = review.provenance
 
 BACKLOG_READ = ("get_issue", "get_issue_comments", "get_document", "get_document_comments",
                 "get_project", "get_wiki", "get_wikis", "get_documents", "get_document_tree")
-TOOLS = ["Read", "Glob", "Grep", "Agent", "SendMessage"]
+TOOLS = ["Read", "Glob", "Grep", "Agent", "Task", "SendMessage"]
 MD_TOOLS = ("git_diff", "review_context")
 
 

@@ -122,11 +122,19 @@ class MDReviewFlowTests(unittest.TestCase):
         self.assertTrue(self.validate(good, previous=previous)["approved"])
 
     def test_claude_agent_and_resumed_child_ids_come_from_native_result(self):
-        rows = [{"type": "result", "session_id": "parent-A"},
-                {"message": {"content": [{"type": "tool_use", "id": "call-A", "name": "Agent", "input": {"subagent_type": "code-quality-reviewer"}}]}},
-                {"message": {"content": [{"type": "tool_result", "tool_use_id": "call-A"}]}, "toolUseResult": {"agentId": "child-A"}}]
-        native = receipts.identities(rows, "claude", "code-quality-reviewer")
-        self.assertEqual({"child-A": "code-quality-reviewer"}, native["children"])
+        for tool in ("Agent", "Task"):
+            with self.subTest(tool=tool):
+                rows = [{"type": "result", "session_id": "parent-A"},
+                        {"message": {"content": [{"type": "tool_use", "id": "call-A", "name": tool, "input": {"subagent_type": "code-quality-reviewer"}}]}},
+                        {"message": {"content": [{"type": "tool_result", "tool_use_id": "call-A"}]}, "toolUseResult": {"agentId": "child-A"}}]
+                native = receipts.identities(rows, "claude", "code-quality-reviewer")
+                self.assertEqual({"child-A": "code-quality-reviewer"}, native["children"])
+                failed = copy.deepcopy(rows)
+                failed[-1]["message"]["content"][0]["is_error"] = True
+                self.assertEqual({}, receipts.identities(failed, "claude", "code-quality-reviewer")["children"])
+                missing = copy.deepcopy(rows)
+                del missing[-1]["toolUseResult"]["agentId"]
+                self.assertEqual({}, receipts.identities(missing, "claude", "code-quality-reviewer")["children"])
         resumed = [{"type": "result", "session_id": "parent-A"},
                    {"message": {"content": [{"type": "tool_use", "id": "call-B", "name": "SendMessage", "input": {"to": "child-A"}}]}},
                    {"message": {"content": [{"type": "tool_result", "tool_use_id": "call-B"}]}, "toolUseResult": {"success": True, "resumedAgentId": "child-A"}}]

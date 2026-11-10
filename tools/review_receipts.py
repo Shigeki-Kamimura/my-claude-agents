@@ -154,14 +154,14 @@ def identities(rows, provider, expected_role, previous=None):
             for block in content:
                 if not isinstance(block, dict):
                     continue
-                if block.get("type") == "tool_use" and block.get("name") in ("Agent", "SendMessage"):
+                if block.get("type") == "tool_use" and block.get("name") in ("Agent", "Task", "SendMessage"):
                     calls[block.get("id")] = (block["name"], block.get("input", {}))
                 if block.get("type") == "tool_result" and block.get("tool_use_id") in calls:
                     tool, inputs = calls[block["tool_use_id"]]
                     native = row.get("toolUseResult", row.get("tool_use_result", {}))
                     if not isinstance(native, dict) or block.get("is_error"):
                         continue
-                    if tool == "Agent" and isinstance(native.get("agentId"), str) and not inputs.get("resume"):
+                    if tool in ("Agent", "Task") and isinstance(native.get("agentId"), str) and not inputs.get("resume"):
                         children[native["agentId"]] = inputs.get("subagent_type")
                     if tool == "SendMessage" and previous and native.get("success") is True:
                         resumed = native.get("resumedAgentId")
