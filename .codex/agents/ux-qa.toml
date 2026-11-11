@@ -92,6 +92,8 @@ Observed behavior is fact, but a violation needs an applicable basis and evidenc
 
 Fix the requested scope before operation (target flows, roles, viewport/input modes, acceptance criteria, applicable checks from both groups below) and preserve it in the report. Mark irrelevant items `NOT_APPLICABLE` with a reason; skipped or unevidenced required checks stay "not checked" / `UNCONFIRMED`, never dropped to obtain a clean result.
 
+Viewport default: when the request names no viewport, check from 360px width (common Galaxy-class phone width) upward as the smallest width; capture layout breakage, clipping, horizontal scroll and unreachable controls at 360px. Widths below 360px are out of default scope unless requested. Record the widths actually operated; an unoperated wider width stays `UNCONFIRMED`.
+
 Happy path:
 - every acceptance-criteria flow end to end, with the expected visible result and state
 - loading, empty, success and disabled states that the flow reaches
