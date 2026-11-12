@@ -1,0 +1,11 @@
+{
+  "implementation_backend": "codex",
+  "pcr_backend": "codex",
+  "qa_backend": "claude",
+  "e2e_backend": "codex",
+  "l2_backend": "claude",
+  "max_fix_rounds": 3,
+  "max_owner_rounds": 1,
+  "cross_model_required": ["l2"],
+  "publish": false
+}

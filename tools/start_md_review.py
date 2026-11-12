@@ -70,12 +70,20 @@ def codex_mcp_overrides(project):
 
 
 def command(config, phase, round_dir, resume=None):
+    provider = "codex" if config["direction"] == "claude-codex-review" or phase == "ci" else "claude"
+    return command_for_provider(provider, config["project"], round_dir, resume)
+
+
+def command_for_provider(provider, project, round_dir, resume=None):
+    """制限付きtransportだけを共用します。workflowの方向は書き換えません。"""
+    if provider not in {"codex", "claude"}:
+        raise ValueError("未対応のレビュー実行先です")
     bridge = {"command": sys.executable, "args": ["-I", "-B", str(review.ROOT / "tools/md_review.py"), "--serve", str(round_dir)]}
-    if config["direction"] == "claude-codex-review" or phase == "ci":
+    if provider == "codex":
         if resume:
             raise ValueError("Codexは毎回fresh execです")
-        return ["codex", "exec", "--cd", config["project"], "--sandbox", "read-only", "--json",
-                *codex_mcp_overrides(config["project"]),
+        return ["codex", "exec", "--cd", project, "--sandbox", "read-only", "--json",
+                *codex_mcp_overrides(project),
                 "-c", 'mcp_servers.md_review.command=' + json.dumps(bridge["command"]),
                 "-c", 'mcp_servers.md_review.args=' + json.dumps(bridge["args"]),
                 "-c", "mcp_servers.md_review.enabled=true",
