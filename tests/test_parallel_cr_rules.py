@@ -9,6 +9,30 @@ RULE_PATH = Path(".claude/knowledge/parallel-cr-review.md")
 SKILL_PATH = Path(".claude/skills/parallel-cr/SKILL.md")
 
 
+ADDITIONAL_CASE_IDS = {
+    "semantic_doc_search",
+    "zero_hits_not_complete",
+    "artifact_selected_cells",
+    "artifact_schema_expansion",
+    "whole_file_rule_preserved",
+    "raw_extract_not_verdict",
+    "duplicate_group_traceable",
+    "candidate_complete_scope_partial",
+    "guard_disproves_reachability",
+    "manual_test_omission",
+    "manual_test_explicit_rule",
+    "api_vs_business_decision",
+    "independent_green_handoff",
+    "dependent_question_stays_local",
+    "events_not_agent_listing",
+    "wall_time_not_work_sum",
+    "metrics_missing_not_gate",
+    "authorized_owner_response",
+    "unauthorized_owner_response",
+    "reconcile_workflow_conflict",
+}
+
+
 class ParallelCrRulesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -88,12 +112,108 @@ class ParallelCrRulesTest(unittest.TestCase):
             "repairs_not_fresh_discovery", "source_mismatch", "unrequested_expansion",
         }
         cases = self.cases["cases"]
+        expected |= ADDITIONAL_CASE_IDS
         self.assertEqual(len(cases), len(expected))
         self.assertEqual({case["id"] for case in cases}, expected)
         for case in cases:
             with self.subTest(case=case["id"]):
                 self.assertGreater(len(case["input"]), 20)
                 self.assertGreater(len(case["expected"]), 20)
+
+
+    def test_document_impact_requires_semantic_search(self):
+        section = self.rule.split("### DOC-IMPACT:", 1)[1].split("### ARTIFACT-DELTA:", 1)[0]
+        for text in ("old -> new behavior", "operation/screen/route", "operational/demo",
+                     "semantic identifiers", "query/hits/disposition", "one bounded alternative",
+                     "inaccessible or truncated", "not proof"):
+            with self.subTest(text=text):
+                self.assertIn(text, section)
+        self.assertNotIn("STG_CASE_MANAGEMENT_DEMO", section)
+        self.assertNotIn("TC12", section)
+
+    def test_artifact_selection_precedes_reading(self):
+        section = self.rule.split("### ARTIFACT-DELTA:", 1)[1].split("### RULE-SCOPE", 1)[0]
+        for text in ("before reading data", "Case IDs, not row numbers alone",
+                     "Do not compare every case/column", "Return only selected values",
+                     "not a semantic audit of all rows", "Do not repeat the same full extraction",
+                     "changed common template/schema", "Explicit whole-file requirements still apply"):
+            with self.subTest(text=text):
+                self.assertIn(text, section)
+
+    def test_raw_reuse_preserves_independent_judgment(self):
+        for text in ("raw source extracts may be shared", "never peer conclusions",
+                     "Each owner still reads its own required originals",
+                     "each owner evaluates its own assigned evidence",
+                     "validator checks contested cells"):
+            self.assertIn(text, self.rule)
+
+    def test_scope_and_guard_before_new_blocker(self):
+        for text in ("nearest guard", "does not establish a reachable failure",
+                     "Do not erase previously tracked findings", "before deeper severity analysis",
+                     "stop unrelated investigation"):
+            self.assertIn(text, self.rule)
+
+    def test_manual_adequacy_stays_with_qa(self):
+        for text in ("QA/E2E test-adequacy ownership", "exact manual acceptance check",
+                     "counterevidence, not universal proof", "omission alone"):
+            self.assertIn(text, self.rule)
+
+    def test_business_authority_and_handoff_gates(self):
+        for text in ("API execution permission does not by itself",
+                     "authorization-matrix audits", "essential to the local verdict",
+                     "independently owned", "Never downgrade weight"):
+            self.assertIn(text, self.rule)
+
+    def test_dedup_preserves_all_ids_and_occurrences(self):
+        for text in ("retaining every original owner/ID", "each distinct occurrence",
+                     "every source ID", "reused ID"):
+            self.assertIn(text, self.rule)
+
+    def test_validator_checks_document_gap_not_only_candidates(self):
+        for text in ("including DOC-IMPACT search evidence", "both owners omitted",
+                     "even when no candidate mentions the document",
+                     "does not make the whole PR COMPLETE"):
+            self.assertIn(text, self.rule)
+
+    def test_no_listing_or_polling_for_concurrency(self):
+        self.assertIn("Do not call `list_agents`", self.rule)
+        self.assertIn("dispatch/completion events", self.rule)
+        self.assertIn("permitted long waits", self.rule)
+        self.assertIn("not `list_agents` or short polling", self.skill)
+        self.assertIn("list_agentsや短い間隔の確認は使わず", self.guide)
+
+    def test_timing_usage_do_not_add_gate(self):
+        for text in ("timestamps with timezone", "duration in seconds",
+                     "not the sum of concurrent owner intervals",
+                     "every child exactly once", "one fixed cutoff",
+                     "never gate approval", "user-reported duration stays SUPPLIED"):
+            self.assertIn(text, self.rule)
+
+    def test_one_owner_response_requires_prior_permission(self):
+        for text in ("reconcile_once: true", "Only under that authorization",
+                     "once to each affected original owner", "no fresh discovery",
+                     "does not authorize another round", "conflicting fresh-round contract"):
+            self.assertIn(text, self.rule)
+        self.assertIn("user explicitly sets `reconcile_once: true`", self.skill)
+        self.assertIn("追加しなければ3担当で終了", self.guide)
+
+    def test_skill_dispatch_passes_missing_coverage_contract(self):
+        for text in ("DOC-IMPACT", "ARTIFACT-DELTA", "manual-test adequacy",
+                     "group candidates", "mandatory-coverage gaps", "NOT_MEASURED",
+                     "do not forward calibration examples or behavioral fixtures"):
+            self.assertIn(text, self.skill)
+
+    def test_guide_reports_trial_as_supplied_not_new_measurement(self):
+        for text in ("約21分", "SUPPLIED", "内訳は未計測", "未発見か記載漏れか",
+                     "新しい実機試行まで未測定", "sync_codex_desktop.py"):
+            self.assertIn(text, self.guide)
+
+    def test_skill_frontmatter_and_section_links(self):
+        self.assertTrue(self.skill.startswith("---\nname: parallel-cr\n"))
+        self.assertEqual(self.skill.split("---\n", 2)[1].count("name:"), 1)
+        for number in range(1, 9):
+            self.assertEqual(self.rule.count(f"## {number}. "), 1)
+        self.assertNotIn("reconcile_once: true", self.rule.split("## 1.", 1)[0])
 
 
 if __name__ == "__main__":
