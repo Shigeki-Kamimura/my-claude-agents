@@ -31,6 +31,8 @@ class DesktopSyncTests(unittest.TestCase):
             path = self.source / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('# fixture shared contract\n')
+        (self.source / sync.PCR_SKILL_SOURCE).write_text(
+            '---\nname: parallel-cr\ndescription: Explicit PCR-1 fixture.\n---\n\n# parallel-cr\nRead the PCR-1 contract.\n')
         (self.source / '.codex/config.toml').write_text('[agents]\nmax_threads=6\n')
         (self.source / '.codex/agents').mkdir()
         self.put('worker')
@@ -305,6 +307,223 @@ class DesktopSyncTests(unittest.TestCase):
             self.apply()
         with contextlib.redirect_stdout(io.StringIO()):
             sync.restore(self.dest, backup, True)
+
+    def test_parallel_skill_and_parent_entry_are_installed(self):
+        p = self.plan()
+        skill = p['changes'][sync.PCR_SKILL].decode()
+        self.assertTrue(skill.startswith('---\nname: parallel-cr\n'))
+        for path in (sync.PCR_SKILL_SOURCE, sync.PCR_CONTRACT, sync.PCR_GUIDE):
+            self.assertIn(str(self.source / path), skill)
+        self.assertIn('Read the PCR-1 contract.', skill)
+        self.assertIn('Preserve mandatory rule/exception checks.', skill)
+        self.assertIn('Project rules, disabled skills', p['changes']['AGENTS.md'].decode())
+        self.assertIn(str(self.dest / sync.PCR_SKILL), p['changes']['AGENTS.md'].decode())
+        self.assertIn('Plain cr: remains a single reviewer.', p['changes']['AGENTS.md'].decode())
+        worker = sync.toml(p['changes']['agents/worker.toml'], 'planned')
+        self.assertNotIn('Parent-only explicit PCR-1', worker['developer_instructions'])
+        self.assertNotIn('agents/parallel-cr.toml', p['changes'])
+        self.assertEqual(set(p['changes']), {'agents/worker.toml', 'AGENTS.md', sync.PCR_SKILL, sync.PCR_STATE})
+        self.apply()
+        state = json.loads((self.dest / sync.PCR_STATE).read_text())
+        self.assertEqual(state['sha256'], sync.sha((self.dest / sync.PCR_SKILL).read_bytes()))
+        self.assertEqual(self.plan()['changes'], {})
+
+    def test_repository_skill_body_and_front_matter_are_preserved(self):
+        raw = (SCRIPT.parent / sync.PCR_SKILL_SOURCE).read_bytes()
+        header, separator, body = raw.decode().partition('\n---\n')
+        installed = sync.parallel_skill(self.source, raw).decode()
+        self.assertTrue(installed.startswith(header + separator))
+        self.assertTrue(installed.endswith(body.lstrip('\n')))
+        self.assertIn(sync.sha(raw), installed)
+        self.assertIn('only the PCR-1 contract, not missing project requirements', installed)
+
+    def test_existing_desktop_receives_only_parent_and_skill_changes(self):
+        (self.dest / 'agents').mkdir()
+        old = sync.toml((self.source / '.codex/agents/worker.toml').read_bytes(), 'source')
+        old['developer_instructions'] = sync.owned(old['developer_instructions'], sync.block(self.source), self.source)
+        (self.dest / 'agents/worker.toml').write_bytes(sync.encode(old))
+        (self.dest / 'AGENTS.md').write_text(sync.owned('Human instructions remain.\n', sync.block(self.source), self.source))
+        p = self.plan()
+        self.assertEqual(set(p['changes']), {'AGENTS.md', sync.PCR_SKILL, sync.PCR_STATE})
+        self.apply()
+        self.assertTrue((self.dest / 'AGENTS.md').read_text().startswith('Human instructions remain.\n'))
+
+    def test_missing_parallel_source_files_stop_before_writes(self):
+        before = self.tree(self.dest)
+        for rel in (sync.PCR_SKILL_SOURCE, sync.PCR_CONTRACT, sync.PCR_GUIDE):
+            with self.subTest(path=rel):
+                path = self.source / rel
+                old = path.read_bytes()
+                path.unlink()
+                with self.assertRaisesRegex(sync.Stop, 'Missing or external'):
+                    self.plan()
+                path.write_bytes(old)
+        self.assertEqual(self.tree(self.dest), before)
+
+    def test_invalid_parallel_skill_front_matter_stops(self):
+        path = self.source / sync.PCR_SKILL_SOURCE
+        for text in ('missing header', '---\nname: wrong\ndescription: Invalid.\n---\nBody\n',
+                     '---\nname: parallel-cr\nname: parallel-cr\ndescription: Duplicate.\n---\nBody\n',
+                     '---\nname: parallel-cr\n---\nBody\n',
+                     '---\nname: parallel-cr\ndescription: Empty body.\n---\n'):
+            with self.subTest(text=text):
+                path.write_text(text)
+                with self.assertRaisesRegex(sync.Stop, 'front matter'):
+                    self.plan()
+        self.assertFalse((self.dest / sync.PCR_SKILL).exists())
+
+    def test_unmanaged_parallel_skill_is_not_overwritten(self):
+        path = self.dest / sync.PCR_SKILL
+        path.parent.mkdir(parents=True)
+        path.write_text('User-owned skill.\n')
+        before = self.tree(self.dest)
+        with self.assertRaisesRegex(sync.Stop, 'Unmanaged parallel-cr'):
+            self.apply()
+        self.assertEqual(self.tree(self.dest), before)
+
+    def test_identical_unmanaged_skill_can_be_adopted(self):
+        data = self.plan()['changes'][sync.PCR_SKILL]
+        path = self.dest / sync.PCR_SKILL
+        path.parent.mkdir(parents=True)
+        path.write_bytes(data)
+        self.assertNotIn(sync.PCR_SKILL, self.plan()['changes'])
+        self.apply()
+        self.assertEqual(path.read_bytes(), data)
+        self.assertEqual(self.plan()['changes'], {})
+
+    def test_managed_parallel_skill_edits_and_deletion_are_protected(self):
+        self.apply()
+        path = self.dest / sync.PCR_SKILL
+        path.write_text(path.read_text() + '\nUser edit.\n')
+        with self.assertRaisesRegex(sync.Stop, 'edited or removed'):
+            self.plan()
+        path.unlink()
+        with self.assertRaisesRegex(sync.Stop, 'edited or removed'):
+            self.plan()
+
+    def test_invalid_parallel_ownership_is_not_ignored(self):
+        self.apply()
+        path = self.dest / sync.PCR_STATE
+        for raw in ('{bad', '[]', '{"version": 1}',
+                    json.dumps({'version': 1, 'path': '../outside', 'sha256': '0' * 64}),
+                    json.dumps({'version': 1, 'path': sync.PCR_SKILL, 'sha256': 'bad'})):
+            with self.subTest(raw=raw):
+                path.write_text(raw)
+                with self.assertRaisesRegex(sync.Stop, 'ownership record'):
+                    self.plan()
+
+    def test_parallel_paths_reject_symlinks(self):
+        outside = self.root / 'outside'
+        outside.mkdir()
+        for rel in ('skills', 'skills/parallel-cr', sync.PCR_SKILL, sync.PCR_STATE):
+            with self.subTest(path=rel):
+                target = self.dest / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.symlink_to(outside, target_is_directory=True)
+                with self.assertRaisesRegex(sync.Stop, 'Symlink'):
+                    self.plan()
+                target.unlink()
+
+    def test_concurrent_parallel_destination_change_stops(self):
+        self.apply()
+        for rel in (sync.PCR_SKILL, sync.PCR_STATE):
+            with self.subTest(path=rel):
+                self.put('worker', 'An update to make apply check the plan.\n')
+                p = self.plan()
+                path = self.dest / rel
+                original = path.read_bytes()
+                path.write_bytes(original + b'\nConcurrent edit.\n')
+                with self.assertRaisesRegex(sync.Stop, 'Destination changed'):
+                    sync.apply(p)
+                path.write_bytes(original)
+
+    def test_concurrent_parallel_source_change_stops(self):
+        for rel in (sync.PCR_SKILL_SOURCE, sync.PCR_CONTRACT, sync.PCR_GUIDE):
+            with self.subTest(path=rel):
+                p = self.plan()
+                path = self.source / rel
+                old = path.read_bytes()
+                path.write_bytes(old + b'\nConcurrent edit.\n')
+                with self.assertRaisesRegex(sync.Stop, 'Source changed'):
+                    sync.apply(p)
+                path.write_bytes(old)
+
+    def test_parallel_source_update_and_restore_preserve_old_skill(self):
+        self.apply()
+        skill = (self.dest / sync.PCR_SKILL).read_bytes()
+        state = (self.dest / sync.PCR_STATE).read_bytes()
+        source = self.source / sync.PCR_SKILL_SOURCE
+        source.write_text(source.read_text() + '\nNew scoped obligation.\n')
+        backup = self.apply()
+        self.assertIn(b'New scoped obligation.', (self.dest / sync.PCR_SKILL).read_bytes())
+        self.assertEqual(self.plan()['changes'], {})
+        with contextlib.redirect_stdout(io.StringIO()):
+            sync.restore(self.dest, backup, True)
+        self.assertEqual((self.dest / sync.PCR_SKILL).read_bytes(), skill)
+        self.assertEqual((self.dest / sync.PCR_STATE).read_bytes(), state)
+
+    def test_parallel_first_install_restore_removes_managed_files_only(self):
+        other = self.dest / 'skills/personal/SKILL.md'
+        other.parent.mkdir(parents=True)
+        other.write_text('Unrelated skill.\n')
+        backup = self.apply()
+        before = self.tree(self.dest)
+        with contextlib.redirect_stdout(io.StringIO()):
+            sync.restore(self.dest, backup, False)
+        self.assertEqual(self.tree(self.dest), before)
+        with contextlib.redirect_stdout(io.StringIO()):
+            sync.restore(self.dest, backup, True)
+        self.assertFalse((self.dest / sync.PCR_SKILL).exists())
+        self.assertFalse((self.dest / sync.PCR_STATE).exists())
+        self.assertEqual(other.read_text(), 'Unrelated skill.\n')
+        self.assertEqual((self.dest / 'config.toml').read_text(), 'model="local-model"\n')
+
+    def test_parallel_write_failure_rolls_back(self):
+        actual = sync.atomic
+        def fail(path, data):
+            if path == self.dest / sync.PCR_STATE:
+                raise OSError('simulated ownership write failure')
+            return actual(path, data)
+        with patch.object(sync, 'atomic', side_effect=fail), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(OSError):
+                self.apply()
+        self.assertFalse((self.dest / sync.PCR_SKILL).exists())
+        self.assertFalse((self.dest / sync.PCR_STATE).exists())
+        self.assertFalse((self.dest / 'agents/worker.toml').exists())
+        self.assertEqual((self.dest / 'AGENTS.md').read_text(), 'Human instructions remain.\n')
+        meta = next((self.dest / 'backups/desktop-agent-sync').glob('*/manifest.json'))
+        self.assertEqual(json.loads(meta.read_text())['status'], 'rolled_back')
+
+    def test_parallel_restore_refuses_subsequent_skill_edits(self):
+        backup = self.apply()
+        path = self.dest / sync.PCR_SKILL
+        path.write_text(path.read_text() + '\nUser edit.\n')
+        before = self.tree(self.dest)
+        with self.assertRaisesRegex(sync.Stop, 'subsequent edits'):
+            sync.restore(self.dest, backup, True)
+        self.assertEqual(self.tree(self.dest), before)
+
+    def test_restore_does_not_allow_arbitrary_skill_paths(self):
+        backup = self.apply()
+        meta = backup / 'manifest.json'
+        state = json.loads(meta.read_text())
+        state['files']['skills/personal/SKILL.md'] = {'before': None, 'after': 'x'}
+        meta.write_text(json.dumps(state))
+        with self.assertRaisesRegex(sync.Stop, 'unmanaged path'):
+            sync.restore(self.dest, backup, True)
+
+    def test_legacy_backup_without_skill_files_is_restorable(self):
+        backup = self.apply()
+        meta = backup / 'manifest.json'
+        state = json.loads(meta.read_text())
+        for rel in (sync.PCR_SKILL, sync.PCR_STATE):
+            del state['files'][rel]
+        meta.write_text(json.dumps(state))
+        skill = (self.dest / sync.PCR_SKILL).read_bytes()
+        with contextlib.redirect_stdout(io.StringIO()):
+            sync.restore(self.dest, backup, True)
+        self.assertEqual((self.dest / sync.PCR_SKILL).read_bytes(), skill)
+        self.assertFalse((self.dest / 'agents/worker.toml').exists())
 
 
 if __name__ == '__main__':

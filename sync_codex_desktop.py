@@ -19,10 +19,16 @@ BEGIN = '<!-- codex-desktop-sync:begin -->'
 END = '<!-- codex-desktop-sync:end -->'
 MODEL = {'model', 'model_reasoning_effort', 'model_reasoning_summary', 'model_verbosity'}
 CORE = {'name', 'description', 'developer_instructions'}
+PCR_SKILL_SOURCE = '.agents/skills/parallel-cr/SKILL.md'
+PCR_CONTRACT = '.claude/knowledge/parallel-cr-review.md'
+PCR_GUIDE = 'docs/parallel-cr-review.md'
+PCR_SKILL = 'skills/parallel-cr/SKILL.md'
+PCR_STATE = '.desktop-parallel-cr.json'
 REFS = ('.codex/AGENTS.md', '.codex/workflows/claude-review.yml',
         '.codex/workflows/codex-review.yml', '.codex/workflows/md-review.md', '.codex/workflows/critical-review-request.md',
         '.claude/knowledge/engineering-governance.md',
-        '.claude/knowledge/human-review-patterns.md')
+        '.claude/knowledge/human-review-patterns.md',
+        PCR_SKILL_SOURCE, PCR_CONTRACT, PCR_GUIDE)
 
 
 class Stop(RuntimeError):
@@ -143,7 +149,22 @@ def snapshot(source):
     return result
 
 
-def block(source):
+def block(source, destination=None):
+    # 並列起動の案内は親だけに渡し、子の担当範囲を広げません。
+    parallel = '' if destination is None else f'''
+Parent-only explicit PCR-1 entry:
+- Installed skill: `{destination / PCR_SKILL}`
+- Shared PCR-1 contract fallback: `{source / PCR_CONTRACT}`
+- Invocation examples: `{source / PCR_GUIDE}`
+Only an explicit user request for PCR-1 / parallel-cr selects this trial.
+The parent reads the installed skill and resolves the contract before ordinary
+cr: routing or bare-review expansion. Plain cr: remains a single reviewer.
+Use the real installed code-quality-reviewer for CR-A, CR-B and bounded validation;
+pass only each child's assignment and resolved rule paths, never the full fan-out.
+Candidate-only checks use one owner. Children never start this parent sequence.
+Project rules, disabled skills and active permissions remain authoritative.
+Missing source/agent/tool access is BLOCKED; never impersonate or widen access.
+'''
     return f'''{BEGIN}
 Desktop shared references (project-specific rules/profile remain authoritative):
 - Routing and explicit cross-model review contracts: {source}/.codex/AGENTS.md
@@ -162,7 +183,65 @@ Missing project requirements or mandatory evidence remain pending. References do
 not authorize test execution, a review chain, or permission changes. Standalone
 commands retain their behavior. Parent read-only requirements remain mandatory.
 These shared references are live source files; installed TOML definitions are snapshots.
-{END}'''
+{parallel}{END}'''
+
+
+def parallel_skill(source, data):
+    """入口の原文を保ち、導入先だけに絶対パスの補助案内を付けます。"""
+    text = data.decode('utf-8').replace('\r\n', '\n')
+    header, separator, body = text.partition('\n---\n')
+    if (not header.startswith('---\n') or not separator
+            or re.findall(r'^name: (.+)$', header, re.M) != ['parallel-cr']
+            or len(re.findall(r'^description: \S.+$', header, re.M)) != 1
+            or not body.strip()):
+        raise Stop('Invalid parallel-cr skill front matter or empty instructions')
+    adapter = f"""
+<!-- Managed by sync_codex_desktop.py; edit the configuration source. -->
+
+## Desktop source resolution
+
+- Configuration source: `{source / PCR_SKILL_SOURCE}`
+- Source skill SHA-256: `{sha(data)}`
+- Shared PCR-1 contract fallback: `{source / PCR_CONTRACT}`
+- Invocation examples: `{source / PCR_GUIDE}`
+
+Keep the target project's working directory and configured rules/profile first.
+Resolve project-local `.claude/knowledge/parallel-cr-review.md` first; if absent,
+read the shared original above and report the fallback/setup gap. This resolves
+only the PCR-1 contract, not missing project requirements or conflicting rules.
+Read originals through already permitted tools; paths and hashes are not proof
+that their contents were delivered. Preserve mandatory rule/exception checks.
+The parent handles explicit PCR-1 / parallel-cr requests before ordinary cr:
+routing; plain cr: stays single. Respect disabled skills and active permissions.
+Pass resolved paths and only the assigned CR-A / CR-B / validation task to each
+actual owner. A child does not receive permission to start another reviewer.
+Missing or inaccessible sources/tools stay BLOCKED; no permission changes.
+
+"""
+    return (header + separator + adapter + body.lstrip('\n')).encode('utf-8')
+
+
+def plan_parallel_skill(source, src, original):
+    """管理外や手編集のスキルは上書きしません。"""
+    incoming = parallel_skill(source, src[PCR_SKILL_SOURCE])
+    current = original[PCR_SKILL]
+    raw_state = original[PCR_STATE]
+    if raw_state is not None:
+        try:
+            state = json.loads(raw_state)
+        except (UnicodeError, ValueError) as exc:
+            raise Stop('Invalid parallel-cr ownership record') from exc
+        if (not isinstance(state, dict) or state.get('version') != 1
+                or state.get('path') != PCR_SKILL
+                or not isinstance(state.get('sha256'), str)
+                or not re.fullmatch(r'[0-9a-f]{64}', state['sha256'])):
+            raise Stop('Invalid parallel-cr ownership record')
+        if current is None or sha(current) != state['sha256']:
+            raise Stop('Managed parallel-cr skill was edited or removed; nothing overwritten')
+    elif current is not None and current != incoming:
+        raise Stop('Unmanaged parallel-cr skill exists; nothing overwritten')
+    state = {'version': 1, 'path': PCR_SKILL, 'sha256': sha(incoming)}
+    return {PCR_SKILL: incoming, PCR_STATE: (json.dumps(state, indent=2) + '\n').encode()}
 
 
 def legacy_global(source):
@@ -195,7 +274,9 @@ def plan(source, destination):
     supplied = roles({k.removeprefix('.codex/'): v for k, v in src.items()
                       if k.startswith('.codex/agents/')})
     original = {**existing, 'AGENTS.md': read(safe(destination, 'AGENTS.md')),
-                'config.toml': read(safe(destination, 'config.toml'))}
+                'config.toml': read(safe(destination, 'config.toml')),
+                PCR_SKILL: read(safe(destination, PCR_SKILL)),
+                PCR_STATE: read(safe(destination, PCR_STATE))}
     if original['config.toml'] and any(isinstance(v, dict) for v in
             toml(original['config.toml'], 'destination config').get('agents', {}).values()):
         raise Stop('Destination has explicit role registrations; resolve mapping before syncing')
@@ -242,8 +323,9 @@ def plan(source, destination):
         if parse_equal(existing.get(filename), data):
             data = existing[filename]
         changes[filename] = data
+    changes.update(plan_parallel_skill(source, src, original))
     text = (original['AGENTS.md'] or b'').decode('utf-8')
-    changes['AGENTS.md'] = owned(text, block(source), source, global_file=True).encode()
+    changes['AGENTS.md'] = owned(text, block(source, destination), source, global_file=True).encode()
     final = {**existing, **{k: v for k, v in changes.items() if k.startswith('agents/')}}
     roles(final)
     for filename, data in changes.items():
@@ -398,7 +480,7 @@ def restore(destination, backup, do_apply):
         raise Stop('Backup destination/version mismatch')
     actions = []
     for name, entry in m['files'].items():
-        if name != 'AGENTS.md' and not re.fullmatch(r'agents/[A-Za-z0-9_-]+\.toml', name):
+        if name not in {'AGENTS.md', PCR_SKILL, PCR_STATE} and not re.fullmatch(r'agents/[A-Za-z0-9_-]+\.toml', name):
             raise Stop('Backup contains an unmanaged path')
         target = safe(destination, name)
         old = read(safe(backup, name)) if entry['before'] is not None else None
