@@ -75,6 +75,13 @@ class SecurityTestIntegrityTests(unittest.TestCase):
             self.assertIn(POLICY, text)
             self.assertIn("SEC-IMPL-1", text)
 
+    def test_desktop_sync_refers_to_original_policy(self):
+        sync = read("sync_codex_desktop.py")
+        self.assertIn("SEC_TEST_POLICY =", sync)
+        self.assertIn("SEC_TEST_POLICY,", sync)
+        self.assertIn("{source}/{SEC_TEST_POLICY}", sync)
+        self.assertIn("Shared governance fallback", sync)
+
     def test_test_weakenings_not_approvable(self):
         policy = read(POLICY)
         for term in (".only/.todo", "lowering thresholds", "mocks", "fixtures",
