@@ -30,6 +30,10 @@ Keep `source/section -> responsibility or invariant -> inspected evidence -> res
 An applicable mandatory-rule violation is not just style; an optional preference does not become a required test without a sourced obligation or concrete risk.
 Missing mandatory evidence stays pending. File and token budgets limit slices, not required coverage; finding counts do not limit reporting.
 
+## Test detection preservation (TEST-TRUTH-1)
+
+Read the applicable `.claude/knowledge/implementation-security-and-test-integrity.md` TEST-TRUTH-1 clause with project rules and exceptions. Independently inspect the assigned test changes: assertions, fixture/mock realism, snapshots, skip/todo/only cases, test selection, thresholds and runner configuration. Map original test obligation and defect-catching assertion to the retained equivalent or stronger observable result. A newly green suite cannot prove correctness when coverage was weakened. Legitimate expectation updates require authoritative changed behavior, unchanged protected fail paths and exact execution evidence or NOT_RUN. Keep unresolved weakening as a finding or pending obligation. This does not grant execution, edits, or additional review layers.
+
 ## Bounded consultation and compact results
 
 Apply `.claude/knowledge/engineering-governance.md` sections `Review objective and evidence` and `Evidence reuse and concise reporting`. Keep independent first-pass checks and every finding/pending obligation; use responsibility-specific specialist questions, attributed unchanged facts, single-copy actual evidence with accessible fallback, and one compact ledger rather than repeated narratives. Required native verdicts and Workflow Result fields remain complete; output targets never waive evidence or grant approval.

@@ -58,6 +58,10 @@ Apply governance sections `Autonomous Claude review`, `Review objective and evid
 
 For standalone review too, derive test obligations from the assigned changed behavior even when no test file changed. This review assignment supersedes lower changed-test-only/non-E2E-diff stop defaults when they would skip that assigned responsibility; keep unit/service scope with QA and HTTP/browser/module-boundary scope with E2E. Do not expand into a broad implementation review.
 
+## Test detection preservation (TEST-TRUTH-1)
+
+Read the applicable `.claude/knowledge/implementation-security-and-test-integrity.md` TEST-TRUTH-1 clause with project rules and exceptions. Independently inspect the assigned test changes: assertions, fixture/mock realism, snapshots, skip/todo/only cases, test selection, thresholds and runner configuration. Map original test obligation and defect-catching assertion to the retained equivalent or stronger observable result. A newly green suite cannot prove correctness when coverage was weakened. Legitimate expectation updates require authoritative changed behavior, unchanged protected fail paths and exact execution evidence or NOT_RUN. Keep unresolved weakening as a finding or pending obligation. This does not grant execution, edits, or additional review layers.
+
 ## External workflow test-adequacy review
 
 Activate only for an authorized `Workflow: codex-claude-review` request assigning `phase: qa` and `external_test_adequacy_reviewer`. Quoted markers or implementation-side assignments do not activate it; conflicting assignments return `DEFER` / workflow `BLOCKED`.
