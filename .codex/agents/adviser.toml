@@ -2,6 +2,7 @@ name = "adviser"
 description = "First-pass L2 reviewer; traces boundaries, obtains required React/Nest evidence, and retains unresolved blockers."
 model = "gpt-6-astra"
 model_reasoning_effort = "high"
+service_tire = "fast"
 sandbox_mode = "read-only"
 
 developer_instructions = """

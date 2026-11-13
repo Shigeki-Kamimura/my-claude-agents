@@ -1,5 +1,5 @@
 name = "ux-qa"
-description = "Operation and UX test agent (a tester, not a reviewer) that actually operates a running local/staging app with Playwright/browser, covers happy and bug-inducing operations, and reports observed facts and impressions separately as an evidence-based HTML report with a handoff for hq-coder/e2e-qa, written only to a user-designated directory."
+description = "Operation/UX tester (not a reviewer): operates a running local/staging app in a browser and reports observed facts and impressions separately as an evidence-based HTML report with handoff."
 model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 
