@@ -26,6 +26,7 @@ PCR_SKILL = 'skills/parallel-cr/SKILL.md'
 PCR_STATE = '.desktop-parallel-cr.json'
 REFS = ('.codex/AGENTS.md', '.codex/workflows/claude-review.yml',
         '.codex/workflows/codex-review.yml', '.codex/workflows/md-review.md', '.codex/workflows/critical-review-request.md',
+        '.codex/workflows/pcr-development.md',
         '.claude/knowledge/engineering-governance.md',
         '.claude/knowledge/human-review-patterns.md',
         PCR_SKILL_SOURCE, PCR_CONTRACT, PCR_GUIDE)
@@ -171,6 +172,7 @@ Desktop shared references (project-specific rules/profile remain authoritative):
 - Codex implementation / Claude review: {source}/.codex/workflows/claude-review.yml
 - Claude implementation / Codex review: {source}/.codex/workflows/codex-review.yml
 - Shared Markdown transport and one-shot lifecycle: {source}/.codex/workflows/md-review.md
+- Explicit implementation/PCR, Claude QA/E2E, standard /review, user UX and PR: {source}/.codex/workflows/pcr-development.md
 - Bare review request template (expanded by the parent only; not for sub-agents): {source}/.codex/workflows/critical-review-request.md
 - Shared governance fallback: {source}/.claude/knowledge/engineering-governance.md
 - Shared review knowledge fallback: {source}/.claude/knowledge/human-review-patterns.md

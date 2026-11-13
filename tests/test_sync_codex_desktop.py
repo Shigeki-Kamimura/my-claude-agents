@@ -392,6 +392,22 @@ class DesktopSyncTests(unittest.TestCase):
                 path.write_bytes(old)
         self.assertEqual(self.tree(self.dest), before)
 
+    def test_pcr_development_reference_is_installed_for_the_parent(self):
+        contract = self.source / '.codex/workflows/pcr-development.md'
+        self.apply()
+        instructions = (self.dest / 'AGENTS.md').read_text()
+        self.assertIn(str(contract), instructions)
+        self.assertTrue(contract.is_file())
+        self.assertEqual(self.plan()['changes'], {})
+
+    def test_missing_pcr_development_reference_stops_before_writes(self):
+        contract = self.source / '.codex/workflows/pcr-development.md'
+        before = self.tree(self.dest)
+        contract.unlink(missing_ok=True)
+        with self.assertRaisesRegex(sync.Stop, r'Missing or external.*pcr-development\.md'):
+            self.apply()
+        self.assertEqual(self.tree(self.dest), before)
+
     def test_invalid_parallel_skill_front_matter_stops(self):
         path = self.source / sync.PCR_SKILL_SOURCE
         for text in ('missing header', '---\nname: wrong\ndescription: Invalid.\n---\nBody\n',
