@@ -2,7 +2,7 @@ name = "code-quality-reviewer"
 description = "Self-contained L1.5 reviewer for local correctness, applicable rules, maintainability, and explicit unchecked scope."
 model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
-service_tire = "fast"
+service_tier = "fast"
 sandbox_mode = "read-only"
 
 developer_instructions = """
