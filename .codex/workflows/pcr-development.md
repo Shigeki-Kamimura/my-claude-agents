@@ -17,7 +17,7 @@ Resolve this file from the target project's `.codex/workflows/` first, then besi
 resolved shared `.codex/AGENTS.md` (Claude: sibling `.codex` of the resolved profile root).
 Report missing links and use the verified original; do not repair project settings implicitly.
 
-This explicit selection authorizes the named stages and bounded repairs, not additional layers.
+This explicit selection authorizes named stages, bounded repairs, the mandatory sec-arch security pass and an evidence-triggered ADV only; it does not authorize unrelated layers.
 The parent coordinates; each child receives only its assignment, snapshot and original rule paths.
 Keep Nishiguchi's adopted principles, project requirements/exceptions, HND-1, BIAS-1,
 mandatory implementation/framework consultations and all required verification.
@@ -85,13 +85,23 @@ Same-snapshot coverage continuation is not a repair round or fresh discovery.
 One bounded original-owner reconciliation is allowed per snapshot for actual disputes;
 never recursively add validators or silently discard disagreement.
 
+### Mandatory security and conditional design gate
+
+Apply SEC-IMPL-1 and TEST-TRUTH-1 from \`.claude/knowledge/implementation-security-and-test-integrity.md\`. HQ rechecks the actual code diff even when PL predicted no security risk. As soon as a meaningful frozen implementation snapshot exists, invoke a real fresh read-only Claude Code \`sec-arch\` when permitted, independent from Codex's implementation and PCR conclusions. No QA/E2E-only transport, no invented owner and no idle waiting. If unavailable, retain SEC_PENDING with missing access/permission. Record actual reviewer, security-covered boundaries, findings and snapshot. Use the same owner for bounded fixes/impact confirmation.
+
+Only this explicitly selected flow authorizes conditional independent Claude Code \`adviser\`: mark ADV_REQUIRED if the changed producer/consumer API contract, permission design, concurrent write, DB migration/transaction, async/retry durability, multi-screen state or backward-compatibility boundary is reached. Cite concrete source/requirement evidence; else record ADV_NOT_APPLICABLE and the inspected reason. PL ticket classification cannot waive HQ's diff-based reclassification. Preserve adviser's existing model, mandatory specialist consultations, read-only tools and verdicts.
+
+Before Claude QA, require current-snapshot SEC_CLEAR from the security owner, and if ADV_REQUIRED, a current-snapshot clean ADV verdict. Security and design findings, unanswered consultations and missing original evidence block progression. These passes never replace PCR, QA/E2E or native /review and do not activate ADV in standalone or other workflows.
+
 ## 4. Claude Code QA and E2E
 
 After the final PCR gate, invoke actual Claude Code `test-qa`, then `e2e-qa`.
 They independently check happy/fail paths, missing/excess tests, assertions, fixtures/mocks
 and supplied execution evidence against requirements, even when no test file changed.
+TEST-TRUTH-1 requires checking changed assertions, snapshots, mocks/fixtures, skipped cases
+and filters for lost bug detection. A green run after weaker tests is not approval.
 Keep their existing budgets and unfinished-slice reporting; no sampled full-scope approval.
-CR/ADV settings in either Claude profile are unchanged. No extra CR/ADV/ci-reviewer layer starts here.
+CR/ADV settings in either Claude profile remain unchanged. No extra CR or ci-reviewer starts here; ADV only starts when ADV_REQUIRED is reached.
 If a project explicitly requires another layer, retain it as a pending obligation and resolve its
 authorization before proceeding; neither PCR nor `/review` silently substitutes for it.
 
@@ -139,6 +149,8 @@ this local gate is our operating rule, not a claim about native enforcement.
 
 Freeze the candidate from final PCR approval through QA, E2E, standard review and human UX.
 Any source/test/requirement/rule change invalidates downstream approvals for the old snapshot.
+The original security owner, and adviser when required, must confirm affected delta/impact
+for the current snapshot before downstream gates can be renewed.
 Return to PCR for changed obligations, direct effects and every pending item. Each previous selected
 owner renews current-snapshot approval, reusing unaffected evidence only with an explicit impact basis.
 A test change requires QA/E2E to recheck all their obligations; changed rules/specs reopen every
