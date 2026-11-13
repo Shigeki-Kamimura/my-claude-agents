@@ -64,6 +64,36 @@ class ParallelCrRulesTest(unittest.TestCase):
             with self.subTest(token=token):
                 self.assertIn(token, self.rule)
 
+    def test_full_diff_exception_is_limited_to_codex_pcr(self):
+        for clause in (
+            "Use existing role budgets for non-Codex PCR and ordinary standalone roles",
+            "Codex PCR has no fixed file-count limit",
+            "CR-A and CR-B each independently cover the complete assigned change inventory",
+            "and any planner numeric cap only for Codex PCR",
+            "Standalone PCR does not activate that sequence",
+        ):
+            with self.subTest(clause=clause):
+                self.assertIn(clause, self.rule)
+
+    def test_codex_roles_preserve_the_limited_full_diff_exception(self):
+        roles = {
+            "code-quality-reviewer": (
+                "For an explicitly assigned Codex PCR-1 CR-A/CR-B task, there is no fixed file-count limit",
+                "Each discovery owner independently checks every changed hunk",
+                "This exception changes neither standalone CR nor Claude CR/ADV/QA/E2E policy",
+            ),
+            "review-planner": (
+                "For an explicitly selected Codex PCR flow, pass the full change inventory without a numeric file cap",
+                "Its CR-A and CR-B each need complete cumulative coverage",
+                "ordinary CR/ADV/QA/E2E limits below are unchanged",
+            ),
+        }
+        for role, clauses in roles.items():
+            instructions = (ROOT / f".codex/agents/{role}.toml").read_text(encoding="utf-8")
+            for clause in clauses:
+                with self.subTest(role=role, clause=clause):
+                    self.assertIn(clause, " ".join(instructions.split()))
+
     def test_rule_intake_is_required(self):
         for token in ("VERIFIED_PRELOADED", "applicability and exceptions", "coding-guidelines §16", "review-prompt", "XREV-1/HND-1", "CLAUDE.md 5-A/5-I", "NEEDS_CONFIRMATION"):
             with self.subTest(token=token):

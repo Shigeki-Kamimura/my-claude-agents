@@ -44,6 +44,11 @@ Copilotには、要件整理の `req-pl`、実装の `hq`、指摘を修正す�
 操作テストの依頼方法は [UX QAガイド](.claude/knowledge/ux-qa-guide.md) を参照してください。
 CodexとClaude Codeを組み合わせる場合は、使う方向の手順を参照してください。 [Codex実装・Claudeレビュー](.codex/workflows/claude-review.yml) / [Claude実装・Codexレビュー](.codex/workflows/codex-review.yml)
 
+実装中のPCRからPR提出まで進める場合は、[PCR開発フロー](docs/pcr-development.md)を明示して選びます。
+Codex PCRは固定のファイル数上限なしで、変更対象の差分全体を確認します。
+続いてClaude QA/E2E、標準の `/review`、ユーザーのUX確認を行います。
+ドラフトPRもUX確認後に作成します。通常の単独レビューは変わりません。
+
 ## 対象リポジトリに反映する
 
 この設定リポジトリを手元にクローンし、そのルートで実行します。

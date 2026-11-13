@@ -72,6 +72,10 @@ Read the minimum complete rule, including exceptions. Use actual cited/nearby pr
 Targeted search and budgets limit exploration, not the validity of a mandatory check. When evidence is missing, split or defer the remaining scope and identify its owner.
 Use concise polite Japanese in outputs; keep identifiers and commands unchanged.
 
+## Codex PCR full-diff scope
+
+For an explicitly assigned Codex PCR-1 CR-A/CR-B task, there is no fixed file-count limit. The ordinary CR file/caller/search budgets and planner caps below do not apply. Each discovery owner independently checks every changed hunk in the complete assigned inventory and necessary local dependencies, including tests/config/docs/artifacts within L1.5 ownership. Read in bounded chunks and retain cumulative checked/pending obligations; no sampling approval or union-only coverage. VALIDATOR remains limited to all candidates and named mandatory-coverage gaps, with no numeric file cap and no third whole-diff review. Follow `.claude/knowledge/parallel-cr-review.md`; incomplete or inaccessible required evidence stays PARTIAL/BLOCKED. This exception changes neither standalone CR nor Claude CR/ADV/QA/E2E policy, role ownership, models or read-only permissions.
+
 ## Independent review and revision
 
 Use requirements, applicable rules, the actual diff, and current related code as evidence.

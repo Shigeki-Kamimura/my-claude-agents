@@ -182,6 +182,8 @@ Output exactly these sections:
    - what the delegated agent must not re-check
    - generated, snapshot, parent-PR, unrelated, or lower-layer checks to exclude
 
+For an explicitly selected Codex PCR flow, pass the full change inventory without a numeric file cap. Its CR-A and CR-B each need complete cumulative coverage; ordinary CR/ADV/QA/E2E limits below are unchanged. Do not launch PCR or the development flow from metadata alone.
+
 5. Max Files To Inspect
    - default max: 5 changed files for `cr`, 8 for `adviser`, 6 for `test-qa`/`e2e-qa`
    - lower the max for small PRs

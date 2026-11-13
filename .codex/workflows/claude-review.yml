@@ -96,6 +96,7 @@ dispatch_limits:
   rate_limit: On exit with a usage-limit signal (429, hit your ... limit, resets time), record RATE_LIMITED, failure rate_limited and reset_hint; no retry or additional child launch. Work is saved and resumable; show the reset time to the user. Reject the next launch until user acknowledgement with --after-rate-limit-ack.
   enforced_by_tool: The tool enforces first-layer-only launch while unknown, RATE_LIMITED recording/no retry/ack requirement, and no concurrent same-run launch. Three repair rounds, parallel consent and usage reading are contractual, not tool-enforced.
 handoff:
+  parent_flow_exception: Only an actual user-selected pcr-development parent recorded in the host request/summary uses md-review.md Explicit parent flow exception. Return after its selected qa/e2e to standard /review and user UX; do not start this standalone final ci-reviewer/draft handoff. Preserve required project verification and all review permissions/results.
   terminal_state: draft_pr_awaiting_human_ready
   conditions: Under md-review.md 7–9, confirm selected-layer approvals for the current snapshot, implementation-side Local-ci success, a clean actual Codex ci-reviewer verdict and content correspondence with the final commit.
   human_ready: Stop at a draft PR. Only 上村さん personally selects Ready for review.

@@ -32,10 +32,18 @@ A factual comparison does not waive rule intake when the task also asks for scop
 
 ## 4. Common checks with different emphasis
 
-Both owners retain all applicable L1.5 mandatory checks, realistic normal/failure conditions, counterevidence and the full assigned change inventory. Emphasis is not permission to skip a common obligation. Use existing role budgets; list unfinished slices instead of treating sampling as complete. Record the triggered obligations below before workbook inspection so artifact work cannot displace document-impact checks.
+Both owners retain all applicable L1.5 mandatory checks, realistic normal/failure conditions, counterevidence and the full assigned change inventory. Emphasis is not permission to skip a common obligation. Use existing role budgets for non-Codex PCR and ordinary standalone roles; list unfinished slices instead of treating sampling as complete. Codex PCR follows the full-diff exception below. Record the triggered obligations below before workbook inspection so artifact work cannot displace document-impact checks.
 
 - **CR-A:** changed local logic, state/type/null handling, realistic input and failure paths, local reuse/responsibility, nearby guards and relevant assertions.
 - **CR-B:** the same local obligations, emphasizing directly affected callers/consumers, documented labels/states, local usage instructions and source/generated-artifact consistency. This is not an architecture, cross-screen journey or general test-coverage audit.
+
+### Codex PCR: full diff without a fixed file cap
+
+Codex PCR has no fixed file-count limit. CR-A and CR-B each independently cover the complete assigned change inventory, every changed hunk/responsibility and required local dependencies. Do not divide files between them and call only their union COMPLETE. This overrides ordinary Codex CR file/caller/search budgets and any planner numeric cap only for Codex PCR. It includes changed tests, configuration, docs and artifacts within L1.5 ownership; it does not transfer QA/E2E adequacy or ADV architecture decisions to CR.
+
+Use bounded reads and same-owner continuation for context/output limits, retaining checked/pending paths, required clauses, exclusions and next slice in one cumulative record. A large diff is not permission to omit files, approve a sample or request an arbitrary file-count reduction. Inaccessible required evidence or exhausted runtime/context still means PARTIAL/BLOCKED, never approval. Both owners need full cumulative coverage; validator completeness cannot fill an unreviewed discovery scope. The validator has no numeric file cap for all candidates and named missing obligations, but still must not run a third whole-diff review. Necessary binary/whole-file and DOC-IMPACT/ARTIFACT-DELTA duties remain.
+
+The host fixes an immutable source view, including required surrounding code/rules, not only a diff beside a mutable checkout. Under an explicitly selected `pcr-development` flow, implementation may continue only outside that frozen view. Every approval names its reviewed snapshot; later changes require original-owner delta/impact checks and renewed final-snapshot approval. See `.codex/workflows/pcr-development.md` for its explicitly selected repair/QA/E2E/standard-review/UX sequence. Standalone PCR does not activate that sequence or gain execution/publication permissions. Ordinary CR/ADV and Claude/QA/E2E limits remain unchanged.
 
 ### DOC-IMPACT: affected instructions, including unchanged files
 
