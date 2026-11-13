@@ -95,11 +95,43 @@ class DesktopSyncTests(unittest.TestCase):
         with self.assertRaisesRegex(sync.Stop, 'security/config delta'):
             self.plan()
 
+    def test_existing_service_tier_and_unspecified_state_are_preserved(self):
+        (self.dest / 'agents').mkdir()
+        for local, incoming in [('flex', 'fast'), ('fast', 'fast'), ('fast', None), (None, 'fast')]:
+            with self.subTest(local=local, incoming=incoming):
+                old = {'name': 'worker', 'description': 'old', 'developer_instructions': 'old'}
+                if local is not None:
+                    old['service_tier'] = local
+                (self.dest / 'agents/worker.toml').write_bytes(sync.encode(old))
+                self.put('worker', 'Updated source instructions.',
+                         extra={'service_tier': incoming} if incoming is not None else {})
+                before = self.tree(self.dest)
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    sync.main(['--source', str(self.source), '--destination', str(self.dest), '--dry-run'])
+                self.assertEqual(self.tree(self.dest), before)
+                if local != incoming:
+                    self.assertIn('KEEP:', output.getvalue())
+                    self.assertIn('service_tier', output.getvalue())
+                self.apply()
+                after = sync.toml((self.dest / 'agents/worker.toml').read_bytes(), 'installed')
+                self.assertEqual(after.get('service_tier'), local)
+                self.assertEqual('service_tier' in after, local is not None)
+                self.assertIn('Updated source instructions.', after['developer_instructions'])
+                self.assertEqual(self.plan()['changes'], {})
+
+    def test_new_role_service_tier_is_installed(self):
+        self.put('worker', extra={'service_tier': 'fast'})
+        self.apply()
+        after = sync.toml((self.dest / 'agents/worker.toml').read_bytes(), 'installed')
+        self.assertEqual(after['service_tier'], 'fast')
+        self.assertEqual(self.plan()['changes'], {})
+
     def test_new_permission_expansion_stops(self):
-        self.put('worker', extra={'sandbox_mode': 'workspace-write'})
+        self.put('worker', extra={'sandbox_mode': 'workspace-write', 'service_tier': 'fast'})
         with self.assertRaisesRegex(sync.Stop, 'separate review'):
             self.plan()
-        self.put('worker', extra={'features': {'shell_tool': True}})
+        self.put('worker', extra={'features': {'shell_tool': True}, 'service_tier': 'fast'})
         with self.assertRaises(sync.Stop):
             self.plan()
 

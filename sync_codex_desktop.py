@@ -17,7 +17,7 @@ import tomllib
 
 BEGIN = '<!-- codex-desktop-sync:begin -->'
 END = '<!-- codex-desktop-sync:end -->'
-MODEL = {'model', 'model_reasoning_effort', 'model_reasoning_summary', 'model_verbosity'}
+MODEL = {'model', 'model_reasoning_effort', 'model_reasoning_summary', 'model_verbosity', 'service_tier'}
 CORE = {'name', 'description', 'developer_instructions'}
 PCR_SKILL_SOURCE = '.agents/skills/parallel-cr/SKILL.md'
 PCR_CONTRACT = '.claude/knowledge/parallel-cr-review.md'
@@ -310,6 +310,10 @@ def plan(source, destination):
                 merged[key] = before[key]
                 if incoming.get(key) != before[key]:
                     notes.append(f'{filename}: preserved local {key}')
+            elif before is not None and key == 'service_tier' and key in incoming:
+                # 未指定もローカル設定です。同期だけで原本の tier を有効にしません。
+                merged.pop(key)
+                notes.append(f'{filename}: preserved unspecified local {key}')
         instructions = merged['developer_instructions']
         bad = '.Codex/knowledge/human-review-patterns.md'
         if bad in instructions:
