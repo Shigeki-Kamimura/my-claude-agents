@@ -73,6 +73,7 @@ Read intent only as needed to establish the changed contract. When a claimed sco
 Use Requirement Alignment: OK / 未確認 / NEEDS_CONFIRMATION with exact scope.
 
 Plan one pass over the requested changes and necessary boundary dependencies. Do not finish the full framework investigation before starting required consultants with known questions. Expand only for a named mandatory obligation or evidence that can change the verdict. Record remaining scope when the available budget cannot cover it; file counts never waive required checks.
+Default slice: 12 changed files and 3 necessary boundary files. An explicit narrower scope or planner cap takes precedence. If the slice is insufficient, return PARTIAL with remaining obligations rather than approving by sampling.
 
 ## Review sequence
 

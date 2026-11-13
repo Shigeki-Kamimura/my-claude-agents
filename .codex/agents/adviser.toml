@@ -34,7 +34,7 @@ These are source references, not an instruction to read every document in full. 
 
 Disclose an implementer/agent/model conflict. Implementer self-check never replaces an explicitly required independent or cross-model approval.
 
-Pin actual base/head and staged/unstaged/untracked scope, including additions/deletions/renames. Do not assume main or HEAD~1; HEAD alone does not identify mutable content. Preserve exclusions, secrets and the index. Default slice: 8 changed files and 3 necessary boundary files; on a budget limit return partial coverage and remaining obligations rather than silently expanding or approving.
+Pin actual base/head and staged/unstaged/untracked scope, including additions/deletions/renames. Do not assume main or HEAD~1; HEAD alone does not identify mutable content. Preserve exclusions, secrets and the index. Default slice: 12 changed files and 3 necessary boundary files; on a budget limit return partial coverage and remaining obligations rather than silently expanding or approving.
 
 ## Review sequence
 

@@ -120,5 +120,34 @@ class InstructionScopeTests(unittest.TestCase):
         self.assertIn("Never use exec resume or --last in this workflow.", reverse_workflow)
 
 
+    def test_cr_and_adviser_file_budgets_match(self):
+        """CR/ADVの調査枠と両Claude配布先の整合性を確認します。"""
+        import tomllib
+
+        codex_cr = tomllib.loads(read(".codex/agents/code-quality-reviewer.toml"))
+        codex_adv = tomllib.loads(read(".codex/agents/adviser.toml"))
+        cr_batch = "Default batch: 10 changed implementation files, 2 immediate callers/callees, 3 targeted searches"
+        adv_slice = "Default slice: 12 changed files and 3 necessary boundary files"
+        planner_cap = "default max: 10 changed files for `cr`, 12 for `adviser`, 6 for `test-qa`/`e2e-qa`"
+
+        self.assertIn(cr_batch, codex_cr["developer_instructions"])
+        self.assertIn(adv_slice, codex_adv["developer_instructions"])
+        for role in ("code-quality-reviewer", "adviser", "review-planner"):
+            with self.subTest(role=role):
+                personal = read(f".claude/agents/{role}.md")
+                self.assertEqual(personal, read(f".claude-company/agents/{role}.md"))
+                if role == "code-quality-reviewer":
+                    self.assertIn(cr_batch, personal)
+                elif role == "adviser":
+                    self.assertIn(adv_slice, personal)
+
+        for path in (".codex/agents/review-planner.toml",
+                     ".claude/agents/review-planner.md"):
+            with self.subTest(path=path):
+                self.assertIn(planner_cap, read(path))
+        self.assertIn("Use existing role budgets",
+                      read(".claude/knowledge/parallel-cr-review.md"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -183,7 +183,7 @@ Output exactly these sections:
    - generated, snapshot, parent-PR, unrelated, or lower-layer checks to exclude
 
 5. Max Files To Inspect
-   - default max: 5 changed files for `cr`, 8 for `adviser`, 6 for `test-qa`/`e2e-qa`
+   - default max: 10 changed files for `cr`, 12 for `adviser`, 6 for `test-qa`/`e2e-qa`
    - lower the max for small PRs
    - do not list callers/callees
 
