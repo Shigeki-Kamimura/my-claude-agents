@@ -27,6 +27,7 @@ in the user's prompt. Pass the applicable policy clauses and source paths explic
 to each custom agent; do not assume it inherits this developer instruction.
 If either configured file is missing, report the setup gap rather than claiming
 that routing or the adopted review principles were applied.
+For a commit-only request, also read the Commit attribution section of .codex/AGENTS.md.
 """
 
 project_root_markers = [".git"]

@@ -18,6 +18,16 @@ Coordinator obligations:
 
 If the shared contract is missing, report the setup gap. Do not claim it was applied.
 
+## Commit attribution
+
+When authorized to commit a change Codex helped implement, use Git's native
+`git -c trailer.ifExists=addIfDifferent commit --trailer 'Co-authored-by: Codex <noreply@openai.com>'`
+with the intended message and scope. Preserve all existing co-authors, including Claude.
+Do not add Codex for review-only work or for merely committing someone else's change.
+After committing, check `git log -1 --format='%(trailers:key=Co-authored-by,valueonly)'`.
+The Codex identity must appear exactly once. If it does not, report it before pushing;
+do not rewrite history. This rule grants no permission to commit, push or start a review.
+
 ## Explicit PCR development flow
 
 For an actual user request selecting `pcr-development` or the sequence implementation with Codex PCR, Claude QA/E2E, standard Codex `/review`, user UX acceptance, then PR, read `.codex/workflows/pcr-development.md` before other workflow routing or bare-review expansion. Resolve project-local first, then `workflows/pcr-development.md` beside the resolved `.codex/AGENTS.md` (Claude: sibling `.codex` of the resolved profile root). Discussion/configuration edits alone do not activate it.
