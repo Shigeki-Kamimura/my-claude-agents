@@ -1,6 +1,6 @@
 name = "hq-coder"
 description = "Implements scoped, design-correct changes with principle evidence, mandatory React/Nest consultation, and review-ready handoff."
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 model_reasoning_effort = "high"
 developer_instructions = """
 ## MD cross-model review

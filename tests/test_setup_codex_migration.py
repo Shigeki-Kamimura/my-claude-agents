@@ -10,7 +10,7 @@ import unittest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CANONICAL_NAMES = ("hq-coder", "req-pl", "test-qa")
-RETIRED_NAMES = ("hq", "pl", "qa")
+RETIRED_NAMES = ("hq", "pl", "qa", "opus-escalation")
 
 
 class SetupChecks:
@@ -90,8 +90,9 @@ class SetupChecks:
                 destination.symlink_to(source)
         # 生きた旧リンクも移行し、残存する旧ソースを再展開しません。
         (self.source_agents / "qa.toml").write_text('name = "test-qa"\n')
+        (self.source_agents / "opus-escalation.toml").write_text('name = "opus-escalation"\n')
         output = self.run_setup()
-        self.assertEqual(output.count("[REMOVE retired]"), 3)
+        self.assertEqual(output.count("[REMOVE retired]"), len(RETIRED_NAMES))
         self.assert_canonical_links()
         self.run_setup()
         self.assert_canonical_links()
@@ -101,6 +102,7 @@ class SetupChecks:
         foreign.mkdir()
         contents = {
             "hq.toml": b'original retired definition\n',
+            "opus-escalation.toml": b'local escalation definition\n',
             "hq-coder.toml": b'original canonical definition\n',
         }
         for name, content in contents.items():

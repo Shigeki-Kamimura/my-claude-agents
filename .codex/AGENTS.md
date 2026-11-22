@@ -109,26 +109,26 @@ Each agent has one definition whose filename and `name` match; for example,
 ## Model Allocation
 
 Default strategy:
-- main coordinator -> GPT-6.1 Sol / high
-- req-pl -> GPT-6.1 Sol / high
-- hq-coder -> GPT-6.1 Sol / high
+- main coordinator -> GPT-6.2 Sol / high
+- req-pl -> GPT-6.2 Sol / high
+- hq-coder -> GPT-6.2 Sol / high
 - review-planner -> GPT-6 Luna / medium
-- code-quality-reviewer -> GPT-6.1 Sol / high
+- code-quality-reviewer -> GPT-6.2 Sol / high
 - ci-reviewer -> GPT-6.1 Terra / high (requires Codex CLI >= 0.159.0)
-- adviser -> GPT-6 Astra / high
-- reviewer -> GPT-6.1 Sol / high
-- test-qa -> GPT-6.1 Sol / high
-- e2e-qa -> GPT-6.1 Sol / high
-- ux-qa -> GPT-6.1 Sol / high
-- sec-arch -> GPT-6.1 Sol / xhigh
-- data-platform -> GPT-6.1 Sol / xhigh
-- NestJS/Spring specialists -> GPT-6.1 Sol / high
+- adviser -> GPT-6.2 Astra / high
+- reviewer -> GPT-6.2 Sol / high
+- test-qa -> GPT-6.2 Sol / high
+- e2e-qa -> GPT-6.2 Sol / high
+- ux-qa -> GPT-6.2 Sol / high
+- sec-arch -> GPT-6.2 Sol / xhigh
+- data-platform -> GPT-6.2 Sol / xhigh
+- NestJS/Spring specialists -> GPT-6.2 Sol / high
 - React/Vue specialists -> GPT-6 Luna / xhigh
-- sol-escalation -> GPT-6.1 Sol / high
+- sol-escalation -> GPT-6.2 Sol / high
 
 Reasoning:
-- Use GPT-6.1 Sol for normal requirement planning, implementation, and high-value review.
-- Use GPT-6 Astra only for adviser (first-pass L2 boundary review), where a missed risk costs most.
+- Use GPT-6.2 Sol for normal requirement planning, implementation, and high-value review.
+- Use GPT-6.2 Astra only for adviser (first-pass L2 boundary review), where a missed risk costs most.
 - Keep routing and narrow React/Vue checks on Luna when the task boundary is explicit.
 - Escalate only the unresolved decision, never an entire PR, task, or repository.
 - Model choice follows task complexity and decision cost, not project name, workflow stage, or diff size.
@@ -323,7 +323,7 @@ If specialist depth is still required, return the exact unresolved question to t
 Escalation is a continuation of one unresolved root cause, not another review layer.
 Never escalate an entire PR/task because it is large.
 
-### GPT-6 Luna -> GPT-6.1 Sol
+### GPT-6 Luna -> GPT-6.2 Sol
 
 Automatic Luna-to-Sol escalation is intended only for narrow Luna specialists:
 - react-ui-flow
@@ -370,12 +370,12 @@ Parent coordinator behavior:
 5. Use Sol only for the unresolved question.
 6. Allow at most one Sol escalation per root cause.
 
-GPT-6.1 Sol is the terminal model tier.
+GPT-6.2 Sol is the terminal model tier.
 If a Sol agent still cannot decide safely, return the unresolved contract/evidence gap
 instead of escalating to another model.
 
 Manual override:
-- `sol:` -> one bounded GPT-6.1 Sol escalation question
+- `sol:` -> one bounded GPT-6.2 Sol escalation question
 
 ## Review Operating Model
 

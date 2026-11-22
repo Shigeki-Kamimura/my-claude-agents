@@ -223,7 +223,7 @@ function Test-ManagedCodexLink {
     )
 }
 
-$retiredCodexNames = @("hq.toml", "pl.toml", "qa.toml")
+$retiredCodexNames = @("hq.toml", "pl.toml", "qa.toml", "opus-escalation.toml")
 $codexConflicts = 0
 foreach ($retiredName in $retiredCodexNames) {
     $dest = Join-Path $CodexDir "agents\$retiredName"

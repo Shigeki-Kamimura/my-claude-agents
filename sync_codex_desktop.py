@@ -92,7 +92,7 @@ def inventory(root):
             if item.is_symlink():
                 raise Stop(f'Agent discovery contains a symlink: {item}')
             if item.is_file() and item.suffix == '.toml':
-                result[str(item.relative_to(root))] = item.read_bytes()
+                result[item.relative_to(root).as_posix()] = item.read_bytes()
     return result
 
 
@@ -144,7 +144,7 @@ def snapshot(source):
         if path.is_file() and path.suffix == '.toml':
             if path.parent != folder:
                 raise Stop('Nested source role files require an explicit mapping')
-            result[str(path.relative_to(source))] = path.read_bytes()
+            result[path.relative_to(source).as_posix()] = path.read_bytes()
     if not any(k.startswith('.codex/agents/') for k in result):
         raise Stop('Source has no role definitions')
     return result
@@ -268,13 +268,22 @@ def owned(text, replacement, source, global_file=False):
     return text.rstrip('\n') + '\n\n' + replacement + '\n'
 
 
-def plan(source, destination):
+def plan(source, destination, *, adopt_source_models=()):
     state = git_state(source)
     src = snapshot(source)
     existing = inventory(destination)
     installed = roles(existing)
     supplied = roles({k.removeprefix('.codex/'): v for k, v in src.items()
                       if k.startswith('.codex/agents/')})
+    selected_models = set(adopt_source_models)
+    if selected_models:
+        available_models = {
+            role['name'] for role in supplied.values()
+            if isinstance(role.get('model'), str) and role['model'].strip()
+        }
+        unavailable = selected_models - available_models
+        if unavailable:
+            raise Stop(f'No explicit source model for: {", ".join(sorted(unavailable))}')
     original = {**existing, 'AGENTS.md': read(safe(destination, 'AGENTS.md')),
                 'config.toml': read(safe(destination, 'config.toml')),
                 PCR_SKILL: read(safe(destination, PCR_SKILL)),
@@ -284,6 +293,9 @@ def plan(source, destination):
         raise Stop('Destination has explicit role registrations; resolve mapping before syncing')
     changes = {}
     notes = []
+    legacy_opus = 'agents/opus-escalation.toml'
+    if legacy_opus in installed and legacy_opus not in supplied:
+        notes.append(f'{legacy_opus}: Claude-only role; check and retire the legacy copy manually')
     for filename, incoming in supplied.items():
         if Path(filename).stem != incoming['name']:
             raise Stop(f'{filename}: filename must match canonical name; aliases are input routing only')
@@ -307,7 +319,8 @@ def plan(source, destination):
                 pass
             else:
                 raise Stop(f'{filename}: new role setting {key} needs separate review')
-        for key in MODEL:
+        model_keys = MODEL - {'model'} if incoming['name'] in selected_models else MODEL
+        for key in model_keys:
             if before is not None and key in before:
                 merged[key] = before[key]
                 if incoming.get(key) != before[key]:
@@ -520,10 +533,14 @@ def main(argv=None):
     parser.add_argument('--destination', required=True, type=Path, help='effective CODEX_HOME (not agents directory)')
     parser.add_argument('--apply', action='store_true', help='write the displayed plan; default is read-only')
     parser.add_argument('--dry-run', action='store_true', help='explicit read-only plan (also the default)')
+    parser.add_argument('--adopt-source-model', action='append', default=[], metavar='ROLE',
+                        help='use the source model for this canonical role; repeat for additional roles')
     parser.add_argument('--restore', type=Path, help='verified backup to restore; also requires --apply to write')
     args = parser.parse_args(argv)
     if args.apply and args.dry_run:
         parser.error('--dry-run and --apply are mutually exclusive')
+    if args.restore and args.adopt_source_model:
+        parser.error('--adopt-source-model cannot be used with --restore')
     dest = args.destination.expanduser().absolute()
     if not dest.is_dir() or dest.is_symlink():
         raise Stop('Destination must be an existing, non-symlink Codex home')
@@ -538,7 +555,7 @@ def main(argv=None):
     source = args.source.expanduser().resolve()
     if source.is_relative_to(dest.resolve()) or dest.resolve().is_relative_to(source):
         raise Stop('Source and destination must not overlap')
-    p = plan(source, dest)
+    p = plan(source, dest, adopt_source_models=args.adopt_source_model)
     display(p)
     if args.apply:
         apply(p)

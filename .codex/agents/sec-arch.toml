@@ -1,6 +1,6 @@
 name = "sec-arch"
 description = "L2+ reviewer for authorization, trust boundaries, browser auth semantics, sensitive-data exposure, and least privilege."
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 

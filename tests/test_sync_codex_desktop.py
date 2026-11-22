@@ -95,6 +95,52 @@ class DesktopSyncTests(unittest.TestCase):
         with self.assertRaisesRegex(sync.Stop, 'security/config delta'):
             self.plan()
 
+    def test_adopt_source_model_updates_only_the_named_model(self):
+        self.put('worker', extra={
+            'model': 'gpt-6.1-sol', 'model_reasoning_effort': 'xhigh', 'service_tier': 'fast',
+        })
+        self.put('adviser', extra={'model': 'gpt-6-astra'})
+        self.apply()
+        self.put('worker', extra={
+            'model': 'gpt-6.2-sol', 'model_reasoning_effort': 'high', 'service_tier': 'default',
+        })
+        self.put('adviser', extra={'model': 'gpt-6.2-astra'})
+        args = ['--source', str(self.source), '--destination', str(self.dest),
+                '--adopt-source-model', 'worker']
+        before = self.tree(self.dest)
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            sync.main([*args, '--dry-run'])
+        self.assertIn('+model = "gpt-6.2-sol"', output.getvalue())
+        self.assertEqual(self.tree(self.dest), before)
+        with contextlib.redirect_stdout(io.StringIO()):
+            sync.main([*args, '--apply'])
+        worker = sync.toml((self.dest / 'agents/worker.toml').read_bytes(), 'worker')
+        self.assertEqual(worker['model'], 'gpt-6.2-sol')
+        self.assertEqual(worker['model_reasoning_effort'], 'xhigh')
+        self.assertEqual(worker['service_tier'], 'fast')
+        adviser = sync.toml((self.dest / 'agents/adviser.toml').read_bytes(), 'adviser')
+        self.assertEqual(adviser['model'], 'gpt-6-astra')
+
+    def test_adopt_source_model_rejects_unknown_or_unpinned_roles(self):
+        before = self.tree(self.dest)
+        for role in ('missing', 'worker'):
+            with self.subTest(role=role):
+                with self.assertRaisesRegex(sync.Stop, 'No explicit source model'):
+                    sync.main(['--source', str(self.source), '--destination', str(self.dest),
+                               '--adopt-source-model', role, '--apply'])
+                self.assertEqual(self.tree(self.dest), before)
+
+    def test_legacy_opus_copy_is_reported_and_preserved(self):
+        (self.dest / 'agents').mkdir()
+        path = self.dest / 'agents/opus-escalation.toml'
+        legacy = sync.encode({
+            'name': 'opus-escalation', 'description': 'Old role', 'developer_instructions': 'Legacy.',
+        })
+        path.write_bytes(legacy)
+        self.assertIn('agents/opus-escalation.toml', '\n'.join(self.plan()['notes']))
+        self.apply()
+        self.assertEqual(path.read_bytes(), legacy)
+
     def test_existing_service_tier_and_unspecified_state_are_preserved(self):
         (self.dest / 'agents').mkdir()
         for local, incoming in [('flex', 'fast'), ('fast', 'fast'), ('fast', None), (None, 'fast')]:

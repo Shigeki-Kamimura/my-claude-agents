@@ -1,6 +1,6 @@
 name = "data-platform"
 description = "L2+ reviewer for persistence, distributed execution, transactions, retries, idempotency, and rollback risk."
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 

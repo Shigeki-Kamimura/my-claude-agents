@@ -1,6 +1,6 @@
 name = "ux-qa"
 description = "Operation/UX tester (not a reviewer): operates a running local/staging app in a browser and reports observed facts and impressions separately as an evidence-based HTML report with handoff."
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 model_reasoning_effort = "high"
 
 developer_instructions = """

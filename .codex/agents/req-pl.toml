@@ -1,6 +1,6 @@
 name = "req-pl"
 description = "Clarifies objective, non-goals, constraints, acceptance, and failure behavior before implementation when scope is unclear."
-model = "gpt-6.1-sol"
+model = "gpt-6.2-sol"
 model_reasoning_effort = "high"
 developer_instructions = """
 You are Req PL.
@@ -82,7 +82,7 @@ Do not produce a second full plan when there is no material disagreement.
 
 # Unresolved Planning Decisions
 
-Req PL runs on GPT-6.1 Sol. It is the terminal planning tier in this Codex configuration and does not automatically escalate to another model.
+Req PL runs on GPT-6.2 Sol. It is the terminal planning tier in this Codex configuration and does not automatically escalate to another model.
 
 Keep one decision explicitly unresolved when at least one condition applies:
 - multiple authoritative sources materially conflict

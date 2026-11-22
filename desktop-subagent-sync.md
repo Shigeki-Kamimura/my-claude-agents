@@ -26,11 +26,27 @@ wsl.exe -d Ubuntu-Preview -- python3 /home/shigeki/projects/my-claude-agents/syn
 
 - 原本にある canonical 定義を対象にし、`name` とファイル名の一致、重複、TOML、必要な共有参照を検査します。`hq` / `pl` / `qa` などの入力エイリアスはルーティング指示で正規化します。別 TOML を作りません。重複や別名の衝突は、削除せず停止します。
 - 原本にない独自定義（例：`reviewer-md-only.toml`）と、無関係なファイルは残します。廃止された原本の定義も自動削除しません。必要なら個別に整理します。
-- 既存の `model` / effort 等の指定は保持します。原本と違う場合は `KEEP` を表示します。新しいモデルを採用したい場合は、更新とは分けて設定を確認します。
+- 通常の同期では既存の `model` と effort 等の指定を保持し、原本と異なる値に `KEEP` を表示します。`--adopt-source-model ROLE` を指定した担当では、原本の `model` を採用します。
 - `service_tier` も既存ロールの値を保持し、未指定なら未指定のままにします。原本と違う場合は `KEEP` を表示し、同期だけで原本の `fast` 等へ切り替えません。新規ロールは原本の指定を採用するため、適用前の差分で確認してください。
 - 既存の sandbox 等の設定は、原本で省略されても保持します。原本と競合する権限・実行設定は停止します。新規ロールの `read-only` と機能無効化以外の実行設定も別途確認が必要です。`req-pl=read-only`、`test-qa=workspace-write` は現状どおり残ります。子定義の値が親設定を上書きできることを保証するものではありません。
 - `CODEX_HOME/config.toml`、承認・信頼・認証・MCP 設定には書き込みません。明示的な `[agents.<role>]` 登録が元または先にある場合は、フォルダー探索との対応が曖昧なため停止します。
 - 既知の `.Codex/knowledge/human-review-patterns.md` 参照は、実在する原本の `.claude/knowledge/human-review-patterns.md` の絶対パスへ、導入先だけで補正します。原本の定義や西口さんの指針を書き換えません。
+
+## 6.2 系のモデルへ切り替える
+
+プロジェクトの既定モデルは `.codex/config.toml` で管理します。
+Desktop の既存の担当は、上の dry-run に `--adopt-source-model` と担当名を足して確認します。
+
+```text
+--adopt-source-model code-quality-reviewer --adopt-source-model adviser
+```
+
+この例ではレビュー担当に `gpt-6.2-sol`、境界レビュー担当に `gpt-6.2-astra` を採用します。
+対象を増やすときは担当名ごとに指定を繰り返します。思考量・速度・権限は既存の同期規則に従います。
+差分を確認して `--apply` を付けると、既存のバックアップ手順で復元できます。
+
+旧配布の `agents/opus-escalation.toml` があれば `KEEP` に表示されます。
+旧配布分を確認し、`agents/` 外へ退避してください。Claude Code で使う定義は `.claude/agents/opus-escalation.md` にあります。
 
 ## 共有ルールへの参照
 

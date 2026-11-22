@@ -250,10 +250,10 @@ setup_target() {
   # --- Codex agents: ファイル単位でリンク ---
   mkdir -p "$codex_dir/agents"
 
-  # 旧名は入力 alias として残し、同じ name の TOML は展開しません。
+  # 入力の旧名と Claude 専用定義の管理リンクを整理します。
   local retired_name
   local codex_conflicts=0
-  for retired_name in hq.toml pl.toml qa.toml; do
+  for retired_name in hq.toml pl.toml qa.toml opus-escalation.toml; do
     dest="$codex_dir/agents/$retired_name"
     if is_managed_codex_link "$dest" "$SRC_CODEX_AGENTS/$retired_name"; then
       rm "$dest"
@@ -270,7 +270,7 @@ setup_target() {
     for src in "$SRC_CODEX_AGENTS"/*.toml; do
       [ -e "$src" ] || continue
       name="$(basename "$src")"
-      case "$name" in hq.toml|pl.toml|qa.toml) continue ;; esac
+      case "$name" in hq.toml|pl.toml|qa.toml|opus-escalation.toml) continue ;; esac
       dest="$codex_dir/agents/$name"
 
       if [ -L "$dest" ] && ! is_managed_codex_link "$dest" "$src"; then

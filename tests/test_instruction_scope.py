@@ -80,9 +80,9 @@ class InstructionScopeTests(unittest.TestCase):
         config = read(".codex/config.toml")
         model = re.findall(r'(?m)^model = "([^"]+)"$', config)
         effort = re.findall(r'(?m)^model_reasoning_effort = "([^"]+)"$', config)
-        self.assertEqual(model, ["gpt-6.1-sol"])
+        self.assertEqual(model, ["gpt-6.2-sol"])
         self.assertEqual(effort, ["high"])
-        label = "GPT-6.1 Sol / " + effort[0]
+        label = "GPT-6.2 Sol / " + effort[0]
         allocation = section(read(".codex/AGENTS.md"), "## Model Allocation")
         self.assertIn("- main coordinator -> " + label, allocation)
         self.assertIn("# - Keep the primary coordinator on " + label + ".", config)
@@ -126,6 +126,8 @@ class InstructionScopeTests(unittest.TestCase):
 
         codex_cr = tomllib.loads(read(".codex/agents/code-quality-reviewer.toml"))
         codex_adv = tomllib.loads(read(".codex/agents/adviser.toml"))
+        self.assertEqual(codex_cr["model"], "gpt-6.2-sol")
+        self.assertEqual(codex_adv["model"], "gpt-6.2-astra")
         cr_batch = "Default batch: 10 changed implementation files, 2 immediate callers/callees, 3 targeted searches"
         adv_slice = "Default slice: 12 changed files and 3 necessary boundary files"
         planner_cap = "default max: 10 changed files for `cr`, 12 for `adviser`, 6 for `test-qa`/`e2e-qa`"

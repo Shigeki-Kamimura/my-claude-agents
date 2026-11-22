@@ -84,7 +84,7 @@ class ParentHqContractTests(unittest.TestCase):
                          "Do not duplicate", "concurrent edits to the same files"):
             self.assertIn(required, self.ownership)
         self.assertEqual(self.hq["name"], "hq-coder")
-        self.assertEqual(self.hq["model"], "gpt-6.1-sol")
+        self.assertEqual(self.hq["model"], "gpt-6.2-sol")
         self.assertEqual(self.hq["model_reasoning_effort"], "high")
         self.assertIn("context-isolated HQ worker handles only its assigned slice", self.hq["developer_instructions"])
 

@@ -1,6 +1,6 @@
 name = "sol-escalation"
-description = "GPT-6.1 Sol escalation agent for one unresolved question handed off by a Luna specialist."
-model = "gpt-6.1-sol"
+description = "GPT-6.2 Sol escalation agent for one unresolved question handed off by a Luna specialist."
+model = "gpt-6.2-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 

@@ -37,7 +37,7 @@ class TargetedVerificationTests(unittest.TestCase):
             self.assertIn(text, self.policy)
         self.assertNotIn("When `multi_agent_v2`", self.policy)
         self.assertIn("In `claude-codex-review`, Codex remains a read-only review receiver", self.parent)
-        self.assertEqual(self.hq_config["model"], "gpt-6.1-sol")
+        self.assertEqual(self.hq_config["model"], "gpt-6.2-sol")
         self.assertEqual(self.hq_config["model_reasoning_effort"], "high")
 
     def test_execution_alone_does_not_create_a_new_agent(self):

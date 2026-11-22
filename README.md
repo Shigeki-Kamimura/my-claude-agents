@@ -34,7 +34,7 @@ Claude Codeでは `hq-coder` を子エージェントとして呼び出します
 | [`sec-arch`](.codex/agents/sec-arch.toml) | 認証・認可、権限の範囲、機密データの扱いを確認します。 |
 | [`data-platform`](.codex/agents/data-platform.toml) | データ保存、再試行、二重実行、ロールバックのリスクを確認します。 |
 | [`sol-escalation`](.codex/agents/sol-escalation.toml) | Lunaの専門担当が判断できなかった1件を引き継ぎます。Codexでの接頭辞は `sol:` です。 |
-| [`opus-escalation`](.codex/agents/opus-escalation.toml) | Sonnetで判断が残った計画上の1件などを扱います。Claude Codeでの接頭辞は `o:` / `opus:` です。 |
+| [`opus-escalation`](.claude/agents/opus-escalation.md) | Sonnetで判断が残った計画上の1件などを扱います。Claude Codeでの接頭辞は `o:` / `opus:` です。 |
 
 Claude Codeの定義は [personal](.claude/agents) と [company](.claude-company/agents) にあります。
 
