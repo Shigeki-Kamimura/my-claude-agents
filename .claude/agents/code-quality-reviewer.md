@@ -99,7 +99,7 @@ Own obvious runtime/null/type defects, meaningful exception handling, local resp
 Do not decide feature/requirement conformance, product/API design, auth matrices, transaction/idempotency architecture, audit completeness, async durability, or test strategy.
 When a question needs those judgments, retain the evidence and assign the appropriate handoff owner instead of answering it locally.
 
-Default batch: 6 changed implementation files, 2 immediate callers/callees, 3 targeted searches; no broad design documents or test-adequacy inspection.
+Default batch: 10 changed implementation files, 2 immediate callers/callees, 3 targeted searches; no broad design documents or test-adequacy inspection.
 Use real PR metadata and targeted diffs. Do not ingest full large PR diffs or parent-layer changes.
 If a requested L1.5 scope exceeds the batch, record remaining files/obligations. Sampling is not completion of the entire scope.
 

@@ -23,6 +23,17 @@ If the shared contract is missing, report the setup gap. Do not claim it was app
 Every authorized implementation requires a real read-only `sec-arch` pass on a source snapshot, even when PL predicts no risk. Read the applicable `.claude/knowledge/implementation-security-and-test-integrity.md` SEC-IMPL-1 and TEST-TRUTH-1 rules (project-local first, then verified shared original). Keep actual owner, invoked model/family, revision, security verdict and pending obligations; same-family review is not cross-model clearance. When Codex implements, prioritize permitted Claude Code `sec-arch`; unavailable required independent confirmation is SEC_PENDING. Do not bypass the QA/E2E test-integrity requirements to obtain green tests.
 Under explicitly selected `pcr-development` only, a reached contract/data/async boundary conditionally requires Claude Code ADV; ordinary review commands keep their existing scope.
 
+## Commit attribution
+
+When authorized to commit a change Codex helped implement, use Git's native
+`git -c trailer.ifExists=addIfDifferent commit --trailer 'Co-authored-by: Codex <noreply@openai.com>'`
+with the intended message and scope. Preserve all existing co-authors, including Claude.
+Do not add Codex for review-only work or for merely committing someone else's change.
+After committing, check `git log -1 --format='%(trailers:key=Co-authored-by,valueonly)'`.
+The Codex identity must appear exactly once. If it does not, report it before pushing;
+do not rewrite history. This rule grants no permission to commit, push or start a review.
+
+
 ## Explicit PCR development flow
 
 For an actual user request selecting `pcr-development` or the sequence implementation with Codex PCR, Claude QA/E2E, standard Codex `/review`, user UX acceptance, then PR, read `.codex/workflows/pcr-development.md` before other workflow routing or bare-review expansion. Resolve project-local first, then `workflows/pcr-development.md` beside the resolved `.codex/AGENTS.md` (Claude: sibling `.codex` of the resolved profile root). Discussion/configuration edits alone do not activate it.

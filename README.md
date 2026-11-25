@@ -75,6 +75,20 @@ Codex Desktopで、リンクになっているエージェントが `agent type 
 GuildBoardの `ux-qa` は、プロジェクト側のTOMLを同じ内容の通常ファイルに置き換えると起動しました。
 通常ファイルに置き換えた定義は、原本を更新したときに個別に反映します。
 
+### AIで実装したコミットの確認
+
+共有設定を使うCodexは、実装に参加した変更をコミットするとき、Gitの `--trailer` で共同著者を記録します。
+`codex_git_commit` は[OpenAIが削除した設定](https://github.com/openai/codex/pull/22412)です。個人の `config.toml` に追加する必要はありません。
+Claude Codeは標準の共同著者設定を使います。既存の共同著者行は削除・置換しません。
+
+Codexにコミットを依頼した後、`git log -1 --format=%B` の末尾に次の行が1つあることを確認します。
+
+```text
+Co-authored-by: Codex <noreply@openai.com>
+```
+
+手動コミットには、この設定で印は付きません。案内にあるGuildBoardの判定は、Claudeの印があればCodexがレビューし、なければClaudeがレビューする予定です。両方の印がある場合もCodexが担当します。PR側の振り分けとコメントの `model:` 表示は、この設定の対象外です。
+
 ## Codex Desktopアプリに反映する
 
 Desktopが使う `CODEX_HOME` の `agents/` に、TOMLを通常ファイルとしてコピーします。
