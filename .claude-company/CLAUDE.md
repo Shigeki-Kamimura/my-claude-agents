@@ -29,11 +29,16 @@ If the shared contract is missing, report the setup gap. Do not claim it was app
 
 ---
 
+## Mandatory implementation security and test integrity
+
+Every authorized implementation requires a real read-only `sec-arch` pass on a source snapshot, even when PL predicts no risk. Read the applicable `.claude/knowledge/implementation-security-and-test-integrity.md` SEC-IMPL-1 and TEST-TRUTH-1 rules (project-local first, then verified shared original). Keep actual owner, invoked model/family, revision, security verdict and pending obligations; same-family review is not cross-model clearance. When Codex implements, prioritize permitted Claude Code `sec-arch`; unavailable required independent confirmation is SEC_PENDING. Do not bypass the QA/E2E test-integrity requirements to obtain green tests.
+Under explicitly selected `pcr-development` only, a reached contract/data/async boundary conditionally requires Claude Code ADV; ordinary review commands keep their existing scope.
+
 ## Explicit PCR development flow
 
 For an actual user request selecting `pcr-development` or the sequence implementation with Codex PCR, Claude QA/E2E, standard Codex `/review`, user UX acceptance, then PR, read `.codex/workflows/pcr-development.md` before other workflow routing or bare-review expansion. Resolve project-local first, then `workflows/pcr-development.md` beside the resolved `.codex/AGENTS.md` (Claude: sibling `.codex` of the resolved profile root). Discussion/configuration edits alone do not activate it.
 This parent-coordinated flow preserves mandatory rules and verification, freezes PCR inputs while implementation continues, removes fixed file caps only for Codex PCR, and requires full final-snapshot coverage and owner reapproval. Claude QA/E2E remain read-only. Standard `/review` is distinct from `/reviewer` and `rev:`; do not invent a native Approve API. User UX acceptance precedes both draft and ready PR creation; publication needs its existing scoped authorization.
-When the actual user selects this parent flow and its QA/E2E explicitly use the MD transport, carry `Parent workflow: pcr-development` and the original contract in the host request/summary. Only that named parent contract supersedes the transport's final Local-ci/ci-reviewer/draft handoff. Keep required project verification, eleven result fields, usage confirmation, rate-limit limits, all read-only controls and unchanged standalone workflows. Do not automatically add CR/ADV/CI review or activate IPR-1.
+When the actual user selects this parent flow and its QA/E2E explicitly use the MD transport, carry `Parent workflow: pcr-development` and the original contract in the host request/summary. Only that named parent contract supersedes the transport's final Local-ci/ci-reviewer/draft handoff. Keep required project verification, eleven result fields, usage confirmation, rate-limit limits, all read-only controls and unchanged standalone workflows. Do not automatically add CR/CI review or activate IPR-1. Risk-triggered ADV is authorized only by the selected pcr-development contract.
 
 ## Explicit implementation-review loop
 
