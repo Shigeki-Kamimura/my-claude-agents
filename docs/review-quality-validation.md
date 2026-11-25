@@ -187,3 +187,35 @@ python3 -I -B /absolute/path/to/my-claude-agents/tools/review_quality_report.py 
 
 未実行テンプレートのまま実行すると`INCONCLUSIVE`、終了コード4になります。
 合成データによるツールのテストは、実モデル比較の実行証拠に数えません。
+
+## ハーネスの改善試行
+
+この共有設定の改善を依頼されたときは、実行記録から一つの変更を試します。対象は、親から担当に渡す情報、ツールの入出力、終了時の確認などです。 [Shah・Kathrotia『Harnesses That Improve Themselves』、2026年](https://arxiv.org/html/2611.22299v1#S2)
+
+1. 現行版で同じ失敗や余分な操作を再現します。記録から、どの処理を変えれば結果が変わるかを特定します。
+2. 比較元の版、改善を測る指標、守る条件、使える予算を先に決めます。修正に使う例と、最後に試す別の例を用意します。
+3. 一時コピーで該当する処理を一つ直します。候補を固定してから、同じ入力と上限で新旧を実行します。評価例、期待値、採点処理、権限設定は候補の編集対象から外します。
+4. 別の例でも指標が改善し、守る条件を満たした場合に共有元へ反映します。効果が不明な場合は候補を試行として残します。元の版、判断に使った記録、変更箇所を残せば元に戻せます。
+
+ツールの結果は、その実行入口から確かめます。モデルの見逃しや誤指摘を評価するときは、上記の反復と独立採点を使います。
+
+普段のClaudeレビューでは、[指摘と対応判断](../.codex/workflows/md-review.md#claudeの指摘と対応判断)を同じIDでたどれます。同じ漏れが続いたら、その記録を使って、入力資料、レビューの調べ方、実装のどこを直すかを確かめます。対象外で見送った指摘を誤指摘として数えず、保留は未確定の例として扱います。
+
+### 2026年11月25日の資料読み取り
+
+比較元は `832acc4` です。現行版では5,292文字で返せる3範囲に、上限12,000文字で2回の呼び出しが必要でした。先に読んだ範囲が途中で切れ、後の短い範囲で文字数が余っていました。
+
+`tools/read_review_source.py --batch` の文字数の配分を変更しました。各範囲の先頭行を確保し、余った文字数を未完了の範囲に配ります。比較では全ての行、順序、元ファイルのSHA-256、続きの行番号、出力上限を照合しました。
+
+| 用途 | 読み取るファイルと行番号（比較元の版、指定順） | 旧版の回数 | 採用版の回数 |
+| --- | --- | ---: | ---: |
+| 改修用 | `.codex/AGENTS.md` 159–184、`.claude/knowledge/human-review-patterns.md` 3–16、`AGENTS.md` 1–5 | 2 / 2 / 2 | 2 / 1 / 1 |
+| 改修用 | `.codex/AGENTS.md` 185–214、`.claude/knowledge/human-review-patterns.md` 22–39、`AGENTS.md` 8–12 | 4 / 3 / 2 | 4 / 2 / 2 |
+| 別の例 | `.codex/workflows/pcr-development.md` 55–91、`docs/pcr-development.md` 1–6、`docs/parallel-cr-review.md` 1–6 | 2 / 2 / 1 | 2 / 1 / 1 |
+| 別の例 | `.claude/knowledge/engineering-governance.md` 233–256、`tools/review_receipts.py` 7–15、`docs/review-efficiency-validation.md` 1–9 | 3 / 2 / 2 | 2 / 1 / 1 |
+| 別の例 | `tools/implementation_review.py` 252–307、`docs/implementation-review.md` 1–10、`tools/implementation_review_state.py` 10–21 | 2 / 2 / 2 | 2 / 1 / 1 |
+| 別の例 | `docs/review-quality-validation.md` 30–49、`tools/review_quality_report.py` 15–25、`docs/examples/review-quality-assessment.json` 1–8 | 1 / 1 / 1 | 1 / 1 / 1 |
+
+各列は4,000、8,000、12,000文字の順です。再現時は、比較元のルートで、表の相対パスを `path`、両端の行番号を `start_line`、`end_line` とするJSON配列を用意します。同じ配列に両版の読取ツールを `--batch requests.json --max-chars 12000` などで実行します。未完了の範囲だけを `next_range_line` から読み直し、全範囲がそろうまでの回数を数えます。
+
+別の4組、12条件では、呼び出しが合計21回から15回に減りました。6条件で減り、6条件は同じでした。これは実ファイルを使ったツール単体の結果です。実レビューの精度、トークン使用量、所要時間は未測定です。公開した例は、次回から回帰試験に使えます。

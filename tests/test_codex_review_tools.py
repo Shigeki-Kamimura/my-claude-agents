@@ -240,6 +240,39 @@ class ReviewToolsTests(unittest.TestCase):
             self.assertTrue(value["range_complete"])
             self.assertIsNone(value["next_range_line"])
 
+    def test_batch_uses_spare_capacity_for_earlier_ranges(self):
+        long_file = self.root / "long.txt"
+        long_file.write_bytes(('確認 "\\\\' * 5 + "\r\n").encode("utf-8") * 24)
+        short_file = self.root / "short.txt"
+        short_file.write_text("ok\n", encoding="utf-8")
+        requests = [{"path": str(long_file), "end_line": 21}, {"path": str(short_file)}]
+        manifest = self.root / "reads.json"
+        for order in (requests, list(reversed(requests))):
+            with self.subTest(first=order[0]["path"]):
+                manifest.write_text(json.dumps(order))
+                full = self.cli("read_review_source.py", "--batch", manifest).stdout
+                budget = len(full)
+                result = self.cli("read_review_source.py", "--batch", manifest, "--max-chars", budget)
+                self.assertEqual(result.stdout, full)
+                values = json.loads(result.stdout)["reads"]
+                self.assertEqual([row["path"] for row in values], [req["path"] for req in order])
+                self.assertTrue(all(row["range_complete"] for row in values))
+
+    def test_batch_reserves_a_whole_first_line_for_every_range(self):
+        long_file = self.root / "long.txt"
+        long_file.write_text("字" * 1200, encoding="utf-8")
+        short_file = self.root / "short.txt"
+        short_file.write_bytes(b"")
+        manifest = self.root / "reads.json"
+        manifest.write_text(json.dumps([{"path": str(long_file)}, {"path": str(short_file)}]))
+        full = self.cli("read_review_source.py", "--batch", manifest).stdout
+        budget = len(full)
+        self.assertEqual(self.cli("read_review_source.py", "--batch", manifest,
+                                  "--max-chars", budget).stdout, full)
+        too_small = self.cli("read_review_source.py", "--batch", manifest,
+                             "--max-chars", budget - 1, code=2)
+        self.assertEqual(too_small.stdout, "")
+
     def test_batch_failure_emits_no_partial_source_and_validates_requests(self):
         source = self.root / "rules.txt"
         source.write_text("private source\n", encoding="utf-8")

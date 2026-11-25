@@ -45,7 +45,7 @@ class SecurityTestIntegrityTests(unittest.TestCase):
     def test_sec_arch_permissions_unchanged(self):
         role = tomllib.loads(read(".codex/agents/sec-arch.toml"))
         self.assertEqual(role["sandbox_mode"], "read-only")
-        self.assertEqual(role["model"], "gpt-6.1-sol")
+        self.assertEqual(role["model"], "gpt-6.2-sol")
 
     def test_qa_e2e_detect_weakened_tests(self):
         for role in ("test-qa", "e2e-qa"):

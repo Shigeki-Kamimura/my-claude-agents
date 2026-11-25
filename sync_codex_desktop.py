@@ -161,7 +161,9 @@ Parent-only explicit PCR-1 entry:
 Only an explicit user request for PCR-1 / parallel-cr selects this trial.
 The parent reads the installed skill and resolves the contract before ordinary
 cr: routing or bare-review expansion. Plain cr: remains a single reviewer.
-Use the real installed code-quality-reviewer for CR-A, CR-B and bounded validation;
+Use three installed pcr-reviewer owners (GPT-6.2 Sol / max) for CR-A/B/C and one
+pcr-validator (GPT-6.2 Astra / xhigh) for bounded validation. Supply the resolved
+L1.5 instructions from {source}/.codex/agents/code-quality-reviewer.toml and the PCR contract;
 pass only each child's assignment and resolved rule paths, never the full fan-out.
 Candidate-only checks use one owner. Children never start this parent sequence.
 Project rules, disabled skills and active permissions remain authoritative.
@@ -217,7 +219,7 @@ Read originals through already permitted tools; paths and hashes are not proof
 that their contents were delivered. Preserve mandatory rule/exception checks.
 The parent handles explicit PCR-1 / parallel-cr requests before ordinary cr:
 routing; plain cr: stays single. Respect disabled skills and active permissions.
-Pass resolved paths and only the assigned CR-A / CR-B / validation task to each
+Pass resolved paths and only the assigned CR-A / CR-B / CR-C / validation task to each
 actual owner. A child does not receive permission to start another reviewer.
 Missing or inaccessible sources/tools stay BLOCKED; no permission changes.
 

@@ -51,12 +51,12 @@ class ArchiveTests(unittest.TestCase):
 
     def test_parent_children_and_fix_round_kept(self):
         sources = [self.source("parent", [{"timestamp": "2026-11-12T07:00:00Z", "role": "user", "text": "設問編集を実装してください"}])]
-        for slot in ("hq", "cr_a", "cr_b", "validator", "qa", "e2e"):
+        for slot in ("hq", "cr_a", "cr_b", "cr_c", "validator", "qa", "e2e"):
             sources.append(self.source(slot, [{"role": "assistant", "text": slot + "の確認結果です"}]))
         record = self.save(sources)
         self.assertEqual(record["status"], "COMPLETE")
         body = Path(record["html_path"]).read_text()
-        for slot in ("hq", "cr_a", "cr_b", "validator", "qa", "e2e"):
+        for slot in ("hq", "cr_a", "cr_b", "cr_c", "validator", "qa", "e2e"):
             self.assertIn(slot + "の確認結果です", body)
         self.assertIn("設問編集を実装してください", body)
         first = Path(record["html_path"]).read_bytes()

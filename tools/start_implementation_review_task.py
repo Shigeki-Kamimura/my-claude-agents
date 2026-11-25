@@ -59,7 +59,10 @@ def make_prompt(state: dict, job: dict, round_dir: Path) -> str:
                     "snapshot_file": str(round_dir / "snapshot.json"),
                     "rule_sources": state["source_config"]["rules"],
                     "contract": str(controller.ROOT / ".claude/knowledge/implementation-review.md")})
-    if job["mode"] == "initial" and job["slot"] in {"cr_a", "cr_b"}:
+    if job["role"] in ("pcr-reviewer", "pcr-validator"):
+        payload["shared_l15_instructions"] = str(controller.ROOT / ".codex/agents/code-quality-reviewer.toml")
+        payload["shared_pcr_contract"] = str(controller.ROOT / ".claude/knowledge/parallel-cr-review.md")
+    if job["mode"] == "initial" and job["slot"] in flow.DISCOVERY_SLOTS:
         flow.require("reports" not in payload and "open_findings" not in payload, "初回担当へ相手の結果を渡せません")
     consultant_note = ("L2の必須React/Nest等の相談は既存の規約に従って実行し、実担当・原本・応答を記録してください。\n"
                        if job["slot"] == "l2" else "他の層や専門担当を追加起動してはいけません。\n")

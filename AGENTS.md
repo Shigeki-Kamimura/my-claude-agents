@@ -65,3 +65,5 @@ Use one owner-attributed finding/coverage record; retain every unresolved obliga
 ## Project Evidence
 
 Use actual project design/spec paths, source revisions, exact commands and observed results. Separate file inspection from execution. Follow the task's named issue/ticket system; do not assume a universal tracker, DESIGN.md path, framework or ORM convention. Current explicit user instructions take precedence over stale task notes within applicable platform/security controls. High-risk auth/data/API/async/CI changes still require impact, rollback and targeted validation.
+
+For a request to improve the agent harness maintained in this configuration repository, use recorded runs to test one reversible change on separate evaluation cases. Follow the [harness trial procedure](docs/review-quality-validation.md#ハーネスの改善試行).

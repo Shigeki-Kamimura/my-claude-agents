@@ -28,7 +28,8 @@ Its preview controller rejects review-time source changes and does not implement
 ## 2. Implementation in parallel with a fixed PCR input
 
 The authorized implementation owner edits and runs planned verification. Codex PCR uses the
-real `code-quality-reviewer` owners CR-A and CR-B, then the bounded VALIDATOR from PCR-1
+three independent `pcr-reviewer` owners CR-A, CR-B and CR-C (GPT-6.2 Sol / max), then one
+`pcr-validator` (GPT-6.2 Astra / xhigh) for bounded validation under PCR-1
 (`.claude/knowledge/parallel-cr-review.md`, company equivalent when selected).
 Keep configured models/effort and read-only review permissions. Missing actual owners/tools are BLOCKED.
 
@@ -40,7 +41,7 @@ Do not stage/restage, commit, reset or stash merely to obtain the review snapsho
 Exclude secrets/ignored data under existing policy; inaccessible required contents remain pending.
 Confirm capture consistency before releasing the writer. A hash of HEAD alone is insufficient.
 
-CR-A, CR-B and VALIDATOR must read the same frozen source AND necessary callers/rules,
+CR-A, CR-B, CR-C and VALIDATOR must read the same frozen source AND necessary callers/rules,
 through permitted tools, with an accessible immutable view of each required original.
 A saved diff while source reads follow the live checkout is not sufficient isolation.
 The implementer may continue on S_n+1 only after the S_n material is safely separate.
@@ -55,13 +56,13 @@ A result for S_n is evidence for S_n only. Keep its findings even when implement
 
 ## 3. PCR coverage, repair and final approval
 
-Codex PCR has no fixed file-count limit. Both CR-A and CR-B independently cover the complete
+Codex PCR has no fixed file-count limit. CR-A, CR-B and CR-C each independently cover the complete
 intended diff, including changed code, tests, configuration, documentation and artifacts within
 L1.5 ownership, plus necessary direct dependencies and mandatory originals. Their union is insufficient.
 Read in bounded chunks; output/context limits never shrink the assigned change inventory.
 Keep one cumulative coverage record per owner: checked hunks/obligations, pending paths,
 required rule/consultation evidence, exclusions and next same-layer slice.
-The validator checks every candidate and named mandatory-coverage gap, not a third whole-diff review.
+The validator checks every candidate and named mandatory-coverage gap, not another whole-diff review.
 PARTIAL/BLOCKED, unread required material or a completed slice never become full-scope approval.
 
 After a coherent implementation/fix batch, perform the planned affected verification and capture S_final.
@@ -72,11 +73,11 @@ active transport's fresh-owner exception and carry its complete attributed ledge
 Reuse verified unchanged readings; a fresh owner does not inherit another owner's approval.
 Only the owning reviewer confirms a fix/withdrawal. Neither HQ nor VALIDATOR closes another owner's IDs.
 
-Before QA, require both discovery owners' current-snapshot L1.5 approval, full cumulative coverage,
+Before QA, require all three discovery owners' current-snapshot L1.5 approval, full cumulative coverage,
 completed bounded validation and no open local findings/questions or required evidence gaps.
 Preserve HND-1: green independently owned handoffs may proceed to their already selected owner;
 yellow/red or locally dependent gaps block the PCR gate. Every mandatory handoff must close before PR.
-Do not label two same-family CRs as independent cross-model approval or as L2.
+Do not label three same-family CRs as independent cross-model approval or as L2.
 
 This flow authorizes at most three coherent repair rounds. Findings alone do not launch a round:
 the implementation owner must apply authorized batch fixes and finish planned verification first.
@@ -111,6 +112,8 @@ The authorized implementer owns those actions. Preserve actual commands/cases/ex
 NOT_RUN/FAILED/PARTIAL; supplied results never count as the reviewer's execution.
 Required execution must pass before the dependent gate. Optional unrun checks stay non-gating notes.
 Preserve native verdicts, real invocation evidence, mandatory rules/consultation and HND-1 closure.
+
+For each Claude QA/E2E finding, the host records its decision and evidence in the existing finding record using [Claudeの指摘と対応判断](md-review.md#claudeの指摘と対応判断). This applies to direct and MD-based reviews alike.
 
 Use existing permitted role-level invocation. If the restricted MD transport is explicitly selected,
 use `codex-claude-review` with **only qa/e2e selected**, retain its eleven Workflow Result fields,

@@ -15,8 +15,8 @@ The policy permits implementation, selected review and bounded correction only. 
 ## 2. Ownership and transitions
 
 - The parent retains HQ implementation ownership. Do not launch an extra HQ merely to bridge review tools. HQ may edit the authorized source/tests and perform the planned targeted verification. Implementation reports are Supplied, not independent approval.
-- Freeze a meaningful implementation batch, not each file save. On the first PCR pass start independent CR-A and CR-B using real `code-quality-reviewer` owners. Keep peer reports and implementation reasoning out of initial input. Apply PCR-1 DOC-IMPACT and ARTIFACT-DELTA checks; do not repeat full workbook/repository audits.
-- Freeze both actual reports before starting a separate validator. It checks all owned candidate IDs and mandatory coverage, not the whole PR again. It cannot withdraw someone else's finding.
+- Freeze a meaningful implementation batch, not each file save. For new Codex PCR, assign CR-A/B/C to three independent `pcr-reviewer` owners (GPT-6.2 Sol / max) and validation to `pcr-validator` (GPT-6.2 Astra / xhigh). Claude PCR and saved version-1 runs retain A/B and validation with `code-quality-reviewer`. Use the controller's planned roles throughout that run. Keep peer reports and implementation reasoning out of initial input. Apply PCR-1 DOC-IMPACT and ARTIFACT-DELTA checks; do not repeat full workbook/repository audits.
+- Freeze all assigned discovery reports before starting a separate validator. It checks all owned candidate IDs and mandatory coverage, not the whole PR again. It cannot withdraw someone else's finding.
 - Confirmed, in-scope implementation problems go to HQ as one batch. Required verification is completed before recheck. A claimed fix never closes a finding. The owning reviewer confirms the exact fix/current snapshot and affected obligations.
 - Requirement or rule ambiguity goes to actual `req-pl`, with the disputed question and source evidence only. PL may resolve what existing authoritative sources already decide. It does not invent product decisions or design the implementation. Conflicting product choices require the user. Sourced clarification returns to the reviewer; an actual implementation issue then returns to HQ.
 - Missing reviewer evidence returns to the same owner for one bounded completion attempt. Do not ask HQ to rewrite code for unread rules, or ask PL to perform a code review. Remaining disagreement stops for the user rather than recursively adding validators.
@@ -62,7 +62,7 @@ Each finding is an atomic repair/decision unit:
 
 A closure is `{key, status, evidence}` where key includes the discovery slot, and status is reviewer_confirmed_fixed/reviewer_withdrawn. Only the owning review slot can close it, with actual continuation evidence or the authorized fresh-Codex transport plus the complete imported ledger. HQ/PL/the validator cannot close an originating reviewer's finding. Preserve original text and any justified routing/severity amendments.
 
-Validator fields: `assessments` for every open CR-A/CR-B key, each with fact (CONFIRMED/REJECTED/UNCONFIRMED), pr_scope (IN_SCOPE/OUT_OF_SCOPE/UNCONFIRMED), and evidence; also `mandatory_coverage_checked: true`. Empty candidate lists do not waive mandatory coverage checks. Rule or scope uncertainty is not a confirmed mandatory repair.
+Validator fields: `assessments` for every open discovery key, including CR-C on three-owner runs, each with fact (CONFIRMED/REJECTED/UNCONFIRMED), pr_scope (IN_SCOPE/OUT_OF_SCOPE/UNCONFIRMED), and evidence; also `mandatory_coverage_checked: true`. For each grouped Codex finding, include the three attributed positions and source IDs in the visible report under PCR-1 section 6. Empty candidate lists do not waive mandatory coverage checks. Rule or scope uncertainty is not a confirmed mandatory repair.
 
 QA/E2E fields: `adequacy_checks` containing every key in section 3 with status and evidence.
 
@@ -90,7 +90,9 @@ No automation of reviewer opinion: approval requires COMPLETE, no local open fin
 
 HTML is mandatory for this workflow, including failures, interruptions and limits. Use `tools/implementation_review_archive.py`, which reuses `tools/render_review_record.py`; do not add an LLM summarization pass or another exporter.
 
-Record the parent, HQ/PL, CR-A, CR-B, validator, QA/E2E, selected L2 and any required consultants. Preserve the visible request, reply, tool/result evidence that can be safely displayed, corrections, answers and decisions in chronological order. Include actual owner/backend, fixed source/rules and the finding/closure ledger. A final summary alone is not a chat transcript.
+Record the parent, HQ/PL, all assigned discovery owners, validator, QA/E2E, selected L2 and any required consultants. Preserve the visible request, reply, tool/result evidence that can be safely displayed, corrections, answers and decisions in chronological order. Include actual owner/backend, fixed source/rules and the finding/closure ledger. A final summary alone is not a chat transcript.
+
+For findings from a selected Claude reviewer, the parent uses [Claudeの指摘と対応判断](../../.codex/workflows/md-review.md#claudeの指摘と対応判断). Use the slot-qualified finding key in one visible parent note before the next saved transition. If the run already stopped, use the existing `archive` checkpoint after the note so the same run's HTML includes it. The controller retains the actual owner's findings and closures.
 
 Use only the run's explicitly bound logs and byte windows. External Codex resolution is bounded to actual returned session IDs and launch dates; never read unrelated session bodies. Retained owner logs may include that owner's earlier rounds in this same run. Missing native IDs or logs stay PARTIAL; do not invent chats or silently omit participants.
 

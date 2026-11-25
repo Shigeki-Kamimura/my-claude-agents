@@ -76,7 +76,7 @@ Desktop の既存の担当は、上の dry-run に `--adopt-source-model` と担
 | `.desktop-parallel-cr.json` | 導入したスキルのハッシュです。手編集や管理外ファイルの上書きを防ぎます。 |
 | `AGENTS.md` の所有ブロック | 親だけが明示依頼を受け付ける案内です。 |
 
-`parallel-cr.toml` は作りません。`code-quality-reviewer.toml` へ規約全文も埋め込みません。親が入口を読み、実際の `code-quality-reviewer` へ CR-A、CR-B、限定検証の担当を分けて依頼する設計です。通常の `cr:` は単独のままです。候補だけの検証依頼は1体です。子に並列起動を許可しません。
+`parallel-cr.toml` は作りません。`code-quality-reviewer.toml` へ規約全文も埋め込みません。親が `pcr-reviewer` を3人起動します（GPT-6.2 Sol / max）。全員の報告後、`pcr-validator` が全指摘と確認漏れを検証します（GPT-6.2 Astra / xhigh）。通常の `cr:` は単独のままです。候補だけの検証依頼は1体です。子に並列起動を許可しません。
 
 規約本文は原本の `.claude/knowledge/parallel-cr-review.md` を参照します。依頼例は原本の `docs/parallel-cr-review.md` にあります。プロジェクト側の設定済み参照を優先し、共有原本を使った場合はその経路を報告します。未読の規約・例外、未確認の生成物、重要度や対象範囲の未解決事項は省略できません。
 
@@ -89,7 +89,7 @@ Desktop の既存の担当は、上の dry-run に `--adopt-source-model` と担
 ```text
 PR #<番号>をPCR-1で並列L1.5レビューしてください。
 同期済みのparallel-crスキルを読み、共通入力を固定してください。
-CR-A・CR-Bの独立レビュー後、指摘と必須確認の不足を限定検証してください。
+CR-A・CR-B・CR-Cの独立レビュー後、指摘と必須確認の不足を限定検証してください。
 変更、テスト、CI、QA/E2E/ADVの追加起動は行わないでください。
 ```
 

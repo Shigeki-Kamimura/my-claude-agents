@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,19 +57,32 @@ class ParallelCrRulesTest(unittest.TestCase):
 
     def test_explicit_activation_only(self):
         self.assertIn("Plain `cr:` remains a single", self.rule)
-        self.assertIn("not new agent types", self.rule)
+        self.assertIn("assign CR-A, CR-B and CR-C to three fresh `pcr-reviewer` owners", self.rule)
+        self.assertIn("one fresh `pcr-validator`", self.rule)
         self.assertIn("not a registered agent or executable orchestrator", self.skill)
 
     def test_actual_roles_and_frozen_inputs(self):
-        for token in ("actual merge-base SHA", "immutable snapshot", "actual invocation/owner", "Freeze both initial reports"):
+        for token in ("actual merge-base SHA", "immutable snapshot", "actual invocation/owner", "Freeze all initial reports"):
             with self.subTest(token=token):
                 self.assertIn(token, self.rule)
+
+    def test_pcr_model_bindings_and_evidence_rules(self):
+        for name, model, effort in (("pcr-reviewer", "gpt-6.2-sol", "max"),
+                                    ("pcr-validator", "gpt-6.2-astra", "xhigh")):
+            role = tomllib.loads((ROOT / ".codex/agents" / f"{name}.toml").read_text())
+            self.assertEqual((role["name"], role["model"], role["model_reasoning_effort"]),
+                             (name, model, effort))
+            self.assertEqual(role["sandbox_mode"], "read-only")
+            self.assertIn("code-quality-reviewer.toml", role["developer_instructions"])
+        self.assertIn("at most one vote each", self.rule)
+        self.assertIn("silence or insufficient evidence 未判定", self.rule)
+        self.assertIn("The validator has no fourth vote", self.rule)
 
     def test_full_diff_exception_is_limited_to_codex_pcr(self):
         for clause in (
             "Use existing role budgets for non-Codex PCR and ordinary standalone roles",
             "Codex PCR has no fixed file-count limit",
-            "CR-A and CR-B each independently cover the complete assigned change inventory",
+            "CR-A, CR-B and CR-C each independently cover the complete assigned change inventory",
             "and any planner numeric cap only for Codex PCR",
             "Standalone PCR does not activate that sequence",
         ):
@@ -78,13 +92,13 @@ class ParallelCrRulesTest(unittest.TestCase):
     def test_codex_roles_preserve_the_limited_full_diff_exception(self):
         roles = {
             "code-quality-reviewer": (
-                "For an explicitly assigned Codex PCR-1 CR-A/CR-B task, there is no fixed file-count limit",
+                "For an explicitly assigned Codex PCR-1 discovery task, there is no fixed file-count limit",
                 "Each discovery owner independently checks every changed hunk",
                 "This exception changes neither standalone CR nor Claude CR/ADV/QA/E2E policy",
             ),
             "review-planner": (
                 "For an explicitly selected Codex PCR flow, pass the full change inventory without a numeric file cap",
-                "Its CR-A and CR-B each need complete cumulative coverage",
+                "Its CR-A, CR-B and CR-C each need complete cumulative coverage",
                 "ordinary CR/ADV/QA/E2E limits below are unchanged",
             ),
         }
@@ -107,7 +121,7 @@ class ParallelCrRulesTest(unittest.TestCase):
         self.assertIn("higher-priority project diff restriction", self.rule)
 
     def test_validation_includes_coverage(self):
-        for token in ("findings AND missing coverage", "third whole-PR review", "single-owner finding", "no majority threshold"):
+        for token in ("findings AND missing coverage", "another whole-PR review", "single-owner finding", "no majority threshold"):
             with self.subTest(token=token):
                 self.assertIn(token, self.rule)
 
@@ -200,7 +214,7 @@ class ParallelCrRulesTest(unittest.TestCase):
             self.assertIn(text, self.rule)
 
     def test_validator_checks_document_gap_not_only_candidates(self):
-        for text in ("including DOC-IMPACT search evidence", "both owners omitted",
+        for text in ("including DOC-IMPACT search evidence", "all discovery owners omitted",
                      "even when no candidate mentions the document",
                      "does not make the whole PR COMPLETE"):
             self.assertIn(text, self.rule)
@@ -225,7 +239,7 @@ class ParallelCrRulesTest(unittest.TestCase):
                      "does not authorize another round", "conflicting fresh-round contract"):
             self.assertIn(text, self.rule)
         self.assertIn("user explicitly sets `reconcile_once: true`", self.skill)
-        self.assertIn("追加しなければ3担当で終了", self.guide)
+        self.assertIn("追加しなければ4担当で終了", self.guide)
 
     def test_skill_dispatch_passes_missing_coverage_contract(self):
         for text in ("DOC-IMPACT", "ARTIFACT-DELTA", "manual-test adequacy",

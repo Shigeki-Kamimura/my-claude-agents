@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import itertools
+import json
 from pathlib import Path
 import sys
 import unittest
@@ -29,7 +30,7 @@ def prepare(state, slot, **updates):
     job = next(j for j in flow.pending(state) if j["slot"] == slot)
     state = flow.claim(state, job["id"], state["snapshot_id"], state["rules_id"])
     job = state["jobs"][job["id"]]
-    verdict = "L1.5_APPROVE" if slot in {"cr_a", "cr_b", "validator"} else "APPROVE"
+    verdict = "L1.5_APPROVE" if slot in {"cr_a", "cr_b", "cr_c", "validator"} else "APPROVE"
     result = {"job_id": job["id"], "slot": slot, "provider": job["provider"],
               "snapshot_id": job["snapshot_id"], "rules_id": job["rules_id"], "coverage": "COMPLETE",
               "decision": "APPROVE", "native_verdict": verdict,
@@ -43,14 +44,14 @@ def prepare(state, slot, **updates):
                       verification=[{"status": "PASS", "required": True, "evidence": "fixture test exit=0"}])
     if slot == "validator":
         result.update(assessments={f["key"]: {"fact": "CONFIRMED", "pr_scope": "IN_SCOPE", "evidence": f["evidence"]}
-                                  for f in flow.unresolved(state) if f["slot"] in {"cr_a", "cr_b"}}, mandatory_coverage_checked=True)
+                                  for f in flow.unresolved(state) if f["slot"] in {"cr_a", "cr_b", "cr_c"}}, mandatory_coverage_checked=True)
         if result["assessments"]:
             result.update(decision="REQUEST_CHANGES", native_verdict="L1.5_REQUEST_CHANGES")
     if slot in {"qa", "e2e"}:
         result["adequacy_checks"] = {key: {"status": "CHECKED", "evidence": "fixture assertion: " + key} for key in flow.QA_CHECKS}
     result.update(updates)
     if result["findings"] or result["missing_obligations"] or result["questions"]:
-        result.update(decision="REQUEST_CHANGES", native_verdict="L1.5_REQUEST_CHANGES" if slot in {"cr_a", "cr_b", "validator"} else "REQUEST_CHANGES")
+        result.update(decision="REQUEST_CHANGES", native_verdict="L1.5_REQUEST_CHANGES" if slot in {"cr_a", "cr_b", "cr_c", "validator"} else "REQUEST_CHANGES")
     owner = job["previous_owner"] if job["owner_mode"] == "resume" else "fixture-owner-" + job["id"]
     parent = job["previous_parent"] if job["owner_mode"] == "resume" else "fixture-parent-" + job["id"]
     receipt = {"job_id": job["id"], "provider": job["provider"], "role": job["role"], "owner_id": owner,
@@ -67,7 +68,7 @@ def finish(state, slot, **updates):
 
 
 def through_pcr(state):
-    for slot in ("hq", "cr_a", "cr_b", "validator"):
+    for slot in ("hq", *flow.discovery_slots(state), "validator"):
         state = finish(state, slot)
     return state
 
@@ -87,18 +88,20 @@ class StateTests(unittest.TestCase):
 
     def test_pcr_discovery_jobs_available_together(self):
         state = finish(fixture_state(), "hq")
-        self.assertEqual({j["slot"] for j in flow.pending(state)}, {"cr_a", "cr_b"})
+        self.assertEqual({j["slot"] for j in flow.pending(state)}, {"cr_a", "cr_b", "cr_c"})
         self.assertNotIn("reports", flow.task_payload(state, flow.pending(state)[0]["id"]))
         state = finish(state, "cr_a")
-        self.assertEqual([j["slot"] for j in flow.pending(state)], ["cr_b"])
+        self.assertEqual([j["slot"] for j in flow.pending(state)], ["cr_b", "cr_c"])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         self.assertEqual([j["slot"] for j in flow.pending(state)], ["validator"])
-        self.assertEqual(set(flow.task_payload(state, flow.pending(state)[0]["id"])["reports"]), {"cr_a", "cr_b"})
+        self.assertEqual(set(flow.task_payload(state, flow.pending(state)[0]["id"])["reports"]), {"cr_a", "cr_b", "cr_c"})
 
     def test_fix_and_delta_recheck_closes_only_by_owner(self):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         self.assertEqual(flow.pending(state)[0]["slot"], "hq")
         state = finish(state, "hq")
@@ -106,15 +109,87 @@ class StateTests(unittest.TestCase):
         self.assertEqual({j["mode"] for j in flow.pending(state)}, {"recheck"})
         state = finish(state, "cr_a", closures=[{"key": "cr_a:F1", "status": "reviewer_confirmed_fixed", "evidence": "fixture.ts:10 invalidation完了後に開きます"}])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         self.assertEqual(state["stage"], "qa")
         self.assertEqual(state["fix_rounds"], 1)
+
+    def test_all_completion_orders_wait_for_three_distinct_codex_owners(self):
+        for order in itertools.permutations(("cr_a", "cr_b", "cr_c")):
+            with self.subTest(order=order):
+                state = finish(fixture_state(), "hq")
+                for slot in order:
+                    job = next(j for j in flow.pending(state) if j["slot"] == slot)
+                    self.assertEqual(job["role"], "pcr-reviewer")
+                    self.assertNotIn("validator", [j["slot"] for j in flow.pending(state)])
+                    payload = flow.task_payload(state, job["id"])
+                    self.assertNotIn("open_findings", payload)
+                    self.assertNotIn("reports", payload)
+                    state = finish(state, slot)
+                self.assertEqual([j["role"] for j in flow.pending(state)], ["pcr-validator"])
+                restored = json.loads(json.dumps(state))
+                self.assertEqual(flow.pending(restored), flow.pending(state))
+
+    def test_only_cr_c_reports_a_finding(self):
+        state = finish(fixture_state(), "hq")
+        for slot in ("cr_a", "cr_b"):
+            state = finish(state, slot)
+        state = finish(state, "cr_c", findings=[finding()])
+        s, job, result, receipt = prepare(state, "validator", assessments={})
+        with self.assertRaises(flow.ContractError):
+            flow.accept(s, job["id"], result, receipt)
+        state = finish(state, "validator")
+        self.assertEqual(state["ledger"]["cr_c:F1"]["status"], "open")
+        state = finish(state, "hq")
+        for slot in ("cr_b", "cr_a"):
+            state = finish(state, slot)
+        self.assertEqual([j["slot"] for j in flow.pending(state)], ["cr_c"])
+
+    def test_cr_c_cannot_reuse_a_peer_or_validator(self):
+        state = finish(fixture_state(), "hq")
+        state = finish(state, "cr_a")
+        state = finish(state, "cr_b")
+        for slot, other in (("cr_c", "cr_b"), ("validator", "cr_c")):
+            s, job, result, receipt = prepare(state, slot)
+            receipt["owner_id"] = state["owners"][other]
+            with self.assertRaises(flow.ContractError):
+                flow.accept(s, job["id"], result, receipt)
+            state = finish(state, slot)
+
+    def test_cr_c_coverage_and_questions_return_to_their_owner(self):
+        for updates, expected in (({"coverage": "PARTIAL", "missing_obligations": ["clause"]}, "cr_c"),
+                                  ({"questions": ["Q1"]}, "pl")):
+            state = finish(fixture_state(), "hq")
+            for slot in ("cr_a", "cr_b"):
+                state = finish(state, slot)
+            state = finish(state, "cr_c", **updates)
+            state = finish(state, "validator")
+            self.assertEqual([j["slot"] for j in flow.pending(state)], [expected])
+            if expected == "pl":
+                self.assertEqual(state["clarify_slots"], ["cr_c"])
+
+    def test_saved_v1_runs_and_explicit_claude_keep_two_owners_after_fix(self):
+        for backend, version in (("codex", 1), ("claude", 1), ("claude", 2)):
+            with self.subTest(backend=backend, version=version):
+                state = fixture_state(pcr_backend=backend)
+                state["schema_version"] = version
+                state = finish(json.loads(json.dumps(state)), "hq")
+                self.assertEqual([j["slot"] for j in flow.pending(state)], ["cr_a", "cr_b"])
+                state = finish(state, "cr_b", findings=[finding()])
+                state = finish(json.loads(json.dumps(state)), "cr_a")
+                job, = flow.pending(state)
+                self.assertEqual(job["role"], "code-quality-reviewer")
+                self.assertEqual(set(flow.task_payload(state, job["id"])["reports"]), {"cr_a", "cr_b"})
+                state = finish(state, "validator")
+                state = finish(json.loads(json.dumps(state)), "hq")
+                self.assertEqual([(j["slot"], j["role"]) for j in flow.pending(state)],
+                                 [("cr_a", "code-quality-reviewer"), ("cr_b", "code-quality-reviewer")])
 
     def test_qa_fix_invalidates_pcr_and_qa(self):
         state = through_pcr(fixture_state())
         state = finish(state, "qa", findings=[finding("QA1", summary="異常系の期待値がありません")])
         state = finish(state, "hq")
-        self.assertEqual({j["slot"] for j in flow.pending(state)}, {"cr_a", "cr_b"})
+        self.assertEqual({j["slot"] for j in flow.pending(state)}, {"cr_a", "cr_b", "cr_c"})
         self.assertEqual(state["ledger"]["qa:QA1"]["status"], "open")
 
     def test_qa_repair_is_confirmed_by_qa_before_another_fix(self):
@@ -123,6 +198,7 @@ class StateTests(unittest.TestCase):
         state = finish(state, "hq")
         state = finish(state, "cr_a")
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         self.assertEqual([j["slot"] for j in flow.pending(state)], ["qa"])
         state = finish(state, "qa", closures=[{"key": "qa:Q1", "status": "reviewer_confirmed_fixed", "evidence": "negative assertion added"}])
@@ -144,6 +220,7 @@ class StateTests(unittest.TestCase):
         f = finding(route="pl")
         state = finish(state, "cr_a", findings=[f])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         state = finish(state, "pl", decision="CLARIFIED", native_verdict="CLARIFIED", requires_user=False,
                        resolution_basis="existing_authoritative_sources", answers=[{"id": "Q1", "answer": "preserve existing questions", "evidence": "spec.md:20"}])
@@ -156,6 +233,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         state = finish(state, "hq", new_snapshot_id=state["snapshot_id"])
         self.assertEqual(state["status"], "NEEDS_USER_INPUT")
@@ -165,10 +243,12 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(max_fix_rounds=1), "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         state = finish(state, "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         self.assertEqual(state["status"], "NEEDS_USER_INPUT")
 
@@ -176,6 +256,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator", assessments={"cr_a:F1": {"fact": "REJECTED", "pr_scope": "OUT_OF_SCOPE", "evidence": "baseにも同じ問題があります"}})
         self.assertEqual(state["ledger"]["cr_a:F1"]["status"], "open")
         self.assertEqual(flow.pending(state)[0]["slot"], "cr_a")
@@ -186,6 +267,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator", assessments={"cr_a:F1": {"fact": "UNCONFIRMED", "pr_scope": "IN_SCOPE", "evidence": "根拠不足です"}})
         state = finish(state, "cr_a", findings=[finding()])
         self.assertEqual(state["status"], "NEEDS_USER_INPUT")
@@ -194,6 +276,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", coverage="PARTIAL", missing_obligations=["scope-rule-exception"])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         self.assertEqual(flow.pending(state)[0]["slot"], "cr_a")
         self.assertEqual(flow.pending(state)[0]["mode"], "complete_evidence")
@@ -204,6 +287,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", questions=["Q1:既存のカテゴリ未設定を許すか"])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         self.assertEqual(flow.pending(state)[0]["slot"], "pl")
         state = finish(state, "pl", decision="CLARIFIED", native_verdict="CLARIFIED", requires_user=False,
@@ -216,6 +300,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", questions=["Q1"])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         state = finish(state, "pl", decision="CLARIFIED", native_verdict="CLARIFIED", requires_user=True,
                        answers=[{"id": "Q1", "answer": "権限の選択が必要です", "evidence": "仕様A/Bが衝突しています"}])
@@ -279,6 +364,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         for changes in ({"assessments": {}}, {"mandatory_coverage_checked": False}):
             s, job, result, receipt = prepare(state, "validator", **changes)
             with self.assertRaises(flow.ContractError):
@@ -288,6 +374,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         s, job, result, receipt = prepare(state, "validator", closures=[{"key": "cr_a:F1", "status": "reviewer_withdrawn", "evidence": "parent says so"}])
         with self.assertRaises(flow.ContractError):
             flow.accept(s, job["id"], result, receipt)
@@ -301,6 +388,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", findings=[finding()])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         state = finish(state, "hq")
         s, job, result, receipt = prepare(state, "cr_a")
@@ -358,6 +446,7 @@ class StateTests(unittest.TestCase):
         state = finish(fixture_state(), "hq")
         state = finish(state, "cr_a", coverage="PARTIAL", missing_obligations=["rules"])
         state = finish(state, "cr_b")
+        state = finish(state, "cr_c")
         state = finish(state, "validator")
         s, job, result, receipt = prepare(state, "cr_a")
         receipt["owner_id"] = "different-owner"

@@ -208,6 +208,26 @@ never resume old md-v2 parent/child sessions without verifying their safety.
   After source/test/requirement/rule changes, selected layers check impact and renew approval for the current snapshot.
   Never invent unselected-layer approvals or let the parent transfer prior approvals.
 
+### Claudeの指摘と対応判断
+
+Claudeの指摘を受けた親は、元の報告と同じ指摘IDで対応判断を記録します。
+判断を初めて返すときと、判断や根拠が変わったときに、既存の記録へ1行追記します。
+対象版・段階・原担当は元の報告を参照できれば十分です。根拠を調べた版が異なる場合は、その版も添えます。
+
+`段階・元の指摘ID | 採用／見送り／保留 | 判断者と理由 | 仕様の節・テスト名などの根拠`
+
+- 採用は、何を直すかと、それが必要な根拠を残します。
+- 見送りは、指摘が仕様と合わない、既存テストで確認済み、今回の対象外など、理由を区別します。
+- 保留は、足りない資料や未確認の条件と、次に確かめることを残します。根拠がないときも保留です。
+
+例（架空）：`QA・Q-07 | 採用 | HQ：保存失敗時に入力を保つ仕様を検査していない | 編集仕様 §4、saveError.test.ts の「保存失敗」`
+
+MDを使う場合は、親が `--note-stdin` で同じ `review.md` の実装側追記に含めます。
+直接のレビューでは、同じ形式をその作業の指摘記録に使います。
+既存の修正メモに必要事項がそろえば、その記載を使います。指摘がゼロなら追記は不要です。
+原報告と過去の判断は保存します。対応の採否とは別に、指摘を閉じるのは原担当です。
+テストは確認した箇所と実行結果を区別し、未実行ならその旨を残します。
+
 ## Claudeを待機させません
 
 `tools/start_md_review.py` launches one selected layer once.
@@ -414,6 +434,7 @@ Inherit these restrictions in the actual child; verify runtime tool lists and ac
 
 ## Fix candidate（追記）
 - Finding ID → changed responsibility / path → execution evidence / remaining
+- Claudeの指摘への対応は、この行に採用・見送り・保留と判断理由・根拠を添えます。
 - User answers and source:
 - Scope/rule changes:
 

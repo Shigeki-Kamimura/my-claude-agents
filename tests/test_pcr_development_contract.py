@@ -40,7 +40,7 @@ class PcrDevelopmentContractTests(unittest.TestCase):
         self.assert_clauses(
             2,
             "branch/index/worktree/untracked contents and modes",
-            "CR-A, CR-B and VALIDATOR must read the same frozen source AND necessary callers/rules",
+            "CR-A, CR-B, CR-C and VALIDATOR must read the same frozen source AND necessary callers/rules",
             "A saved diff while source reads follow the live checkout is not sufficient isolation",
             "only after the S_n material is safely separate",
             "hold concurrent editing for the review",
@@ -50,7 +50,7 @@ class PcrDevelopmentContractTests(unittest.TestCase):
         self.assert_clauses(
             3,
             "Codex PCR has no fixed file-count limit",
-            "Both CR-A and CR-B independently cover the complete intended diff",
+            "CR-A, CR-B and CR-C each independently cover the complete intended diff",
             "Their union is insufficient",
             "The validator checks every candidate and named mandatory-coverage gap",
             "PARTIAL/BLOCKED, unread required material or a completed slice never become full-scope approval",
@@ -61,7 +61,7 @@ class PcrDevelopmentContractTests(unittest.TestCase):
             3,
             "Resume the original owners for fixes, affected dependencies and pending obligations",
             "Only the owning reviewer confirms a fix/withdrawal",
-            "Before QA, require both discovery owners' current-snapshot L1.5 approval",
+            "Before QA, require all three discovery owners' current-snapshot L1.5 approval",
             "at most three coherent repair rounds",
             "Same-snapshot coverage continuation is not a repair round",
         )

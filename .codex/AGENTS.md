@@ -80,6 +80,8 @@ Apply governance `Rule loading across continuations` and `Evidence reuse and con
 - e2e-qa
 - ux-qa
 - code-quality-reviewer
+- pcr-reviewer
+- pcr-validator
 - ci-reviewer
 - hq-coder
 - sec-arch
@@ -95,6 +97,7 @@ Apply governance `Rule loading across continuations` and `Evidence reuse and con
 - p: / pl: -> req-pl
 - rp: / plan: -> review-planner
 - cr: -> code-quality-reviewer
+- Explicit Codex PCR -> three independent `pcr-reviewer` owners (CR-A/B/C), then one `pcr-validator`. Candidate-only validation uses one `pcr-validator`. Pass the resolved L1.5 instruction source and PCR contract to each owner.
 - ci: -> ci-reviewer (explicit GuildBoard Actions-rubric preflight only)
 - r: / rev: -> reviewer
 - a: / adv: -> adviser
@@ -120,6 +123,8 @@ Default strategy:
 - hq-coder -> GPT-6.2 Sol / high
 - review-planner -> GPT-6 Luna / medium
 - code-quality-reviewer -> GPT-6.2 Sol / high
+- pcr-reviewer -> GPT-6.2 Sol / max
+- pcr-validator -> GPT-6.2 Astra / xhigh
 - ci-reviewer -> GPT-6.1 Terra / high (requires Codex CLI >= 0.159.0)
 - adviser -> GPT-6.2 Astra / high
 - reviewer -> GPT-6.2 Sol / high
@@ -134,7 +139,7 @@ Default strategy:
 
 Reasoning:
 - Use GPT-6.2 Sol for normal requirement planning, implementation, and high-value review.
-- Use GPT-6.2 Astra only for adviser (first-pass L2 boundary review), where a missed risk costs most.
+- Use GPT-6.2 Astra for adviser (first-pass L2 boundary review) and bounded Codex PCR validation.
 - Keep routing and narrow React/Vue checks on Luna when the task boundary is explicit.
 - Escalate only the unresolved decision, never an entire PR, task, or repository.
 - Model choice follows task complexity and decision cost, not project name, workflow stage, or diff size.
@@ -188,6 +193,8 @@ For authorized Codex implementation, the main session owns the HQ role by defaul
 ### Compact handoffs
 
 Apply governance `Evidence reuse and concise reporting`. Keep one finding/coverage record per owner and source snapshot; relay it by accessible ID/reference plus changed conclusions, not repeated narratives. Preserve all open findings, questions, evidence gaps, native verdicts and required Workflow Result fields. A recipient without retained evidence receives the necessary original excerpts and source identity; do not substitute the implementer's summary for independent first-pass inspection. Required role output sections remain, but point to the single record instead of repeating its contents.
+
+When the implementation parent receives a finding from a Claude cross-model review, link its original ID to the host decision and evidence in the existing review record. Use [Claudeの指摘と対応判断](workflows/md-review.md#claudeの指摘と対応判断) for format and ownership.
 
 ### Purpose-led review
 

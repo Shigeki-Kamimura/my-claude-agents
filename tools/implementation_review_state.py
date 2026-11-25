@@ -7,15 +7,18 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 WORKFLOW = "implementation-pcr-loop"
 BACKENDS = {"codex", "claude"}
+DISCOVERY_SLOTS = ("cr_a", "cr_b", "cr_c")
+PCR_SLOTS = {*DISCOVERY_SLOTS, "validator"}
 ROLES = {
-    "hq": "hq-coder", "pl": "req-pl", "cr_a": "code-quality-reviewer",
-    "cr_b": "code-quality-reviewer", "validator": "code-quality-reviewer",
+    "hq": "hq-coder", "pl": "req-pl",
     "qa": "test-qa", "e2e": "e2e-qa", "l2": "adviser",
 }
-REVIEW_SLOTS = {"cr_a", "cr_b", "validator", "qa", "e2e", "l2"}
+CODEX_PCR_ROLES = {**dict.fromkeys(DISCOVERY_SLOTS, "pcr-reviewer"), "validator": "pcr-validator"}
+LEGACY_PCR_ROLES = dict.fromkeys(("cr_a", "cr_b", "validator"), "code-quality-reviewer")
+REVIEW_SLOTS = PCR_SLOTS | {"qa", "e2e", "l2"}
 QA_CHECKS = {"happy_path", "fail_path", "missing_tests", "excess_tests", "assertions", "fixtures_mocks"}
 TERMINAL = {"READY_FOR_USER", "NEEDS_USER_INPUT", "BLOCKED", "RATE_LIMITED"}
 CLOSED = {"reviewer_confirmed_fixed", "reviewer_withdrawn"}
@@ -67,7 +70,7 @@ class Policy:
     def provider(self, slot: str) -> str:
         if slot in {"hq", "pl"}:
             return self.implementation_backend
-        if slot in {"cr_a", "cr_b", "validator"}:
+        if slot in PCR_SLOTS:
             return self.pcr_backend
         value = getattr(self, slot + "_backend")
         require(value in BACKENDS, "未選択の担当です: " + slot)
@@ -95,15 +98,28 @@ def policy_of(state: dict) -> Policy:
     return p
 
 
-def queue(state: dict, slots: list[str], mode: str, obligations: dict | None = None) -> None:
+def pcr_roles(state: dict) -> dict[str, str]:
+    """保存時の版と選択から、各ラウンドで同じ担当構成を使います。"""
+    if state["schema_version"] == 1 or state["policy"]["pcr_backend"] == "claude":
+        return LEGACY_PCR_ROLES
+    return CODEX_PCR_ROLES
+
+
+def discovery_slots(state: dict) -> tuple[str, ...]:
+    roles = pcr_roles(state)
+    return tuple(slot for slot in DISCOVERY_SLOTS if slot in roles)
+
+
+def queue(state: dict, slots: list[str] | tuple[str, ...], mode: str, obligations: dict | None = None) -> None:
     policy = policy_of(state)
+    roles = ROLES | pcr_roles(state)
     for slot in slots:
-        require(slot in ROLES, "不明な担当です")
+        require(slot in roles, "このrunで選択されていない担当です")
         state["sequence"] += 1
         job_id = f"job-{state['sequence']:04d}"
         prior = state["owners"].get(slot)
         state["jobs"][job_id] = {
-            "id": job_id, "slot": slot, "role": ROLES[slot], "provider": policy.provider(slot),
+            "id": job_id, "slot": slot, "role": roles[slot], "provider": policy.provider(slot),
             "snapshot_id": state["snapshot_id"], "rules_id": state["rules_id"],
             "epoch": state["epoch"], "mode": mode, "status": "PLANNED",
             "previous_owner": prior, "previous_parent": state["owner_parents"].get(slot),
@@ -192,7 +208,7 @@ def validate_result(job: dict, result: dict, receipt: dict) -> None:
             require(all(c["status"] != "UNCONFIRMED" for c in checks.values()), "未確認の過不足を承認できません")
     if result["decision"] == "APPROVE":
         require(result["coverage"] == "COMPLETE" and not any(result[k] for k in ("findings", "questions", "missing_obligations")), "未解決事項があるため承認できません")
-        accepted = {"L1.5_APPROVE", "L1.5_APPROVE_WITH_NOTES"} if job["slot"] in {"cr_a", "cr_b", "validator"} else {"APPROVE"}
+        accepted = {"L1.5_APPROVE", "L1.5_APPROVE_WITH_NOTES"} if job["slot"] in PCR_SLOTS else {"APPROVE"}
         require(result["native_verdict"] in accepted, "原担当の判定が承認ではありません")
     if job["slot"] in {"hq", "pl", "validator"}:
         require(not result["findings"], "実装・計画・検証担当は発見担当の指摘一覧を直接追加できません")
@@ -288,7 +304,8 @@ def route_open(state: dict, after: str) -> bool:
 
 
 def after_validation(state: dict, result: dict) -> None:
-    open_keys = {f["key"] for f in unresolved(state) if f["slot"] in {"cr_a", "cr_b"}}
+    slots = discovery_slots(state)
+    open_keys = {f["key"] for f in unresolved(state) if f["slot"] in slots}
     assessments = result.get("assessments")
     require(isinstance(assessments, dict) and set(assessments) == open_keys, "検証担当は全ての未解決IDを照合してください")
     require(result.get("mandatory_coverage_checked") is True, "必須確認の不足を照合していません")
@@ -299,7 +316,7 @@ def after_validation(state: dict, result: dict) -> None:
                 and text(assessment.get("evidence")), "検証の根拠・範囲判定が不足しています")
         if assessment["fact"] != "CONFIRMED" or assessment["pr_scope"] != "IN_SCOPE":
             requests.setdefault(state["ledger"][key]["slot"], []).append(key)
-    for slot in ("cr_a", "cr_b"):
+    for slot in slots:
         report = state["reports"][slot]
         if report["coverage"] != "COMPLETE" or report["missing_obligations"]:
             requests.setdefault(slot, []).extend(report["missing_obligations"] or ["coverage"])
@@ -308,7 +325,7 @@ def after_validation(state: dict, result: dict) -> None:
     if result["coverage"] != "COMPLETE" or result["missing_obligations"] or (not open_keys and result["decision"] != "APPROVE"):
         request_owner(state, "validator", result["missing_obligations"] or ["coverage_or_native_verdict"], "validator")
         return
-    question_slots = [slot for slot in ("cr_a", "cr_b") if state["reports"][slot]["questions"]]
+    question_slots = [slot for slot in slots if state["reports"][slot]["questions"]]
     if question_slots:
         state["clarify_slots"] = question_slots
         state["return_stage"] = "pcr"
@@ -334,8 +351,8 @@ def accept(state: dict, job_id: str, result: dict, receipt: dict) -> dict:
     job = next_state["jobs"].get(job_id)
     require(job and job["status"] == "CLAIMED", "未起動・二重結果または不明な依頼です")
     validate_result(job, result, receipt)
-    if job["mode"] == "initial" and job["slot"] in {"cr_a", "cr_b", "validator"}:
-        used = [v for k, v in next_state["owners"].items() if k in {"cr_a", "cr_b", "validator"}]
+    if job["slot"] in PCR_SLOTS:
+        used = [v for k, v in next_state["owners"].items() if k in PCR_SLOTS and k != job["slot"]]
         require(receipt["owner_id"] not in used, "独立レビューで同じ担当を再利用しています")
     job["status"] = "COMPLETED"
     job["receipt"] = copy.deepcopy(receipt)
@@ -375,7 +392,7 @@ def accept(state: dict, job_id: str, result: dict, receipt: dict) -> dict:
                 finding["fix_pending_snapshot"] = new_snapshot
         next_state["epoch"] += 1
         next_state["stage"] = "pcr"
-        queue(next_state, ["cr_a", "cr_b"], "recheck" if "cr_a" in next_state["owners"] else "initial")
+        queue(next_state, discovery_slots(next_state), "recheck" if "cr_a" in next_state["owners"] else "initial")
     elif slot == "pl":
         answers = result.get("answers")
         require(result["decision"] == "CLARIFIED" and isinstance(answers, list) and answers
@@ -394,9 +411,11 @@ def accept(state: dict, job_id: str, result: dict, receipt: dict) -> dict:
             item = next_state["reconcile"].pop(0)
             next_state["stage"] = "reconcile"
             request_owner(next_state, item["slot"], item["obligations"], "reconcile")
-    elif slot in {"cr_a", "cr_b"} and next_state["stage"] == "pcr":
-        current = [j for j in next_state["jobs"].values() if j["epoch"] == job["epoch"] and j["slot"] in {"cr_a", "cr_b"}]
-        if all(j["status"] == "COMPLETED" for j in current):
+    elif slot in DISCOVERY_SLOTS and next_state["stage"] == "pcr":
+        completed = {j["slot"] for j in next_state["jobs"].values()
+                     if j["epoch"] == next_state["epoch"] and j["snapshot_id"] == next_state["snapshot_id"]
+                     and j["rules_id"] == next_state["rules_id"] and j["status"] == "COMPLETED"}
+        if completed.issuperset(discovery_slots(next_state)):
             next_state["stage"] = "validator"
             queue(next_state, ["validator"], "recheck" if "validator" in next_state["owners"] else "initial")
     elif next_state["stage"] == "reconcile":
@@ -438,7 +457,7 @@ def task_payload(state: dict, job_id: str) -> dict:
     job["rules_id"] = state["rules_id"]
     job["scope"] = "delta_and_pending" if job["mode"] in {"fix", "recheck", "complete_evidence"} else "assigned_initial_scope"
     if job["slot"] == "validator":
-        job["reports"] = {k: copy.deepcopy(state["reports"][k]) for k in ("cr_a", "cr_b")}
+        job["reports"] = {k: copy.deepcopy(state["reports"][k]) for k in discovery_slots(state)}
     elif job["slot"] in {"hq", "pl"} or job["mode"] != "initial":
         job["open_findings"] = copy.deepcopy(unresolved(state))
         job["answers"] = copy.deepcopy(state["answers"])

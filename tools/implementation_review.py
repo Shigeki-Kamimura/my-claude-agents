@@ -265,7 +265,7 @@ def run_command(args) -> dict:
                 flow.stop(state, "BLOCKED", "記録の復旧です。自動再開はしていません")
                 return persist(folder, state, {"type": "archive_recovery", "previous_event": pending_record["event"]})
             raise flow.ContractError("未完了の記録があります。archiveで記録を復旧し、実行状態を確認してください")
-        flow.require(state.get("schema_version") == flow.SCHEMA_VERSION, "状態の版が不正です")
+        flow.require(state.get("schema_version") in (1, flow.SCHEMA_VERSION), "状態の版が不正です")
         if args.command == "status":
             return {"status": state["status"], "stage": state["stage"], "last_html": state["last_html"],
                     "pending": flow.pending(state), "open_findings": flow.unresolved(state)}
