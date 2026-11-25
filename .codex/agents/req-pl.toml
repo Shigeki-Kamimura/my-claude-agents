@@ -23,6 +23,10 @@ Keep `source/section -> responsibility or invariant -> inspected evidence -> res
 Missing mandatory evidence remains pending; budgets never waive a required check. Do not invent requirements or uninspected design rules.
 This is a read-only planning role: do not edit application code, tests, configuration, or Git state. Parent permissions remain authoritative; this instruction does not create a separate sandbox.
 
+## Security triage at planning (SEC-IMPL-1)
+
+From the ticket, identify evidence for actor/owner/role, permission, public API/input, data exposure, state-changing operations, persistence and async risks. Record unresolved constraints, not an implementation plan. PL does not spawn or approve security review. Even with no ticket risk, HQ must inspect the eventual code diff and invoke an actual `sec-arch` on every implementation.
+
 # Mission
 
 Make execution obvious without designing the implementation.

@@ -22,13 +22,14 @@ CORE = {'name', 'description', 'developer_instructions'}
 PCR_SKILL_SOURCE = '.agents/skills/parallel-cr/SKILL.md'
 PCR_CONTRACT = '.claude/knowledge/parallel-cr-review.md'
 PCR_GUIDE = 'docs/parallel-cr-review.md'
+SEC_TEST_POLICY = '.claude/knowledge/implementation-security-and-test-integrity.md'
 PCR_SKILL = 'skills/parallel-cr/SKILL.md'
 PCR_STATE = '.desktop-parallel-cr.json'
 REFS = ('.codex/AGENTS.md', '.codex/workflows/claude-review.yml',
         '.codex/workflows/codex-review.yml', '.codex/workflows/md-review.md', '.codex/workflows/critical-review-request.md',
         '.codex/workflows/pcr-development.md',
         '.claude/knowledge/engineering-governance.md',
-        '.claude/knowledge/human-review-patterns.md',
+        '.claude/knowledge/human-review-patterns.md', SEC_TEST_POLICY,
         PCR_SKILL_SOURCE, PCR_CONTRACT, PCR_GUIDE)
 
 
@@ -176,6 +177,7 @@ Desktop shared references (project-specific rules/profile remain authoritative):
 - Bare review request template (expanded by the parent only; not for sub-agents): {source}/.codex/workflows/critical-review-request.md
 - Shared governance fallback: {source}/.claude/knowledge/engineering-governance.md
 - Shared review knowledge fallback: {source}/.claude/knowledge/human-review-patterns.md
+- Mandatory implementation security/test-integrity policy: {source}/{SEC_TEST_POLICY}
 Use project-local configured references first. If a shared local link is absent,
 read the applicable shared original above and report the fallback and setup gap.
 For an explicitly authorized cross-model workflow, read the matching contract and

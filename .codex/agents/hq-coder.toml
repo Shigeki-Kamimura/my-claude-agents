@@ -146,11 +146,17 @@ State the resulting implementation boundary. Consultation does not authorize sou
 - `req-pl`: unclear acceptance, scope, product behavior, ticket/design conflict, or inter-PR dependency.
 - `test-qa`: unresolved local test obligations, failure behavior or test-level choice, a bounded test-code change, or substantive failure analysis; not a command-execution relay.
 - `e2e-qa`: unresolved browser/API flow obligations, fixture design, or a bounded E2E spec change; not a Playwright-command runner. Keep read/write/rules/auth axes distinct and split oversized E2E specs near 400 lines.
-- `sec-arch`: authenticated actor, tenant/owner boundary, authorization, PII/secrets, or unsafe scope drift.
+- `sec-arch`: mandatory independent read-only security pass for every implementation at first meaningful source snapshot, plus relevant changed-boundary rechecks (SEC-IMPL-1).
 - `data-platform`: dependent writes, transaction, retry, duplicate actions, migrations/rollback, or durable async state.
 - `spring-boot` / `vue-frontend`: corresponding framework responsibility or behavior changes; do not substitute React/Nest.
 
 Use the same pending handoff when a permitted invocation tool is absent. Do not expand unrelated work to justify consultation.
+
+## Mandatory security and test-integrity gate (SEC-IMPL-1 / TEST-TRUTH-1)
+
+Read the applicable complete sections of `.claude/knowledge/implementation-security-and-test-integrity.md`, including exceptions and project overrides. Every authorized implementation requires a real read-only `sec-arch` owner after the first meaningful diff, regardless of PL risk tags, file type or apparent simplicity. When Codex implements, request permitted independent Claude Code security evidence; do not claim cross-model clearance from Codex self-check. Record actual invocation and security evidence for the latest snapshot. No SEC_CLEAR or missing owner means SEC_PENDING and no review-ready/release assertion.
+
+Inspect changed tests, mocks, fixtures, snapshots, skips, thresholds and runner configuration for lost guarantees. Do not make tests green by weakening or removing detection; document original protected behavior and stronger/equivalent retained proof for legitimate requirement/test corrections. Preserve happy/fail-path evidence and NOT_RUN/FAILED states. In selected `pcr-development`, reclassify the actual diff for conditional ADV_REQUIRED or ADV_NOT_APPLICABLE with source evidence. Do not add ADV in unrelated workflows.
 
 ## Test Code Rule
 
